@@ -1,0 +1,44 @@
+TYPIC TRAVEL — CẤU TRÚC THEO LÊ NAM
+
+1. Giải nén toàn bộ ZIP. Giữ nguyên các thư mục css, assets và js sau khi giải nén.
+2. Nhấp đúp CHAY_DEMO_WINDOWS.bat hoặc mở index.html bằng Chrome/Edge.
+Không cần cài Node.js, database hay tải thư viện. Chạy được offline.
+
+Nếu muốn chạy localhost: mở Terminal trong thư mục đã giải nén và chạy
+python -m http.server 8080 --bind 127.0.0.1
+Sau đó mở http://127.0.0.1:8080
+(Cách này cần Python có sẵn; hoặc dùng Live Server của VS Code.)
+
+KỊCH BẢN BÁM TÀI LIỆU
+CRM: NEW → CONTACTED → QUALIFIED → QUOTE SENT → NEGOTIATION → WON / LOST.
+Thiết kế: Country France · Pax 4 · Budget 3500 EUR · Duration 14.
+Draft Program → Sales chỉnh → Quotation → Khách chấp nhận → Booking.
+Điều hành: Booking Confirmed → Operation Assigned → Book Services →
+Supplier Confirmed → Voucher Ready → Guide Assigned → Tour Running → Completed.
+HDV cần xác nhận nhận tour. Có thể xác nhận tại Điều hành hoặc giao diện HDV.
+Kế toán: Deposit Invoice → Payment Received → Final Invoice → Payment Received.
+NCC: Invoice → Approve → Pay. Nhập VAT mẫu, xem Cash Flow ngày/tuần/tháng.
+Sau tour: Feedback Form → CSAT → Review → Referral.
+
+ĐIỂM ĐÃ CHỈNH
+- Tên hiển thị Typic Travel trên giao diện, tài liệu in và email mẫu.
+- Bổ sung Customers, Dashboard Sales, Marketing Content, Invoices, VAT,
+  Cash Flow, Guide Calendar/Confirm, Vehicle/Capacity/Booking, Documents,
+  Review/Referral, AI Automation mô phỏng và bảng đối chiếu 12 module.
+- Không ép cọc 30%; số tiền cọc theo hợp đồng do người dùng nhập.
+- Không ép giá bán phải cao hơn dự toán. Có thể xem tour lỗ trong phân tích.
+- Không giới hạn khách chỉ có một booking; chỉ chống tạo lặp từ quote đã Accepted.
+
+GIỚI HẠN
+Demo HTML/JavaScript dùng dữ liệu mẫu, lưu riêng trong trình duyệt.
+Phân quyền chỉ mô phỏng menu, chưa có bảo mật backend hoặc đăng nhập thật.
+OpenAI API, Gmail Workspace, Google Drive API, Google Login và Make.com
+chưa được kết nối. Không gửi email, không chuyển tiền, không phát hành hóa đơn thật.
+Tỷ giá và thuế suất được nhập cho minh họa, không phải thông tin thực tế.
+Chỉ tải file giả lập, không sử dụng hộ chiếu hoặc thông tin nhạy cảm thật.
+Chưa kiểm tra trực quan trong trình duyệt tại môi trường tạo file.
+
+DỮ LIỆU
+520 NCC, 10 HDV, 12 xe, 8 booking ban đầu.
+Có tìm kiếm, lọc, phân trang và luồng thao tác liên thông.
+Vào Hướng dẫn dự án để đối chiếu tài liệu, tải JSON hoặc khôi phục mẫu.

@@ -1,0 +1,32 @@
+/* DEMO DATA — cấu hình danh mục và dữ liệu mẫu. Không render UI hoặc gọi API bên ngoài. */
+
+const serviceTypes=['Hotel','Vehicle','Guide','Restaurant','Flights','Cruise','Train','Insurance'];
+
+const typesVI={Hotel:'Khách sạn',Vehicle:'Xe',Guide:'HDV',Restaurant:'Nhà hàng',Flights:'Vé máy bay',Cruise:'Du thuyền',Train:'Tàu hỏa',Insurance:'Bảo hiểm'};
+
+const stages=['NEW','CONTACTED','QUALIFIED','QUOTE SENT','NEGOTIATION','WON','LOST'];
+
+function seed(){
+ const guideNames=['Nguyễn Minh Anh','Trần Quốc Huy','Lê Thu Hà','Phạm Hoàng Nam','Đỗ Thanh Mai','Vũ Quốc Bảo','Nguyễn Khánh Linh','Trần Đức Anh','Lê Bảo Ngọc','Phạm Minh Khoa'];
+ const guides=guideNames.map((name,i)=>({id:'G'+(i+1),name,lang:i%3===0?'Pháp, Anh':i%3===1?'Anh, Việt':'Anh, Đức',area:i<5?'Miền Bắc':'Miền Trung & Nam',rate:1100000+i*50000,rating:4.2+(i%5)/10}));
+ const suppliers=Array.from({length:520},(_,i)=>({id:'NCC-'+String(i+1).padStart(3,'0'),name:['Lotus Hospitality','Heritage Cruises','Mekong Transport','Bamboo Dining','Sky Travel','Rail Connect','Viet Guide'][i%7]+' '+String(i+1).padStart(3,'0'),type:serviceTypes[i%8],country:i%9===0?'Cambodia':'Vietnam',quality:70+i%29,price:68+(i*3)%31,response:60+(i*7)%39,complaint:75+(i*2)%24,terms:i%3===0?'Cọc 30%, còn lại sau tour':i%3===1?'Thanh toán sau 15 ngày':'Thanh toán sau 30 ngày',contract:i%13===0?'Chờ ký':'Đã ký'}));
+ const tourNames=['Vietnam Heritage 10 Days','Vietnam & Cambodia 14 Days','Luxury Vietnam Escape','Family Vietnam Discovery','Hanoi & Ha Long Highlights','Mekong Culture Journey','Central Vietnam Explorer','Vietnam Slow Travel'];
+ const clients=['Claire Dubois','Pierre Martin','Sophie Laurent','Thomas Wilson','Marie Bernard','Emma Schneider','Louis Petit','Anna Weber'];
+ const revenues=[168e6,244e6,296e6,132e6,96e6,185e6,154e6,213e6];
+ const bookings=tourNames.map((tour,i)=>{let done=i===6||i===7,running=i===0||i===1;let start=['2026-10-10','2026-10-08','2026-10-15','2026-10-18','2026-10-20','2026-10-25','2026-10-01','2026-10-02'][i],end=['2026-10-19','2026-10-21','2026-10-24','2026-10-27','2026-10-25','2026-11-03','2026-10-09','2026-10-11'][i];let cost=Math.round(revenues[i]*[.7,.73,.68,.75,.72,.71,.74,.69][i]);return{id:'BK-'+String(i+1).padStart(3,'0'),client:clients[i],tour,start,end,pax:[4,6,2,5,4,8,6,4][i],revenue:revenues[i],cost,sales:i%2?'Lan Phương':'Minh Quân',operator:i%2?'Hà An':'Quốc Bảo',status:done?'Completed':running?'Running':'Preparing',guide:(done||running)?'G'+(i+1):'',voucher:done||running,received:done?revenues[i]:Math.round(revenues[i]*.3),services:serviceTypes.map((t,k)=>({type:t,needed:k<4||k===5||i%3===0,supplier:'NCC-'+String((i*8+k)%520+1).padStart(3,'0'),cost:Math.round(cost/[.3,.14,.1,.16,.08,.13,.04,.05].reduce((a,b)=>a+b,0)*[.3,.14,.1,.16,.08,.13,.04,.05][k]),confirmed:done||running||k<i%4})),passengers:Array.from({length:[4,6,2,5,4,8,6,4][i]},(_,j)=>({name:j===0?clients[i]:'Guest '+(j+1)+' · '+clients[i].split(' ')[1],notes:j===0?'Khách liên hệ chính':'Không có ghi chú'})),feedback:done?(i===7?{score:5,note:'Lịch trình hợp lý, HDV tận tâm.'}:null):null};});
+ bookings.forEach(b=>{let required=b.services.filter(s=>s.needed);let total=required.reduce((n,s)=>n+s.cost,0);required.forEach((s,i)=>s.cost=i===required.length-1?b.cost-required.slice(0,-1).reduce((n,x)=>n+x.cost,0):Math.round(s.cost/total*b.cost));});
+ const leads=[['LD-001','Camille Robert','Website','France',4,180e6,'NEW'],['LD-002','Julien Moreau','Google Ads','France',6,240e6,'CONTACTED'],['LD-003','Helen Brown','Referral','UK',2,150e6,'QUALIFIED'],['LD-004','David Müller','Facebook','Germany',8,320e6,'QUOTE SENT'],['LD-005','Alice Leclerc','Website','France',4,220e6,'NEGOTIATION'],['LD-006','Marc Simon','Referral','France',3,160e6,'NEW'],['LD-007','Paul Fischer','Google Ads','Germany',6,260e6,'CONTACTED'],['LD-008','Sarah Jones','Website','UK',4,190e6,'LOST']].map((a,i)=>({id:a[0],name:a[1],source:a[2],country:a[3],pax:a[4],budget:a[5],status:a[6],sales:i%2?'Lan Phương':'Minh Quân',email:'guest'+(i+1)+'@example.com',followup:'2026-10-13',note:'Quan tâm tour văn hóa Việt Nam.',tour:'Vietnam Heritage 10 Days',days:10,start:'2026-11-05'}));
+ const quotes=[{id:'QT-001',lead:'LD-004',client:'David Müller',tour:'Vietnam Heritage 10 Days',pax:8,days:10,amount:320e6,cost:230e6,version:1,status:'Sent',start:'2026-11-05',program:[]},{id:'QT-002',lead:'LD-005',client:'Alice Leclerc',tour:'Luxury Vietnam Escape',pax:4,days:10,amount:220e6,cost:154e6,version:2,status:'Draft',start:'2026-11-08',program:[]}];
+ const payables=bookings.map((b,i)=>({id:'AP-'+String(i+1).padStart(3,'0'),booking:b.id,supplier:b.services[0].supplier,amount:Math.round(b.cost*.3),due:i<2?'2026-10-11':'2026-10-20',status:i===7?'Paid':i===6?'Approved':'Pending'}));
+ return{guides,suppliers,bookings,leads,quotes,payables,transactions:[],drafts:[],docs:[],activities:[],campaigns:[{name:'France Autumn Discovery',channel:'Google Ads',spend:18e6,leads:64,traffic:4200},{name:'Vietnam Family Stories',channel:'Facebook',spend:12e6,leads:48,traffic:3100},{name:'Travel Partners & Referral',channel:'Referral',spend:3e6,leads:26,traffic:840}]};
+}
+
+function initializeDemoCollections(){
+if(!state.customers)state.customers=[...state.leads.map(l=>({id:'CUS-'+l.id.slice(3),name:l.name,company:'',contact:l.name,country:l.country,email:l.email,whatsapp:'+00 DEMO',phone:'Chưa nhập'})),...state.bookings.map((b,i)=>({id:'CUS-B'+(i+1),name:b.client,company:'',contact:b.client,country:'France',email:'booking'+(i+1)+'@example.com',whatsapp:'+00 DEMO',phone:'Chưa nhập'}))];
+if(!state.invoices)state.invoices=[];
+if(!state.vat)state.vat=[];
+if(!state.contents)state.contents=[{id:'CT-001',title:'Vietnam 14 Days for French Guests',channel:'Website',owner:'Marketing 1',status:'Draft'},{id:'CT-002',title:'Family Vietnam Travel Stories',channel:'Facebook',owner:'Marketing 2',status:'Scheduled'},{id:'CT-003',title:'Luxury Vietnam Experience',channel:'Email',owner:'Marketing 3',status:'Published'}];
+if(!state.vehicles)state.vehicles=Array.from({length:12},(_,i)=>({id:'VEH-'+String(i+1).padStart(3,'0'),name:i%3===0?'Minibus':i%3===1?'Sedan':'Tour Bus',capacity:[16,4,35][i%3],plate:'DEMO-'+(i+101),supplier:state.suppliers.filter(s=>s.type==='Vehicle')[i].id}));
+if(!state.issues)state.issues=[{id:'IS-001',booking:'BK-003',type:'Supplier',note:'Chờ khách sạn xác nhận loại phòng.',status:'Open'}];
+state.bookings.forEach(b=>{if(b.guideConfirmed===undefined)b.guideConfirmed=!!b.guide;if(!b.vehicle&&b.status!=='Preparing')b.vehicle=state.vehicles[+b.id.slice(3)%12].id;});
+}

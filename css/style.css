@@ -21,3 +21,7 @@
 .flow span.cur{background:#fbf0dd;color:var(--amber);font-weight:700;box-shadow:inset 0 0 0 1px var(--amber)}
 .ops-missing{margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--ink)}
 .ops-missing li{margin-bottom:4px}
+.ops-lists{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.ops-lists h4{margin:0 0 8px}
+.ops-lrow{padding:10px 0;border-top:1px solid var(--line);font-size:12px}
+@media(max-width:900px){.ops-lists{grid-template-columns:1fr}}

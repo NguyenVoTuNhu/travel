@@ -27,6 +27,7 @@ const TRAVEL_CONFIG = Object.freeze({
     contents: 'travel_marketing_contents',
     vehicles: 'travel_vehicles',
     issues: 'travel_tour_issues',
-    auditLogs: 'travel_audit_logs'
+    auditLogs: 'travel_audit_logs',
+    settings: 'travel_settings'
   })
 });

@@ -50,33 +50,33 @@ views.quotes = () =>
 
 function renderQuoteDetails(id) {
   let q = state.quotes.find((q) => q.id === id);
+  const lead = state.leads.find((item) => item.id === q.lead);
+  const statusLabel =
+    { Draft: "Nháp", Sent: "Đã đánh dấu gửi", Accepted: "Đã chấp nhận" }[
+      q.status
+    ] || q.status;
+  const margin = q.amount ? ((q.amount - q.cost) / q.amount) * 100 : 0;
+  const history = (q.history || [])
+    .map(
+      (item) =>
+        `<div class="quote-history-row"><div><b>Phiên bản ${item.version}</b><small>${money(item.amount)}</small></div><span>Chi phí ${money(item.cost)}</span></div>`,
+    )
+    .join("");
+  const actions =
+    btn("In / Lưu PDF", "printQuote('" + id + "')") +
+    btn("Email khách · mô phỏng", "simulateEmail('" + id + "')") +
+    (q.status !== "Accepted"
+      ? btn("Sửa giá", "reviseQuote('" + id + "')") +
+        btn("Đánh dấu gửi", "markQuoteSent('" + id + "')") +
+        btn(
+          "Khách chấp nhận → Đặt chỗ",
+          "acceptQuote('" + id + "')",
+          "primary",
+        )
+      : badge("Đã chuyển thành Đặt chỗ", "green"));
   modal(
-    "Báo giá " + q.id + " · v" + q.version,
-    card(
-      esc(q.client),
-      line("Chương trình", esc(q.tour)) +
-        line("Ngày khởi hành", fmt(q.start)) +
-        line("Số khách", q.pax) +
-        line("Giá bán nhóm", money(q.amount)) +
-        line("Dự toán", money(q.cost)) +
-        line("Lợi nhuận dự kiến", money(q.amount - q.cost)),
-    ) +
-      card(
-        "Chương trình tour",
-        q.program?.length
-          ? q.program
-              .map(
-                (p, i) =>
-                  '<div class="timeline"><b>Ngày ' +
-                  (i + 1) +
-                  "</b><p>" +
-                  esc(p) +
-                  "</p></div>",
-              )
-              .join("")
-          : '<p class="sub">Báo giá mẫu chưa có chương trình chi tiết. Có thể tạo bản mới từ Thiết kế tour.</p>',
-      ) +
-      `<div class="actions">${btn("In / Lưu PDF", "printQuote('" + id + "')")}${q.status !== "Accepted" ? btn("Sửa giá · tạo phiên bản", "reviseQuote('" + id + "')") + btn("Đánh dấu gửi", "markQuoteSent('" + id + "')") + btn("Khách chấp nhận → Booking", "acceptQuote('" + id + "')", "primary") : badge("Đã chuyển thành Booking", "green")}</div><p class="notice">Demo không gửi email. Khi chạy thật cần lưu lịch sử từng phiên bản và người duyệt.</p>`,
+    "Chi tiết báo giá",
+    `<div class="detail-panel quote-detail"><section class="quote-identity"><div class="quote-mark">QT</div><div><div class="quote-identity-line"><h3>${q.id}</h3>${badge(statusLabel, q.status === "Accepted" ? "green" : "amber")}</div><strong>${esc(q.client)}</strong><p>${esc(q.tour)}</p></div></section><div class="detail-summary"><div><small>Phiên bản</small><b>v${q.version}</b></div><div><small>Khởi hành</small><b>${fmt(q.start)}</b></div><div><small>Số khách</small><b>${q.pax} khách</b></div><div><small>Quốc gia</small><b>${esc(q.country || lead?.country || "—")}</b></div></div><section class="quote-finance"><div><small>Giá bán nhóm</small><strong>${money(q.amount)}</strong></div><div><small>Dự toán</small><strong>${money(q.cost)}</strong></div><div class="positive"><small>Lợi nhuận dự kiến</small><strong>${money(q.amount - q.cost)}</strong><span>Biên ${margin.toFixed(1)}%</span></div></section><div class="quote-detail-grid"><section class="detail-section"><div class="detail-section-head"><h3>Chương trình tour</h3><span>${q.days || q.program?.length || 0} ngày</span></div><div class="quote-itinerary">${q.program?.length ? q.program.map((item, index) => `<div class="quote-day"><b>Ngày ${index + 1}</b><p>${esc(item)}</p></div>`).join("") : '<div class="empty">Báo giá chưa có chương trình chi tiết.</div>'}</div></section><aside><section class="detail-section"><div class="detail-section-head"><h3>Thông tin gốc</h3></div>${line("Khách hàng tiềm năng", q.lead || "—")}${line("Ngân sách nguyên tệ", q.budgetNative ? esc(q.budgetNative) + " " + esc(q.currency) : "Báo giá VND")}${line("Tỷ giá", q.rate ? new Intl.NumberFormat("vi-VN").format(q.rate) : "—")}${line("Ngôn ngữ", esc(q.language || "—"))}</section><section class="detail-section"><div class="detail-section-head"><h3>Lịch sử phiên bản</h3></div>${history || '<div class="empty compact">Chưa có phiên bản trước.</div>'}</section></aside></div><p class="quote-note">Bản trình diễn không gửi email thật. Lịch sử phiên bản và người duyệt cần được lưu đầy đủ khi triển khai thực tế.</p><footer class="detail-footer">${actions}</footer></div>`,
   );
 }
 
@@ -195,44 +195,13 @@ function printQuote(id) {
 
 function quoteDetail(id) {
   renderQuoteDetails(id);
-  let q = state.quotes.find((q) => q.id === id);
-  document
-    .querySelector(".modal")
-    .insertAdjacentHTML(
-      "beforeend",
-      card(
-        "Thông tin gốc và lịch sử phiên bản",
-        line(
-          "Country",
-          esc(
-            q.country ||
-              state.leads.find((l) => l.id === q.lead)?.country ||
-              "—",
-          ),
-        ) +
-          line(
-            "Budget nguyên tệ",
-            q.budgetNative
-              ? esc(q.budgetNative) + " " + esc(q.currency)
-              : "Báo giá mẫu VND",
-          ) +
-          (q.history || [])
-            .map((h) =>
-              line(
-                "Version " + h.version,
-                money(h.amount) + " · Cost " + money(h.cost),
-              ),
-            )
-            .join(""),
-      ) + btn("Email khách · mô phỏng", "simulateEmail('" + id + "')"),
-    );
 }
 
 function simulateEmail(id) {
   let q = state.quotes.find((q) => q.id === id);
   modal(
     "Email quotation · " + id,
-    `<label>To${field("to", "email", state.leads.find((l) => l.id === q.lead)?.email || "")}</label><label>Subject${field("subject", "text", "Typic Travel — Quotation " + id)}</label><label>Nội dung<textarea>Dear ${esc(q.client)},\nPlease find our proposed itinerary and quotation for ${esc(q.tour)}.\nBest regards,\nTypic Travel</textarea></label><div class="alert">Mô phỏng Email khách trong tài liệu. Chưa kết nối Gmail Workspace; không gửi email thật.</div>${btn("Ghi nhận mô phỏng gửi", "markQuoteSent('" + id + "')", "primary")}`,
+    `<label>Đến${field("to", "email", state.leads.find((l) => l.id === q.lead)?.email || "")}</label><label>Tiêu đề${field("subject", "text", "TypicOne ERP — Báo giá " + id)}</label><label>Nội dung<textarea>Kính gửi ${esc(q.client)},\nXin gửi quý khách chương trình và báo giá đề xuất cho ${esc(q.tour)}.\nTrân trọng,\nTypicOne ERP</textarea></label><div class="alert">Mô phỏng Email khách trong tài liệu. Chưa kết nối Gmail Workspace; không gửi email thật.</div>${btn("Ghi nhận mô phỏng gửi", "markQuoteSent('" + id + "')", "primary")}`,
     true,
   );
 }

@@ -6,7 +6,7 @@ views.help = () =>
     "Phạm vi bám tài liệu Ai Automation 2 · Những phần đã mô phỏng và việc cần triển khai.",
     btn("In hướng dẫn / Lưu PDF", "window.print()"),
   ) +
-  `<section class="hero"><div><div class="eyebrow">TOMS / TOUR OPERATOR MANAGEMENT SYSTEM</div><h2>Typic Travel là hệ thống vận hành<br>doanh nghiệp lữ hành.</h2><p>Phục vụ 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV và 500+ NCC. Booking là hồ sơ trung tâm nối bán hàng, dịch vụ, thu chi và phản hồi.</p></div><div class="heroart"><div class="orbit"></div><div class="plane">◎</div></div></section>` +
+  `<section class="hero"><div><div class="eyebrow">TOMS / TOUR OPERATOR MANAGEMENT SYSTEM</div><h2>TypicOne ERP là hệ thống vận hành<br>doanh nghiệp lữ hành.</h2><p>Phục vụ 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV và 500+ NCC. Booking là hồ sơ trung tâm nối bán hàng, dịch vụ, thu chi và phản hồi.</p></div><div class="heroart"><div class="orbit"></div><div class="plane">◎</div></div></section>` +
   card(
     "Kịch bản demo 1 · Điều hành một tour đã có",
     `<div class="timeline"><b>01 · Mở Tổng quan CEO</b><p>Kiểm tra giá trị booking, lợi nhuận dự kiến, công nợ và cảnh báo thiếu dịch vụ từ database.</p></div><div class="timeline"><b>02 · Mở một booking cần chuẩn bị</b><p>Mở checklist, chọn NCC đúng loại dịch vụ và xác nhận từng dịch vụ. Cập nhật chi phí làm dự toán và biên lợi nhuận thay đổi.</p></div><div class="timeline"><b>03 · Phân công HDV</b><p>Chọn HDV còn lịch trống; danh sách khóa HDV trùng ngày với tour khác. Phân công sẽ xác nhận dịch vụ Guide.</p></div><div class="timeline"><b>04 · Tạo voucher → Bắt đầu tour</b><p>Xác nhận dịch vụ NCC, tạo voucher, phân công và xác nhận HDV rồi bắt đầu tour.</p></div><div class="timeline"><b>05 · Hoàn tất → Thu phần còn lại → Feedback</b><p>Hoàn tất ở Điều hành, ghi nhận thu ở Kế toán và nhập feedback ở Chăm sóc khách hàng.</p></div>`,
@@ -128,12 +128,12 @@ function resetForm() {
 views.help = () =>
   title(
     "Đối chiếu tài liệu yêu cầu",
-    "Ai Automation _ 2.docx · Typic Travel ERP V1",
+    "Ai Automation _ 2.docx · TypicOne ERP V1",
     btn("In / Lưu PDF", "window.print()"),
   ) +
   card(
     "Tên doanh nghiệp và phạm vi",
-    "<p>Tên hiển thị theo yêu cầu của bạn: <b>Typic Travel</b>. Bản sửa dùng Typic Travel trên giao diện, email, bản in và file tải về.</p><p>Quy mô trong tài liệu: 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV, hơn 500 nhà cung cấp và hàng chục tour mỗi tháng.</p>",
+    "<p>Tên hiển thị theo yêu cầu của bạn: <b>TypicOne ERP</b>. Bản sửa dùng TypicOne ERP trên giao diện, email, bản in và file tải về.</p><p>Quy mô trong tài liệu: 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV, hơn 500 nhà cung cấp và hàng chục tour mỗi tháng.</p>",
   ) +
   card(
     "12 phân hệ ERP V1",

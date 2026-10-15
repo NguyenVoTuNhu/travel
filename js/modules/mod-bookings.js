@@ -65,9 +65,11 @@ views.bookings = () =>
   );
 
 function filterBookingRows(q) {
-  document
-    .querySelectorAll(".bookrow")
-    .forEach((r) => (r.hidden = !r.dataset.search.includes(q.toLowerCase())));
+  const rows = document.querySelectorAll(".bookrow");
+  rows.forEach((row) => (row.dataset.filteredOut = String(!row.dataset.search.includes(q.toLowerCase()))));
+  const wrapper = rows[0]?.closest(".tablewrap");
+  if (wrapper?.dataset.paginated) updateTablePagination(wrapper, true);
+  else rows.forEach((row) => (row.hidden = row.dataset.filteredOut === "true"));
 }
 
 function passengerDetail(id) {

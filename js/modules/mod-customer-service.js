@@ -481,7 +481,7 @@ function feedbackForm(id) {
     `<label>${label}<select name="${name}" required>${[5, 4, 3, 2, 1].map((score) => `<option value="${score}" ${current[name] === score ? "selected" : ""}>${score}/5</option>`).join("")}</select></label>`;
   modal(
     `Feedback Form · ${item.id}`,
-    `<form onsubmit="saveFeedback(event,'${id}')"><div class="score-grid">${scoreField("overall", "Hài lòng tổng thể")}${scoreField("itinerary", "Lịch trình")}${scoreField("guide", "Hướng dẫn viên")}${scoreField("hotel", "Khách sạn")}${scoreField("transport", "Phương tiện")}${scoreField("support", "Dịch vụ hỗ trợ")}</div><label>Ý kiến của khách<textarea name="comment" required maxlength="1000" placeholder="Nhập phản hồi chi tiết…">${esc(current.comment || "")}</textarea></label><label><input name="allowContact" type="checkbox" value="1" ${current.allowContact === false ? "" : "checked"}> Khách đồng ý để Typic Travel liên hệ lại</label><div class="formfooter">${btn("Hủy", `openCareCase('${id}')`)}<button class="btn primary" type="submit">Lưu Feedback & CSAT</button></div></form>`,
+    `<form onsubmit="saveFeedback(event,'${id}')"><div class="score-grid">${scoreField("overall", "Hài lòng tổng thể")}${scoreField("itinerary", "Lịch trình")}${scoreField("guide", "Hướng dẫn viên")}${scoreField("hotel", "Khách sạn")}${scoreField("transport", "Phương tiện")}${scoreField("support", "Dịch vụ hỗ trợ")}</div><label>Ý kiến của khách<textarea name="comment" required maxlength="1000" placeholder="Nhập phản hồi chi tiết…">${esc(current.comment || "")}</textarea></label><label><input name="allowContact" type="checkbox" value="1" ${current.allowContact === false ? "" : "checked"}> Khách đồng ý để TypicOne ERP liên hệ lại</label><div class="formfooter">${btn("Hủy", `openCareCase('${id}')`)}<button class="btn primary" type="submit">Lưu Feedback & CSAT</button></div></form>`,
     true,
   );
 }
@@ -696,7 +696,7 @@ function exportCustomerServiceCSV() {
       .replace(/"/g, '""') +
     '"';
   downloadFile(
-    "Typic Travel_Customer_Service.csv",
+    "TypicOne ERP_Customer_Service.csv",
     "\ufeff" +
       [headers, ...rows].map((row) => row.map(cell).join(",")).join("\r\n"),
     "text/csv;charset=utf-8",

@@ -11,6 +11,8 @@ async function enterApplication(user) {
   currentUser = user;
   role = user.role;
   if (!rights[role]?.includes(current)) current = rights[role]?.[0];
+  openNavGroups.clear();
+  navGroupsInitialized = false;
   showAppShell();
   const app = document.getElementById("app");
   app.innerHTML = '<div class="empty">Đang kết nối database…</div>';
@@ -27,6 +29,7 @@ async function enterApplication(user) {
 }
 
 async function startApplication() {
+  startUILocalization();
   try {
     await loadAuthUsers();
     const user = await restoreAuthSession();

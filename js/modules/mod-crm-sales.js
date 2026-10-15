@@ -597,7 +597,7 @@ function exportCRMLeads() {
         .replace(/"/g, '""') +
       '"';
   downloadFile(
-    "Typic Travel_CRM_Leads.csv",
+    "TypicOne ERP_CRM_Leads.csv",
     "\ufeff" +
       [headers, ...rows].map((r) => r.map(cell).join(",")).join("\r\n"),
     "text/csv;charset=utf-8",

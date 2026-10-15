@@ -1,19 +1,120 @@
-/* MODULE quote-engine — giao diện và nghiệp vụ của phân hệ Travel. */
+/* MODULE quote-engine — thiết kế tour từ cấu hình và template trong database. */
 
-const renderTourDesignForm=()=>title('Thiết kế chương trình tour','Tạo chương trình, dự toán và chuyển thành báo giá có phiên bản.',badge('AI mô phỏng','amber'))+`<div class="grid"><div>${card('Thông tin thiết kế',`<form id="designform" onsubmit="buildTour(event)"><div class="formgrid"><label class="full">Chọn khách từ CRM<select name="lead" id="designlead" onchange="fillDesign(this.value)">${state.leads.filter(l=>l.status!=='LOST').map(l=>'<option value="'+l.id+'">'+l.id+' · '+esc(l.name)+'</option>').join('')}</select></label><label>Chương trình<select name="template"><option>Vietnam Heritage 10 Days</option><option>Vietnam & Cambodia</option><option>Luxury Vietnam</option><option>Family Vietnam</option></select></label><label>Thời lượng (ngày)<input name="days" type="number" min="3" max="21" value="10" required></label><label>Số khách<input name="pax" type="number" min="1" max="100" value="4" required></label><label>Ngày khởi hành<input name="start" type="date" value="2026-11-05" required></label><label>Giá bán nhóm (VND)<input name="amount" type="number" min="1000000" step="1000000" value="180000000" required></label><label>Dự toán chi phí (VND)<input name="cost" type="number" min="0" step="1000000" value="126000000" required></label><label class="full">Yêu cầu đặc biệt<textarea name="note" placeholder="Ăn chay, phòng gia đình, trải nghiệm văn hóa…"></textarea></label></div><div class="formfooter"><button class="btn primary" type="submit">⌁ Tạo chương trình mẫu</button></div></form>`)}<div class="alert">Bản demo dùng chương trình mẫu theo tuyến, không gọi OpenAI API. Nội dung và chi phí phải được Sales kiểm tra trước khi chốt.</div></div><div id="programresult">${card('Bản nháp hành trình','<div class="empty">⌁<br>Chọn khách và tạo chương trình.<br>Bạn có thể chỉnh từng ngày trước khi tạo báo giá.</div>')}${card('Mẫu tour có thể tái sử dụng','<div class="timeline"><b>Vietnam Heritage</b><p>Hà Nội · Hạ Long · Hội An · TP.HCM</p></div><div class="timeline"><b>Vietnam & Cambodia</b><p>Việt Nam · Phnom Penh · Siem Reap</p></div><div class="timeline"><b>Luxury / Family</b><p>Điều chỉnh tiêu chuẩn và nhịp độ cho khách.</p></div>')}</div></div>`;
+let draft = null;
 
-let draft=null;
+const optionList = (values) =>
+  values.map((value) => `<option>${esc(value)}</option>`).join("");
 
-function selectLead(id){document.getElementById('designlead').value=id;fillDesign(id)}
+function renderTourDesignForm() {
+  const availableLeads = state.leads.filter((lead) => lead.status !== "LOST");
+  const leadOptions = availableLeads
+    .map(
+      (lead) =>
+        `<option value="${lead.id}">${lead.id} · ${esc(lead.name)}</option>`,
+    )
+    .join("");
+  const templateOptions = state.tourTemplates
+    .map((template) => `<option>${esc(template.name)}</option>`)
+    .join("");
+  const templateSummary = state.tourTemplates
+    .map(
+      (template) =>
+        `<div class="timeline"><b>${esc(template.name)}</b><p>${esc(template.itinerary.join(" · "))}</p></div>`,
+    )
+    .join("");
 
-function fillDesign(id){let l=state.leads.find(l=>l.id===id),f=document.getElementById('designform');if(!l||!f)return;f.elements.pax.value=l.pax;f.elements.amount.value=l.budget;f.elements.cost.value=Math.round(l.budget*.7);f.elements.note.value=l.note;}
+  return (
+    title(
+      "Thiết kế chương trình tour",
+      "Tạo chương trình, dự toán và chuyển thành báo giá có phiên bản.",
+      badge("TEMPLATE DATABASE", "green"),
+    ) +
+    `<div class="grid"><div>${card(
+      "Thông tin thiết kế",
+      `<form id="designform" onsubmit="buildTour(event)"><div class="formgrid"><label class="full">Chọn khách từ CRM<select name="lead" id="designlead" onchange="fillDesign(this.value)" required><option value="">Chọn Lead</option>${leadOptions}</select></label><label>Chương trình<select name="template" required><option value="">Chọn template</option>${templateOptions}</select></label><label>Country / Thị trường<select name="country" required><option value="">Chọn thị trường</option>${optionList(crmCountries)}</select></label><label>Budget (nguyên tệ)<input name="budgetNative" type="number" min="1" required></label><label>Currency<select name="currency" required><option value="">Chọn tiền tệ</option>${optionList(travelCurrencies)}</select></label><label>Tỷ giá quy đổi sang VND<input name="rate" type="number" min="1" required></label><label>Thời lượng (ngày)<input name="days" type="number" min="1" max="60" required></label><label>Số khách<input name="pax" type="number" min="1" max="100" required></label><label>Ngày khởi hành<input name="start" type="date" required></label><label>Giá bán nhóm (VND)<input name="amount" type="number" min="1" step="1000000" required></label><label>Dự toán chi phí (VND)<input name="cost" type="number" min="0" step="1000000" required></label><label>Ngôn ngữ chương trình<select name="language" required>${optionList(travelLanguages)}</select></label><label class="full">Yêu cầu đặc biệt<textarea name="note" placeholder="Ăn chay, phòng gia đình, trải nghiệm văn hóa…"></textarea></label></div><div class="formfooter"><button class="btn primary" type="submit">Tạo chương trình</button></div></form>`,
+    )}<div class="alert">Template, thị trường, tiền tệ và ngôn ngữ được nạp từ database. Sales chịu trách nhiệm nhập giá và tỷ giá áp dụng.</div></div><div id="programresult">${card("Bản nháp hành trình", '<div class="empty">Chọn Lead và template để tạo chương trình.</div>')}${card("Template có thể tái sử dụng", templateSummary || '<div class="empty">Chưa có template trong database.</div>')}</div></div>`
+  );
+}
 
-function buildDraftProgram(e){e.preventDefault();let f=new FormData(e.target),cost=+f.get('cost'),amount=+f.get('amount');const routes={'Vietnam Heritage 10 Days':['Hà Nội · Đón sân bay và nhận phòng','Hà Nội · Phố cổ và văn hóa địa phương','Ninh Bình · Tràng An và làng quê','Hạ Long · Du thuyền và nghỉ đêm','Hạ Long → Hà Nội · Bay đến Đà Nẵng','Hội An · Khám phá phố cổ','Hội An · Trải nghiệm làng nghề','TP.HCM · Tham quan thành phố','Mekong · Trải nghiệm miền sông nước','Tiễn sân bay · Kết thúc chương trình'],'Vietnam & Cambodia':['Hà Nội · Đón khách','Hà Nội · City tour','Hạ Long · Du thuyền','Hạ Long · Nghỉ dưỡng','Đà Nẵng · Di chuyển','Hội An · Văn hóa','TP.HCM · Tham quan','Mekong · Khám phá','Phnom Penh · Di chuyển','Siem Reap · Angkor Wat'],'Luxury Vietnam':['Hà Nội · Đón khách riêng','Hà Nội · Trải nghiệm ẩm thực','Hạ Long · Du thuyền cao cấp','Hạ Long · Thư giãn','Đà Nẵng · Resort biển','Hội An · Tour riêng','Hội An · Spa và nghỉ dưỡng','TP.HCM · Fine dining','Mekong · Trải nghiệm riêng','Tiễn sân bay'],'Family Vietnam':['Hà Nội · Đón gia đình','Hà Nội · Hoạt động trẻ em','Ninh Bình · Đạp xe','Hạ Long · Du thuyền','Đà Nẵng · Di chuyển','Hội An · Làm đèn lồng','Hội An · Ngày tự do','TP.HCM · Khám phá','Mekong · Trải nghiệm gia đình','Tiễn sân bay']};let days=+f.get('days'),base=routes[f.get('template')];draft={lead:f.get('lead'),tour:f.get('template')+' · '+days+' ngày',days,pax:+f.get('pax'),amount,cost,start:f.get('start'),note:f.get('note'),program:Array.from({length:days},(_,i)=>i===days-1?'Tiễn sân bay · Kết thúc chương trình':base[i%Math.max(1,base.length-1)])};document.getElementById('programresult').innerHTML=card('Chương trình đề xuất',`<div class="tagset">${badge(draft.days+' ngày','green')}${badge(draft.pax+' khách')}${badge('Biên dự kiến '+((amount-cost)/amount*100).toFixed(1)+'%','green')}</div><div style="margin-top:16px">${draft.program.map((p,i)=>'<label>Ngày '+(i+1)+'<input id="day'+i+'" value="'+esc(p)+'"></label>').join('')}</div><div class="notice">Yêu cầu khách: ${esc(draft.note||'Chưa có ghi chú')}</div><div class="formfooter">${btn('Tạo báo giá từ bản nháp','createQuote()','primary')}</div>`);toast('Đã tạo chương trình mẫu. Hãy kiểm tra và chỉnh từng ngày.');}
+function selectLead(id) {
+  document.getElementById("designlead").value = id;
+  fillDesign(id);
+}
 
+function fillDesign(id) {
+  const lead = state.leads.find((item) => item.id === id);
+  const form = document.getElementById("designform");
+  if (!lead || !form) return;
+  form.elements.pax.value = lead.pax || "";
+  form.elements.amount.value = lead.budget || "";
+  form.elements.cost.value = lead.budget ? Math.round(lead.budget * 0.7) : "";
+  form.elements.note.value = lead.note || "";
+  form.elements.country.value = lead.country || "";
+}
 
+function buildDraftProgram(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const template = state.tourTemplates.find(
+    (item) => item.name === form.get("template"),
+  );
+  if (!template?.itinerary?.length) {
+    toast("Template chưa có lịch trình trong database.");
+    return;
+  }
 
-views.design=()=>{let h=renderTourDesignForm();h=h.replace('<label>Thời lượng (ngày)','<label>Country / Thị trường<select name="country"><option>France</option><option>UK</option><option>Germany</option><option>Vietnam</option></select></label><label>Budget (nguyên tệ)<input name="budgetNative" type="number" min="1" value="3500" required></label><label>Currency<select name="currency"><option>EUR</option><option>USD</option><option>VND</option></select></label><label>Tỷ giá quy đổi mẫu sang VND<input name="rate" type="number" min="1" value="28000" required></label><label>Thời lượng (ngày)');h=h.replace('value="10" required','value="14" required');h=h.replace('Yêu cầu đặc biệt<textarea','Ngôn ngữ chương trình<select name="language"><option>Việt</option><option>Anh</option><option>Pháp</option></select></label><label class="full">Yêu cầu đặc biệt<textarea');return h+'<div class="alert">Ví dụ đúng tài liệu: France · 4 pax · Budget 3.500 EUR · Duration 14 days. Tỷ giá là số mẫu có thể sửa, không phải tỷ giá hiện tại. AI sinh nội dung và dịch Pháp–Anh–Việt đang mô phỏng bằng mẫu; không gọi API.</div>'};
+  const days = Number(form.get("days"));
+  const amount = Number(form.get("amount"));
+  const cost = Number(form.get("cost"));
+  draft = {
+    lead: form.get("lead"),
+    tour: `${template.name} · ${days} ngày`,
+    days,
+    pax: Number(form.get("pax")),
+    amount,
+    cost,
+    start: form.get("start"),
+    note: form.get("note"),
+    program: Array.from(
+      { length: days },
+      (_, index) => template.itinerary[index % template.itinerary.length],
+    ),
+  };
 
+  document.getElementById("programresult").innerHTML = card(
+    "Chương trình đề xuất",
+    `<div class="tagset">${badge(draft.days + " ngày", "green")}${badge(draft.pax + " khách")}${badge("Biên dự kiến " + (((amount - cost) / amount) * 100).toFixed(1) + "%", "green")}</div><div style="margin-top:16px">${draft.program.map((item, index) => `<label>Ngày ${index + 1}<input id="day${index}" value="${esc(item)}"></label>`).join("")}</div><div class="notice">Yêu cầu khách: ${esc(draft.note || "Chưa có ghi chú")}</div><div class="formfooter">${btn("Tạo báo giá từ bản nháp", "createQuote()", "primary")}</div>`,
+  );
+}
 
+views.design = () => renderTourDesignForm();
 
-function buildTour(e){buildDraftProgram(e);if(!draft)return;let f=new FormData(e.target);draft.country=f.get('country');draft.currency=f.get('currency');draft.budgetNative=+f.get('budgetNative');draft.rate=+f.get('rate');draft.language=f.get('language');if(draft.language!=='Việt'){const en=['Arrival and hotel check-in','City highlights and local culture','Countryside discovery','Cruise and sightseeing','Transfer and leisure'],fr=['Arrivée et installation à l’hôtel','Visite de la ville et culture locale','Découverte de la campagne','Croisière et visites','Transfert et temps libre'];draft.program=draft.program.map((p,i)=>(draft.language==='Pháp'?fr:en)[i%5]);draft.program.forEach((p,i)=>{let el=document.getElementById('day'+i);if(el)el.value=p})}document.getElementById('programresult').insertAdjacentHTML('beforeend','<div class="alert green">Budget khách: '+esc(draft.budgetNative)+' '+esc(draft.currency)+' · Quy đổi mẫu '+money(draft.budgetNative*draft.rate)+'. Giá bán nhóm và dự toán VND phía trái do Sales nhập riêng.</div>')};
+function buildTour(event) {
+  buildDraftProgram(event);
+  if (!draft) return;
+  const form = new FormData(event.target);
+  draft.country = form.get("country");
+  draft.currency = form.get("currency");
+  draft.budgetNative = Number(form.get("budgetNative"));
+  draft.rate = Number(form.get("rate"));
+  draft.language = form.get("language");
+
+  const translation = travelTranslations[draft.language];
+  if (translation?.length) {
+    draft.program = draft.program.map(
+      (_, index) => translation[index % translation.length],
+    );
+    draft.program.forEach((item, index) => {
+      const input = document.getElementById("day" + index);
+      if (input) input.value = item;
+    });
+  }
+
+  document
+    .getElementById("programresult")
+    .insertAdjacentHTML(
+      "beforeend",
+      `<div class="alert green">Budget khách: ${esc(draft.budgetNative)} ${esc(draft.currency)} · Quy đổi ${money(draft.budgetNative * draft.rate)}. Giá bán nhóm và dự toán VND do Sales nhập.</div>`,
+    );
+  toast("Đã tạo chương trình từ template database.");
+}

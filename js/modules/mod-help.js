@@ -1,11 +1,280 @@
 /* MODULE mod-help — giao diện và nghiệp vụ của phân hệ Travel. */
 
-views.help=()=>title('Hiểu dự án & trình bày demo','Phạm vi bám tài liệu Ai Automation 2 · Những phần đã mô phỏng và việc cần triển khai.',btn('In hướng dẫn / Lưu PDF','window.print()'))+`<section class="hero"><div><div class="eyebrow">TOMS / TOUR OPERATOR MANAGEMENT SYSTEM</div><h2>Typic Travel là hệ thống vận hành<br>doanh nghiệp lữ hành.</h2><p>Phục vụ 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV và 500+ NCC. Booking là hồ sơ trung tâm nối bán hàng, dịch vụ, thu chi và phản hồi.</p></div><div class="heroart"><div class="orbit"></div><div class="plane">◎</div></div></section>`+card('Kịch bản demo 1 · Điều hành một tour đã có',`<div class="timeline"><b>01 · Mở Tổng quan CEO</b><p>Giải thích giá trị booking, lợi nhuận dự kiến, công nợ và cảnh báo thiếu dịch vụ. Các chỉ số tính từ dữ liệu mẫu, không phải số liệu kinh doanh thực.</p></div><div class="timeline"><b>02 · Trung tâm điều hành → BK-003</b><p>Mở checklist, chọn NCC đúng loại dịch vụ và xác nhận từng dịch vụ. Cập nhật chi phí làm dự toán và biên lợi nhuận thay đổi.</p></div><div class="timeline"><b>03 · Phân công HDV</b><p>Chọn HDV còn lịch trống; danh sách khóa HDV trùng ngày với tour khác. Phân công sẽ xác nhận dịch vụ Guide.</p></div><div class="timeline"><b>04 · Tạo voucher → Bắt đầu tour</b><p>Xác nhận dịch vụ NCC, tạo voucher, phân công và xác nhận HDV rồi bắt đầu tour. Tỷ lệ cọc không được áp đặt trong demo.</p></div><div class="timeline"><b>05 · Hoàn tất → Thu phần còn lại → Feedback</b><p>Hoàn tất ở Điều hành, ghi nhận thu ở Kế toán và nhập feedback ở Chăm sóc khách hàng. Về CEO để thấy chỉ số cập nhật.</p></div>`)+card('Kịch bản demo 2 · Từ lead đến booking mới',`<div class="timeline"><b>01 · CRM → Thêm lead</b><p>Nhập khách, thị trường, ngân sách, số khách, nguồn và Sales. Mở hồ sơ lead → Thiết kế tour.</p></div><div class="timeline"><b>02 · Thiết kế chương trình → Báo giá</b><p>Tạo chương trình mẫu, sửa từng ngày, nhập giá bán và dự toán. Tạo báo giá, thử sửa giá để tăng phiên bản rồi in PDF.</p></div><div class="timeline"><b>03 · Chấp nhận báo giá → Booking</b><p>Lead thành WON, hệ thống tạo Booking mới, lưu các dịch vụ cần chuẩn bị và bàn giao điều hành. Chống tạo hai Booking cho cùng lead trong demo.</p></div><div class="timeline"><b>04 · Kế toán → Hóa đơn cọc và ghi nhận thu</b><p>Tạo hóa đơn cọc với số tiền thỏa thuận và ghi nhận thu. Hoàn thiện dịch vụ, tạo voucher và gán HDV. Tài liệu không nêu tỷ lệ cọc bắt buộc.</p></div>`)+card('Đối chiếu 12 phân hệ trong yêu cầu',table(['PHÂN HỆ','TRONG DEMO','KHI TRIỂN KHAI THẬT'],[
-['CEO Dashboard','Chỉ số từ booking, cảnh báo, giá trị theo Sales','Bộ lọc kỳ, mục tiêu, chi phí chung, KPI đầy đủ'],['CRM Sales','Lead, pipeline, chủ sở hữu, follow-up','Khách hàng độc lập, lịch sử tương tác, chống trùng, form website'],['Tour Design','Mẫu tour, chỉnh theo ngày, dự toán','AI thật, dịch thuật, template version, tính tuyến'],['Quotation','Phiên bản giá, in PDF, chuyển booking','Phê duyệt, gửi email, thời hạn, tỷ giá, snapshot mọi phiên bản'],['Bookings','Hồ sơ khách, lịch, pax, doanh thu, checklist','Đổi/hủy booking, rooming list, nhiều booking mỗi khách'],['Operation Center','Dịch vụ, dự toán, xác nhận, voucher, chạy/hoàn tất','Yêu cầu dịch vụ gửi NCC, issue log, SLA, thông báo'],['Supplier Management','520 NCC mẫu, lọc, điểm trọng số, hợp đồng','Contact, hợp đồng file, bảng giá, lịch sử đánh giá, công nợ'],['Guide Management','10 HDV, lịch, ngôn ngữ, chống trùng','HDV nhận/từ chối tour, nghỉ phép, quyết toán'],['Vehicle Management','Dịch vụ xe gắn tour, NCC, trạng thái','Từng xe, biển số, tài xế, số chỗ, chống trùng lịch'],['Accounting','Thu khách, duyệt/ghi nhận chi, công nợ','VAT, hóa đơn điện tử, đa tiền tệ, đối soát, khóa sổ'],['Document Center','Bản ghi hợp đồng mẫu, voucher, rooming list','Google Drive, file thật, phân quyền, retention, nhật ký truy cập'],['Customer Service','Feedback, CSAT, đánh dấu điểm thấp','Form gửi khách, xử lý khiếu nại, review, referral']].map(r=>'<tr>'+r.map(x=>'<td style="white-space:normal;min-width:150px">'+x+'</td>').join('')+'</tr>')))+`<div class="grid">${card('Phân quyền và dữ liệu','<div class="faq"><p>Đổi vai trò ở góc trên để trình bày menu CEO, Marketing, Sales, Điều hành, Kế toán và HDV. Đây là mô phỏng giao diện, không phải bảo mật thật; toàn bộ dữ liệu mẫu nằm trong trình duyệt.</p><p>Chạy thật cần đăng nhập Google hoặc SSO, kiểm quyền ở backend, giới hạn theo người phụ trách, nhật ký chỉnh sửa và bảo vệ hộ chiếu.</p><p>Booking liên kết khách, báo giá, dịch vụ, NCC, HDV, xe, hóa đơn, thanh toán, tài liệu và feedback. Giữ một hồ sơ xuyên suốt để mọi bộ phận dùng cùng thông tin.</p></div>')}${card('Kiến trúc triển khai đề xuất','<div class="faq"><p>Next.js / React cho giao diện; Laravel hoặc NestJS cho API; PostgreSQL cho dữ liệu; Google Drive hoặc storage tương đương cho file.</p><p>Gmail Workspace, OpenAI API và Make.com được kết nối theo nhu cầu, sau khi chốt phân quyền và cơ chế duyệt. Dữ liệu vận hành và quy tắc tiền tệ nên nằm ở backend.</p><p>Tài liệu nói 27 bảng chính nhưng danh sách cuối có 26 tên. Cần chốt ERD và bổ sung dữ liệu lịch, xe, hợp đồng, lịch sử đánh giá trước triển khai.</p></div>')}</div>`+card('Lộ trình trong tài liệu',`<div class="journey"><button><span class="num">PHASE 1 · 2 TUẦN</span><b>Chuẩn hóa quy trình</b><small>12 Sheet + Notion tạm thời</small></button><button><span class="num">PHASE 2 · 1–2 THÁNG</span><b>Web App lõi</b><small>Sales · Operations · Accounting</small></button><button><span class="num">PHASE 3</span><b>Mobile cho HDV</b><small>Tour được giao · Khách · Voucher</small></button><button><span class="num">PHASE 4</span><b>AI & Automation</b><small>Chương trình · Dịch · Báo giá · Phân tích</small></button></div><p class="notice">Thời gian là đề xuất trong tài liệu, chưa phải cam kết triển khai. Cần xác định phạm vi, tích hợp và tiêu chí nghiệm thu.</p>`)+card('Những điểm cần hỏi khách hàng trước khi báo giá',`<div class="faq"><ol><li>Inbound, outbound hay cả hai? Khách lẻ, nhóm riêng hay ghép đoàn? Ai sử dụng từng màn hình?</li><li>Đơn vị tiền tệ của hợp đồng và chi phí? Ngân sách 3.500 EUR trong ví dụ là mỗi người hay cả nhóm? Tỷ giá chốt lúc nào?</li><li>Cọc bao nhiêu theo từng hợp đồng, hạn thanh toán, quy tắc hoàn/hủy tour và phê duyệt giảm giá?</li><li>Chi phí HDV, xe, khách sạn tính theo ngày, người, phòng hay tuyến? Ai được sửa dự toán sau chốt?</li><li>“Chất lượng”, “Giá”, “Phản hồi”, “Khiếu nại” của NCC được đo bằng dữ liệu nào, chu kỳ nào?</li><li>HDV cần nhận tour trên web mobile hay ứng dụng cài đặt? Có cần offline và GPS?</li><li>Hóa đơn điện tử, VAT, phần mềm kế toán, email, Drive, website và quảng cáo tích hợp với dịch vụ nào?</li><li>Ai duyệt báo giá, chi NCC và đổi dịch vụ? Giới hạn số tiền, ủy quyền và lịch sử phê duyệt?</li><li>File hộ chiếu lưu bao lâu, ai được xem/tải? Yêu cầu backup, quyền truy cập và xóa dữ liệu?</li><li>Tiêu chí nghiệm thu, dữ liệu 500+ NCC ban đầu, người phụ trách nhập và đào tạo?</li></ol></div>`)+card('Công cụ demo',`<div class="actions">${btn('Tải dữ liệu mẫu JSON','downloadBackup()')}${btn('Khôi phục dữ liệu ban đầu','resetForm()','danger')}</div><p class="notice">Dữ liệu demo lưu riêng trên trình duyệt đang dùng, chưa đồng bộ giữa thiết bị hoặc người dùng. In hướng dẫn ở đầu trang để lưu một bản trình bày PDF.</p>`)+card('Nhật ký thao tác',state.activities.slice(0,12).map(a=>'<div class="metricline"><span>'+esc(a.text)+'</span><small class="sub">'+esc(a.time)+'</small></div>').join('')||'<p class="sub">Chưa có thao tác mới trong phiên demo.</p>');
+views.help = () =>
+  title(
+    "Hiểu dự án & trình bày demo",
+    "Phạm vi bám tài liệu Ai Automation 2 · Những phần đã mô phỏng và việc cần triển khai.",
+    btn("In hướng dẫn / Lưu PDF", "window.print()"),
+  ) +
+  `<section class="hero"><div><div class="eyebrow">TOMS / TOUR OPERATOR MANAGEMENT SYSTEM</div><h2>Typic Travel là hệ thống vận hành<br>doanh nghiệp lữ hành.</h2><p>Phục vụ 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV và 500+ NCC. Booking là hồ sơ trung tâm nối bán hàng, dịch vụ, thu chi và phản hồi.</p></div><div class="heroart"><div class="orbit"></div><div class="plane">◎</div></div></section>` +
+  card(
+    "Kịch bản demo 1 · Điều hành một tour đã có",
+    `<div class="timeline"><b>01 · Mở Tổng quan CEO</b><p>Kiểm tra giá trị booking, lợi nhuận dự kiến, công nợ và cảnh báo thiếu dịch vụ từ database.</p></div><div class="timeline"><b>02 · Mở một booking cần chuẩn bị</b><p>Mở checklist, chọn NCC đúng loại dịch vụ và xác nhận từng dịch vụ. Cập nhật chi phí làm dự toán và biên lợi nhuận thay đổi.</p></div><div class="timeline"><b>03 · Phân công HDV</b><p>Chọn HDV còn lịch trống; danh sách khóa HDV trùng ngày với tour khác. Phân công sẽ xác nhận dịch vụ Guide.</p></div><div class="timeline"><b>04 · Tạo voucher → Bắt đầu tour</b><p>Xác nhận dịch vụ NCC, tạo voucher, phân công và xác nhận HDV rồi bắt đầu tour.</p></div><div class="timeline"><b>05 · Hoàn tất → Thu phần còn lại → Feedback</b><p>Hoàn tất ở Điều hành, ghi nhận thu ở Kế toán và nhập feedback ở Chăm sóc khách hàng.</p></div>`,
+  ) +
+  card(
+    "Kịch bản demo 2 · Từ lead đến booking mới",
+    `<div class="timeline"><b>01 · CRM → Thêm lead</b><p>Nhập khách, thị trường, ngân sách, số khách, nguồn và Sales. Mở hồ sơ lead → Thiết kế tour.</p></div><div class="timeline"><b>02 · Thiết kế chương trình → Báo giá</b><p>Tạo chương trình mẫu, sửa từng ngày, nhập giá bán và dự toán. Tạo báo giá, thử sửa giá để tăng phiên bản rồi in PDF.</p></div><div class="timeline"><b>03 · Chấp nhận báo giá → Booking</b><p>Lead thành WON, hệ thống tạo Booking mới, lưu các dịch vụ cần chuẩn bị và bàn giao điều hành. Chống tạo hai Booking cho cùng lead trong demo.</p></div><div class="timeline"><b>04 · Kế toán → Hóa đơn cọc và ghi nhận thu</b><p>Tạo hóa đơn cọc với số tiền thỏa thuận và ghi nhận thu. Hoàn thiện dịch vụ, tạo voucher và gán HDV. Tài liệu không nêu tỷ lệ cọc bắt buộc.</p></div>`,
+  ) +
+  card(
+    "Đối chiếu 12 phân hệ trong yêu cầu",
+    table(
+      ["PHÂN HỆ", "TRONG DEMO", "KHI TRIỂN KHAI THẬT"],
+      [
+        [
+          "CEO Dashboard",
+          "Chỉ số từ booking, cảnh báo, giá trị theo Sales",
+          "Bộ lọc kỳ, mục tiêu, chi phí chung, KPI đầy đủ",
+        ],
+        [
+          "CRM Sales",
+          "Lead, pipeline, chủ sở hữu, follow-up",
+          "Khách hàng độc lập, lịch sử tương tác, chống trùng, form website",
+        ],
+        [
+          "Tour Design",
+          "Mẫu tour, chỉnh theo ngày, dự toán",
+          "AI thật, dịch thuật, template version, tính tuyến",
+        ],
+        [
+          "Quotation",
+          "Phiên bản giá, in PDF, chuyển booking",
+          "Phê duyệt, gửi email, thời hạn, tỷ giá, snapshot mọi phiên bản",
+        ],
+        [
+          "Bookings",
+          "Hồ sơ khách, lịch, pax, doanh thu, checklist",
+          "Đổi/hủy booking, rooming list, nhiều booking mỗi khách",
+        ],
+        [
+          "Operation Center",
+          "Dịch vụ, dự toán, xác nhận, voucher, chạy/hoàn tất",
+          "Yêu cầu dịch vụ gửi NCC, issue log, SLA, thông báo",
+        ],
+        [
+          "Supplier Management",
+          "520 NCC mẫu, lọc, điểm trọng số, hợp đồng",
+          "Contact, hợp đồng file, bảng giá, lịch sử đánh giá, công nợ",
+        ],
+        [
+          "Guide Management",
+          "10 HDV, lịch, ngôn ngữ, chống trùng",
+          "HDV nhận/từ chối tour, nghỉ phép, quyết toán",
+        ],
+        [
+          "Vehicle Management",
+          "Dịch vụ xe gắn tour, NCC, trạng thái",
+          "Từng xe, biển số, tài xế, số chỗ, chống trùng lịch",
+        ],
+        [
+          "Accounting",
+          "Thu khách, duyệt/ghi nhận chi, công nợ",
+          "VAT, hóa đơn điện tử, đa tiền tệ, đối soát, khóa sổ",
+        ],
+        [
+          "Document Center",
+          "Bản ghi hợp đồng mẫu, voucher, rooming list",
+          "Google Drive, file thật, phân quyền, retention, nhật ký truy cập",
+        ],
+        [
+          "Customer Service",
+          "Feedback, CSAT, đánh dấu điểm thấp",
+          "Form gửi khách, xử lý khiếu nại, review, referral",
+        ],
+      ].map(
+        (r) =>
+          "<tr>" +
+          r
+            .map(
+              (x) =>
+                '<td style="white-space:normal;min-width:150px">' + x + "</td>",
+            )
+            .join("") +
+          "</tr>",
+      ),
+    ),
+  ) +
+  `<div class="grid">${card("Phân quyền và dữ liệu", '<div class="faq"><p>Menu và quyền của CEO, Marketing, Sales, Điều hành, Kế toán và HDV được nạp từ database theo tài khoản đăng nhập. Dữ liệu nghiệp vụ được đọc và đồng bộ qua các bảng TypicOne.</p><p>Khi triển khai production cần kiểm quyền ở backend, giới hạn theo người phụ trách, nhật ký chỉnh sửa và bảo vệ hộ chiếu.</p><p>Booking liên kết khách, báo giá, dịch vụ, NCC, HDV, xe, hóa đơn, thanh toán, tài liệu và feedback. Giữ một hồ sơ xuyên suốt để mọi bộ phận dùng cùng thông tin.</p></div>')}${card("Kiến trúc triển khai đề xuất", '<div class="faq"><p>Next.js / React cho giao diện; Laravel hoặc NestJS cho API; PostgreSQL cho dữ liệu; Google Drive hoặc storage tương đương cho file.</p><p>Gmail Workspace, OpenAI API và Make.com được kết nối theo nhu cầu, sau khi chốt phân quyền và cơ chế duyệt. Dữ liệu vận hành và quy tắc tiền tệ nên nằm ở backend.</p><p>Tài liệu nói 27 bảng chính nhưng danh sách cuối có 26 tên. Cần chốt ERD và bổ sung dữ liệu lịch, xe, hợp đồng, lịch sử đánh giá trước triển khai.</p></div>')}</div>` +
+  card(
+    "Lộ trình trong tài liệu",
+    `<div class="journey"><button><span class="num">PHASE 1 · 2 TUẦN</span><b>Chuẩn hóa quy trình</b><small>12 Sheet + Notion tạm thời</small></button><button><span class="num">PHASE 2 · 1–2 THÁNG</span><b>Web App lõi</b><small>Sales · Operations · Accounting</small></button><button><span class="num">PHASE 3</span><b>Mobile cho HDV</b><small>Tour được giao · Khách · Voucher</small></button><button><span class="num">PHASE 4</span><b>AI & Automation</b><small>Chương trình · Dịch · Báo giá · Phân tích</small></button></div><p class="notice">Thời gian là đề xuất trong tài liệu, chưa phải cam kết triển khai. Cần xác định phạm vi, tích hợp và tiêu chí nghiệm thu.</p>`,
+  ) +
+  card(
+    "Những điểm cần hỏi khách hàng trước khi báo giá",
+    `<div class="faq"><ol><li>Inbound, outbound hay cả hai? Khách lẻ, nhóm riêng hay ghép đoàn? Ai sử dụng từng màn hình?</li><li>Đơn vị tiền tệ của hợp đồng và chi phí? Ngân sách 3.500 EUR trong ví dụ là mỗi người hay cả nhóm? Tỷ giá chốt lúc nào?</li><li>Cọc bao nhiêu theo từng hợp đồng, hạn thanh toán, quy tắc hoàn/hủy tour và phê duyệt giảm giá?</li><li>Chi phí HDV, xe, khách sạn tính theo ngày, người, phòng hay tuyến? Ai được sửa dự toán sau chốt?</li><li>“Chất lượng”, “Giá”, “Phản hồi”, “Khiếu nại” của NCC được đo bằng dữ liệu nào, chu kỳ nào?</li><li>HDV cần nhận tour trên web mobile hay ứng dụng cài đặt? Có cần offline và GPS?</li><li>Hóa đơn điện tử, VAT, phần mềm kế toán, email, Drive, website và quảng cáo tích hợp với dịch vụ nào?</li><li>Ai duyệt báo giá, chi NCC và đổi dịch vụ? Giới hạn số tiền, ủy quyền và lịch sử phê duyệt?</li><li>File hộ chiếu lưu bao lâu, ai được xem/tải? Yêu cầu backup, quyền truy cập và xóa dữ liệu?</li><li>Tiêu chí nghiệm thu, dữ liệu 500+ NCC ban đầu, người phụ trách nhập và đào tạo?</li></ol></div>`,
+  ) +
+  card(
+    "Công cụ demo",
+    `<div class="actions">${btn("Tải bản sao JSON", "downloadBackup()")}${btn("Tải lại database", "reloadDatabase()")}</div><p class="notice">Dữ liệu được đọc và đồng bộ qua các bảng typicone_* của KIO.</p>`,
+  ) +
+  card(
+    "Nhật ký thao tác",
+    state.activities
+      .slice(0, 12)
+      .map(
+        (a) =>
+          '<div class="metricline"><span>' +
+          esc(a.text) +
+          '</span><small class="sub">' +
+          esc(a.time) +
+          "</small></div>",
+      )
+      .join("") || '<p class="sub">Chưa có thao tác mới trong phiên demo.</p>',
+  );
 
-function resetForm(){modal('Khôi phục dữ liệu demo',`<p>Thao tác này xóa các thay đổi bạn đã thử trong trình duyệt và khôi phục dữ liệu mẫu.</p><div class="formfooter">${btn('Giữ dữ liệu','closeModal()')}${btn('Khôi phục','resetDemo()','danger')}</div>`,true)}
+function resetForm() {
+  reloadDatabase();
+}
 
-views.help=()=>title('Đối chiếu tài liệu yêu cầu','Ai Automation _ 2.docx · Typic Travel ERP V1',btn('In / Lưu PDF','window.print()'))+card('Tên doanh nghiệp và phạm vi','<p>Tên hiển thị theo yêu cầu của bạn: <b>Typic Travel</b>. Bản sửa dùng Typic Travel trên giao diện, email, bản in và file tải về.</p><p>Quy mô trong tài liệu: 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV, hơn 500 nhà cung cấp và hàng chục tour mỗi tháng.</p>')+card('12 phân hệ ERP V1',table(['MODULE','DEMO TƯƠNG TÁC','TÍCH HỢP THẬT'],[
-['1 CEO Dashboard','Revenue, Profit, Running Tours, Pax, Receivable, Payable; Sales, Marketing, Operation, Accounting KPI','Chưa có dữ liệu doanh nghiệp thật'],['2 CRM Sales','NEW → CONTACTED → QUALIFIED → QUOTE SENT → NEGOTIATION → WON / LOST; Customers, Follow-up, Sales 1/2','Lead Website, Welcome Email mô phỏng'],['3 Tour Design','Tour templates; Country France, Pax 4, Budget 3500 EUR, Duration 14; Draft Program chỉnh sửa','OpenAI API và dịch thuật bằng mẫu, chưa gọi API'],['4 Quotation','Quote No, Version, Client, Amount, Profit, in/lưu PDF, Email khách mô phỏng','Chưa gửi Gmail Workspace thật'],['5 Bookings','Quote → Booking; Client, Arrival, Departure, Pax, Revenue, Profit','Dữ liệu trình duyệt'],['6 Operation Center','Booking, Status, Operation, Progress; Hotel, Vehicle, Guide, Restaurant, Flights, Cruise, Train, Insurance','Xác nhận NCC qua thao tác demo'],['7 Supplier Management','520 NCC; Supplier, Type, Country, Rating, Contract, Payment Terms; điểm 40/30/20/10','Contract file demo, chưa có dữ liệu thực'],['8 Guide Management','10 HDV; Language, Area, Rating; Calendar, Availability, Assignment, Confirm','Mobile mô phỏng, chưa có đăng nhập'],['9 Vehicle Management','Supplier, Vehicle, Capacity; Booking → Vehicle → Confirm','Danh mục xe giả lập'],['10 Accounting','Deposit/Final Invoice; Payment Received; Supplier Invoice → Approve → Pay; Receivable, Payable, VAT, Cash Flow ngày/tuần/tháng','Không phát hành hóa đơn hoặc giao dịch ngân hàng'],['11 Document Center','Contract, Invoice, Passport, Voucher, Rooming List; tải file mẫu','Google Drive API chưa kết nối'],['12 Customer Service','Feedback Form → CSAT → Review → Referral','Nhập trực tiếp, chưa gửi form ra ngoài']].map(r=>'<tr>'+r.map(c=>'<td style="white-space:normal;min-width:150px">'+esc(c)+'</td>').join('')+'</tr>')))+card('Luồng đúng bản ERP V1 trong tài liệu','<div class="flow">'+['Booking Confirmed','Operation Assigned','Book Services','Supplier Confirmed','Voucher Ready','Guide Assigned','Tour Running','Completed'].map(s=>'<span>'+s+'</span>').join('')+'</div><p>Ở phần mô tả trước ERP V1, tài liệu đặt Book Guide trước Voucher; ở ERP V1, Guide Assigned sau Voucher. Demo cho tạo voucher sau xác nhận NCC, sau đó bổ sung HDV và xác nhận nhận tour trước Tour Running, theo luồng ERP V1.</p><p>Không ép cọc 30%, không ép tour phải có lợi nhuận dương, không giới hạn một khách chỉ có một booking. Báo giá đã chấp nhận chỉ tạo booking một lần để tránh thao tác lặp.</p>')+card('Phân quyền theo tài liệu',table(['ROLE','PHẠM VI GIAO DIỆN'],Object.entries({CEO:'Toàn bộ',Marketing:'Leads, Campaign, Content, KPI',Sales:'Leads, Customers, Quotes, Booking, Revenue, Profit, Follow-up; không có kế toán',Operations:'Booking Confirmed, Supplier, Guide, Xe, dịch vụ và tài liệu vận hành',Accounting:'Invoice, Payments, VAT, Debt, Cash Flow',Guide:'Tour được giao, khách, lịch trình, voucher, emergency'}).map(([r,v])=>'<tr><td>'+r+'</td><td style="white-space:normal">'+v+'</td></tr>'))+'<p class="notice">Đổi role chỉ mô phỏng giao diện. Muốn phân quyền thật phải có backend và đăng nhập.</p>')+card('Lộ trình và công nghệ trong tài liệu','<p>Phase 1: 2 tuần Google Sheet + Notion, 12 Sheet Dashboard, Leads, Customers, Quotations, Bookings, Operations, Suppliers, Guides, Vehicles, Invoices, Payments, KPI.</p><p>Phase 2: 1–2 tháng Web App Sales, Operations, Accounting. Phase 3: Mobile HDV. Phase 4: AI chương trình tour, quotation, dịch Pháp–Anh–Việt, phân công guide, phân tích lợi nhuận.</p><p>Stack đề xuất của khách: NextJS, Laravel hoặc NestJS, PostgreSQL, Google Drive API, Google Login, Gmail Workspace, OpenAI API, Make.com. Bản demo local hiện là HTML/JavaScript; stack sản phẩm thật chưa được triển khai.</p><p>Tài liệu ghi 27 bảng nhưng danh sách cuối có 26 tên. Đây là điểm cần chốt khi thiết kế cơ sở dữ liệu.</p>')+card('Kịch bản kiểm tra','<ol><li>CRM thêm lead → hồ sơ khách tự tạo → thiết kế tour → chương trình → báo giá → sửa phiên bản → in PDF → chấp nhận tạo Booking.</li><li>Điều hành mở Booking → giao người phụ trách → xác nhận từng dịch vụ → tạo voucher → phân công HDV → xác nhận nhận tour → Tour Running → Completed.</li><li>Kế toán tạo Deposit Invoice với số tiền theo hợp đồng → Payment Received → tạo Final Invoice → Payment Received.</li><li>Chi NCC: Invoice → Approve → Pay. Nhập VAT mẫu và xem dòng tiền theo ngày/tuần/tháng.</li><li>HDV xem tour được giao, khách và voucher; sau tour nhập Feedback → CSAT → Review → Referral.</li></ol>')+card('Dữ liệu demo',btn('Tải JSON','downloadBackup()')+' '+btn('Khôi phục mẫu','resetForm()','danger')+'<p class="notice">Dữ liệu riêng trên trình duyệt. Không dùng hộ chiếu hoặc thông tin nhạy cảm thật.</p>')+card('Nhật ký',state.activities.slice(0,20).map(a=>line(esc(a.text),esc(a.time))).join('')||'<p class="sub">Chưa có thao tác mới.</p>');
+views.help = () =>
+  title(
+    "Đối chiếu tài liệu yêu cầu",
+    "Ai Automation _ 2.docx · Typic Travel ERP V1",
+    btn("In / Lưu PDF", "window.print()"),
+  ) +
+  card(
+    "Tên doanh nghiệp và phạm vi",
+    "<p>Tên hiển thị theo yêu cầu của bạn: <b>Typic Travel</b>. Bản sửa dùng Typic Travel trên giao diện, email, bản in và file tải về.</p><p>Quy mô trong tài liệu: 2 Sales, 2 điều hành, 1 kế toán, 3 Marketing, 1 giám đốc, 10 HDV, hơn 500 nhà cung cấp và hàng chục tour mỗi tháng.</p>",
+  ) +
+  card(
+    "12 phân hệ ERP V1",
+    table(
+      ["MODULE", "DEMO TƯƠNG TÁC", "TÍCH HỢP THẬT"],
+      [
+        [
+          "1 CEO Dashboard",
+          "Revenue, Profit, Running Tours, Pax, Receivable, Payable; Sales, Marketing, Operation, Accounting KPI",
+          "Chưa có dữ liệu doanh nghiệp thật",
+        ],
+        [
+          "2 CRM Sales",
+          "NEW → CONTACTED → QUALIFIED → QUOTE SENT → NEGOTIATION → WON / LOST; Customers, Follow-up, Sales 1/2",
+          "Lead Website, Welcome Email mô phỏng",
+        ],
+        [
+          "3 Tour Design",
+          "Tour templates, thị trường, ngân sách, thời lượng và Draft Program lấy từ database hoặc do Sales nhập",
+          "OpenAI API và dịch thuật bằng mẫu, chưa gọi API",
+        ],
+        [
+          "4 Quotation",
+          "Quote No, Version, Client, Amount, Profit, in/lưu PDF, Email khách mô phỏng",
+          "Chưa gửi Gmail Workspace thật",
+        ],
+        [
+          "5 Bookings",
+          "Quote → Booking; Client, Arrival, Departure, Pax, Revenue, Profit",
+          "Dữ liệu database",
+        ],
+        [
+          "6 Operation Center",
+          "Booking, Status, Operation, Progress; Hotel, Vehicle, Guide, Restaurant, Flights, Cruise, Train, Insurance",
+          "Xác nhận NCC qua thao tác demo",
+        ],
+        [
+          "7 Supplier Management",
+          "520 NCC; Supplier, Type, Country, Rating, Contract, Payment Terms; điểm 40/30/20/10",
+          "Contract file demo, chưa có dữ liệu thực",
+        ],
+        [
+          "8 Guide Management",
+          "10 HDV; Language, Area, Rating; Calendar, Availability, Assignment, Confirm",
+          "Mobile mô phỏng, chưa có đăng nhập",
+        ],
+        [
+          "9 Vehicle Management",
+          "Supplier, Vehicle, Capacity; Booking → Vehicle → Confirm",
+          "Danh mục xe giả lập",
+        ],
+        [
+          "10 Accounting",
+          "Deposit/Final Invoice; Payment Received; Supplier Invoice → Approve → Pay; Receivable, Payable, VAT, Cash Flow ngày/tuần/tháng",
+          "Không phát hành hóa đơn hoặc giao dịch ngân hàng",
+        ],
+        [
+          "11 Document Center",
+          "Contract, Invoice, Passport, Voucher, Rooming List; tải file mẫu",
+          "Google Drive API chưa kết nối",
+        ],
+        [
+          "12 Customer Service",
+          "Feedback Form → CSAT → Review → Referral",
+          "Nhập trực tiếp, chưa gửi form ra ngoài",
+        ],
+      ].map(
+        (r) =>
+          "<tr>" +
+          r
+            .map(
+              (c) =>
+                '<td style="white-space:normal;min-width:150px">' +
+                esc(c) +
+                "</td>",
+            )
+            .join("") +
+          "</tr>",
+      ),
+    ),
+  ) +
+  card(
+    "Luồng đúng bản ERP V1 trong tài liệu",
+    '<div class="flow">' +
+      [
+        "Booking Confirmed",
+        "Operation Assigned",
+        "Book Services",
+        "Supplier Confirmed",
+        "Voucher Ready",
+        "Guide Assigned",
+        "Tour Running",
+        "Completed",
+      ]
+        .map((s) => "<span>" + s + "</span>")
+        .join("") +
+      "</div><p>Ở phần mô tả trước ERP V1, tài liệu đặt Book Guide trước Voucher; ở ERP V1, Guide Assigned sau Voucher. Demo cho tạo voucher sau xác nhận NCC, sau đó bổ sung HDV và xác nhận nhận tour trước Tour Running, theo luồng ERP V1.</p><p>Không ép cọc 30%, không ép tour phải có lợi nhuận dương, không giới hạn một khách chỉ có một booking. Báo giá đã chấp nhận chỉ tạo booking một lần để tránh thao tác lặp.</p>",
+  ) +
+  card(
+    "Phân quyền theo tài liệu",
+    table(
+      ["ROLE", "PHẠM VI GIAO DIỆN"],
+      authRoles.map(
+        (item) =>
+          "<tr><td>" +
+          esc(item.label) +
+          '</td><td style="white-space:normal">' +
+          item.menus
+            .map((id) => pages.find((page) => page[0] === id)?.[2] || id)
+            .map(esc)
+            .join(", ") +
+          "</td></tr>",
+      ),
+    ) +
+      '<p class="notice">Tên role, menu và capability được nạp từ bảng typicone_roles. API production vẫn cần kiểm tra quyền phía server.</p>',
+  ) +
+  card(
+    "Lộ trình và công nghệ trong tài liệu",
+    "<p>Phase 1: 2 tuần Google Sheet + Notion, 12 Sheet Dashboard, Leads, Customers, Quotations, Bookings, Operations, Suppliers, Guides, Vehicles, Invoices, Payments, KPI.</p><p>Phase 2: 1–2 tháng Web App Sales, Operations, Accounting. Phase 3: Mobile HDV. Phase 4: AI chương trình tour, quotation, dịch Pháp–Anh–Việt, phân công guide, phân tích lợi nhuận.</p><p>Stack đề xuất của khách: NextJS, Laravel hoặc NestJS, PostgreSQL, Google Drive API, Google Login, Gmail Workspace, OpenAI API, Make.com. Bản demo local hiện là HTML/JavaScript; stack sản phẩm thật chưa được triển khai.</p><p>Tài liệu ghi 27 bảng nhưng danh sách cuối có 26 tên. Đây là điểm cần chốt khi thiết kế cơ sở dữ liệu.</p>",
+  ) +
+  card(
+    "Kịch bản kiểm tra",
+    "<ol><li>CRM thêm lead → hồ sơ khách tự tạo → thiết kế tour → chương trình → báo giá → sửa phiên bản → in PDF → chấp nhận tạo Booking.</li><li>Điều hành mở Booking → giao người phụ trách → xác nhận từng dịch vụ → tạo voucher → phân công HDV → xác nhận nhận tour → Tour Running → Completed.</li><li>Kế toán tạo Deposit Invoice với số tiền theo hợp đồng → Payment Received → tạo Final Invoice → Payment Received.</li><li>Chi NCC: Invoice → Approve → Pay. Nhập VAT mẫu và xem dòng tiền theo ngày/tuần/tháng.</li><li>HDV xem tour được giao, khách và voucher; sau tour nhập Feedback → CSAT → Review → Referral.</li></ol>",
+  ) +
+  card(
+    "Dữ liệu database",
+    btn("Tải JSON", "downloadBackup()") +
+      " " +
+      btn("Tải lại database", "reloadDatabase()") +
+      '<p class="notice">Dữ liệu được lưu trong các bảng typicone_* qua KIO. Không nhập hộ chiếu hoặc thông tin nhạy cảm khi chưa có phân quyền backend.</p>',
+  ) +
+  card(
+    "Nhật ký",
+    state.activities
+      .slice(0, 20)
+      .map((a) => line(esc(a.text), esc(a.time)))
+      .join("") || '<p class="sub">Chưa có thao tác mới.</p>',
+  );
 
-function resetDemo(){localStorage.removeItem(key);window.location.reload()};
+async function reloadDatabase() {
+  await loadDatabase();
+  render();
+  toast("Đã tải lại dữ liệu từ database.");
+}

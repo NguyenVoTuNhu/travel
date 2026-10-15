@@ -1,7 +1,8 @@
-/* Cấu hình persistence cho bản demo local. Không chứa token hoặc thông tin đăng nhập. */
+/* Cấu hình persistence KRUD multi-tenant. Database được KIO chọn theo domain gọi. */
 const TRAVEL_CONFIG = Object.freeze({
-  brand: 'Typic Travel',
-  storageKey: 'typic-travel-demo-v2',
-  persistence: 'localStorage',
-  apiBaseUrl: null,
+  brand: "Typic Travel",
+  persistence: "kio",
+  apiBaseUrl: "https://kio.dvqt.vn",
+  tablePrefix: "typicone_",
+  chunkSize: 30000,
 });

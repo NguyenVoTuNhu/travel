@@ -1,9 +1,41 @@
-/* APPLICATION BOOTSTRAP — khởi động ứng dụng sau khi tải đủ modules. */
+/* APPLICATION BOOTSTRAP — nạp database trước khi render ứng dụng. */
 
-// Start once after the configuration, storage and all module scripts are loaded.
-initializeDemoCollections();
-save();
-window.addEventListener('keydown', event => {
-  if(event.key === 'Escape') closeModal();
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeModal();
+    closeAccountMenu();
+  }
 });
-render();
+
+async function enterApplication(user) {
+  currentUser = user;
+  role = user.role;
+  if (!rights[role]?.includes(current)) current = rights[role]?.[0];
+  showAppShell();
+  const app = document.getElementById("app");
+  app.innerHTML = '<div class="empty">Đang kết nối database…</div>';
+  try {
+    await loadDatabase();
+    initializeDemoCollections();
+    applyDatabaseSettings();
+    renderCurrentUser();
+    render();
+  } catch (error) {
+    console.error("Database startup error:", error);
+    app.innerHTML = `<div class="alert red"><b>Không thể kết nối database</b>${esc(error.message)}. Hãy kiểm tra kết nối tới kio.dvqt.vn rồi tải lại trang.</div>`;
+  }
+}
+
+async function startApplication() {
+  try {
+    await loadAuthUsers();
+    const user = await restoreAuthSession();
+    if (user) await enterApplication(user);
+    else showLogin();
+  } catch (error) {
+    console.error("Authentication startup error:", error);
+    showLogin(`${error.message} Hãy kiểm tra kết nối tới kio.dvqt.vn.`);
+  }
+}
+
+startApplication();

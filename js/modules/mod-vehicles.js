@@ -1,11 +1,107 @@
 /* MODULE mod-vehicles — giao diện và nghiệp vụ của phân hệ Travel. */
 
-views.vehicles=()=>title('Xe & vận chuyển','Theo dõi dịch vụ xe trong tour và nhà cung cấp vận chuyển.',badge('Capacity mẫu: 16 chỗ'))+card('Lịch đặt xe theo tour',table(['BOOKING / TUYẾN','LỊCH','SỐ KHÁCH / CHỖ','NCC VẬN CHUYỂN','TRẠNG THÁI','THAO TÁC'],state.bookings.map(b=>{let s=b.services.find(s=>s.type==='Vehicle');return '<tr><td>'+bkLink(b)+'<span class="sub">'+esc(b.tour)+'</span></td><td>'+fmt(b.start)+' – '+fmt(b.end)+'</td><td>'+b.pax+' / 16'+(b.pax>16?' '+badge('Cần xe lớn hơn','red'):'')+'</td><td>'+esc(state.suppliers.find(n=>n.id===s.supplier)?.name)+'</td><td>'+badge(s.confirmed?'Đã xác nhận':'Chờ xác nhận',s.confirmed?'green':'amber')+'</td><td>'+(b.status==='Preparing'?btn('Đặt xe',"serviceForm('"+b.id+"','Vehicle')",'small'):'—')+'</td></tr>'})))+``;
+views.vehicles = () =>
+  title(
+    "Vehicle Management",
+    "Supplier · Vehicle · Capacity · Booking → Vehicle → Confirm",
+  ) +
+  card(
+    "Vehicle Company & Fleet",
+    table(
+      ["VEHICLE", "SUPPLIER", "CAPACITY", "LỊCH BOOKING"],
+      state.vehicles.map(
+        (v) =>
+          "<tr><td>" +
+          v.id +
+          " · " +
+          v.name +
+          '<span class="sub">' +
+          v.plate +
+          "</span></td><td>" +
+          esc(state.suppliers.find((s) => s.id === v.supplier)?.name) +
+          "</td><td>" +
+          v.capacity +
+          " chỗ</td><td>" +
+          state.bookings
+            .filter((b) => b.vehicle === v.id && b.status !== "Completed")
+            .map((b) => b.id + " (" + fmt(b.start) + "–" + fmt(b.end) + ")")
+            .join("<br>") +
+          "</td></tr>",
+      ),
+    ),
+  ) +
+  card(
+    "Vehicle Bookings",
+    table(
+      ["BOOKING", "PAX", "VEHICLE", "STATUS", "THAO TÁC"],
+      state.bookings.map(
+        (b) =>
+          "<tr><td>" +
+          b.id +
+          '<span class="sub">' +
+          esc(b.tour) +
+          "</span></td><td>" +
+          b.pax +
+          "</td><td>" +
+          esc(
+            state.vehicles.find((v) => v.id === b.vehicle)?.name ||
+              "Chưa gán xe",
+          ) +
+          "</td><td>" +
+          badge(
+            b.vehicleConfirmed
+              ? "Confirmed"
+              : b.vehicle
+                ? "Assigned"
+                : "Pending",
+            b.vehicleConfirmed ? "green" : "amber",
+          ) +
+          "</td><td>" +
+          (b.status === "Preparing"
+            ? btn("Chọn xe", "vehicleForm('" + b.id + "')", "small")
+            : "—") +
+          "</td></tr>",
+      ),
+    ),
+  );
 
-views.vehicles=()=>title('Vehicle Management','Supplier · Vehicle · Capacity · Booking → Vehicle → Confirm')+card('Vehicle Company & Fleet',table(['VEHICLE','SUPPLIER','CAPACITY','LỊCH BOOKING'],state.vehicles.map(v=>'<tr><td>'+v.id+' · '+v.name+'<span class="sub">'+v.plate+'</span></td><td>'+esc(state.suppliers.find(s=>s.id===v.supplier)?.name)+'</td><td>'+v.capacity+' chỗ</td><td>'+state.bookings.filter(b=>b.vehicle===v.id&&b.status!=='Completed').map(b=>b.id+' ('+fmt(b.start)+'–'+fmt(b.end)+')').join('<br>')+'</td></tr>')))+card('Vehicle Bookings',table(['BOOKING','PAX','VEHICLE','STATUS','THAO TÁC'],state.bookings.map(b=>'<tr><td>'+b.id+'<span class="sub">'+esc(b.tour)+'</span></td><td>'+b.pax+'</td><td>'+esc(state.vehicles.find(v=>v.id===b.vehicle)?.name||'Chưa gán xe')+'</td><td>'+badge(b.vehicleConfirmed?'Confirmed':b.vehicle?'Assigned':'Pending',b.vehicleConfirmed?'green':'amber')+'</td><td>'+(b.status==='Preparing'?btn('Chọn xe',"vehicleForm('"+b.id+"')",'small'):'—')+'</td></tr>')));
+function vehicleAvailable(v, b) {
+  return (
+    v.capacity >= b.pax &&
+    !state.bookings.some(
+      (x) =>
+        x.id !== b.id &&
+        x.status !== "Completed" &&
+        x.vehicle === v.id &&
+        x.start <= b.end &&
+        x.end >= b.start,
+    )
+  );
+}
 
-function vehicleAvailable(v,b){return v.capacity>=b.pax&&!state.bookings.some(x=>x.id!==b.id&&x.status!=='Completed'&&x.vehicle===v.id&&x.start<=b.end&&x.end>=b.start)}
+function vehicleForm(id) {
+  let b = state.bookings.find((b) => b.id === id);
+  modal(
+    "Vehicle booking · " + id,
+    `<form onsubmit="assignVehicle(event,'${id}')"><label>Vehicle<select name="vehicle" required><option value="">Chọn xe</option>${state.vehicles.map((v) => '<option value="' + v.id + '" ' + (!vehicleAvailable(v, b) ? "disabled" : "") + ">" + v.id + " · " + v.name + " · " + v.capacity + " chỗ" + (!vehicleAvailable(v, b) ? " · Không đủ chỗ / trùng lịch" : "") + "</option>").join("")}</select></label><label>Confirm<select name="confirmed"><option value="0">Chờ xác nhận</option><option value="1">Đã xác nhận</option></select></label><div class="formfooter"><button class="btn primary">Lưu xe</button></div></form>`,
+    true,
+  );
+}
 
-function vehicleForm(id){let b=state.bookings.find(b=>b.id===id);modal('Vehicle booking · '+id,`<form onsubmit="assignVehicle(event,'${id}')"><label>Vehicle<select name="vehicle" required><option value="">Chọn xe</option>${state.vehicles.map(v=>'<option value="'+v.id+'" '+(!vehicleAvailable(v,b)?'disabled':'')+'>'+v.id+' · '+v.name+' · '+v.capacity+' chỗ'+(!vehicleAvailable(v,b)?' · Không đủ chỗ / trùng lịch':'')+'</option>').join('')}</select></label><label>Confirm<select name="confirmed"><option value="0">Chờ xác nhận</option><option value="1">Đã xác nhận</option></select></label><div class="formfooter"><button class="btn primary">Lưu xe</button></div></form>`,true)}
-
-function assignVehicle(e,id){e.preventDefault();let f=new FormData(e.target),b=state.bookings.find(b=>b.id===id),v=state.vehicles.find(v=>v.id===f.get('vehicle'));if(!v||!vehicleAvailable(v,b))return toast('Xe không đủ chỗ hoặc trùng lịch.');b.vehicle=v.id;b.vehicleConfirmed=f.get('confirmed')==='1';let s=b.services.find(s=>s.type==='Vehicle');s.supplier=v.supplier;s.confirmed=b.vehicleConfirmed;b.voucher=false;log(id+' gán '+v.id);closeModal();render()}
+function assignVehicle(e, id) {
+  e.preventDefault();
+  let f = new FormData(e.target),
+    b = state.bookings.find((b) => b.id === id),
+    v = state.vehicles.find((v) => v.id === f.get("vehicle"));
+  if (!v || !vehicleAvailable(v, b))
+    return toast("Xe không đủ chỗ hoặc trùng lịch.");
+  b.vehicle = v.id;
+  b.vehicleConfirmed = f.get("confirmed") === "1";
+  let s = b.services.find((s) => s.type === "Vehicle");
+  s.supplier = v.supplier;
+  s.confirmed = b.vehicleConfirmed;
+  b.voucher = false;
+  log(id + " gán " + v.id);
+  closeModal();
+  render();
+}

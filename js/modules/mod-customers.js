@@ -1,88 +1,150 @@
-/* MODULE mod-customers — hồ sơ khách hàng. */
-
-function injectCustomerStyles() {
-  if (document.getElementById("customer-ui")) return;
-  const style = document.createElement("style");
-  style.id = "customer-ui";
-  style.textContent = `
-    #customers-ui .customer-stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}
-    #customers-ui .customer-stat{display:flex;align-items:center;gap:12px;padding:15px 16px}
-    #customers-ui .customer-stat-icon{width:42px;height:42px;flex:0 0 auto;display:grid;place-items:center;border-radius:11px;background:var(--mint);color:var(--green);font-size:17px;font-weight:800}
-    #customers-ui .customer-stat:nth-child(2) .customer-stat-icon{background:#edf3fb;color:#3e6fa7}#customers-ui .customer-stat:nth-child(3) .customer-stat-icon{background:#fbf0dd;color:var(--amber)}#customers-ui .customer-stat:nth-child(4) .customer-stat-icon{background:#f0f2f6;color:#69768b}
-    #customers-ui .customer-stat small{display:block;color:var(--muted);font-size:10px}#customers-ui .customer-stat strong{display:block;margin-top:2px;font-size:22px;letter-spacing:-.7px}
-    #customers-ui .customer-list{padding:0;overflow:hidden;border-top:3px solid #6c9b7c}#customers-ui .customer-list>.cardhead{padding:15px 16px 0;margin-bottom:11px}
-    #customers-ui .customer-toolbar{display:grid;grid-template-columns:minmax(240px,1fr) 210px auto;gap:9px;padding:0 14px 13px;border-bottom:1px solid var(--line)}
-    #customers-ui .customer-toolbar input,#customers-ui .customer-toolbar select{width:100%}.customer-count{min-height:40px;display:flex;align-items:center;justify-content:center;padding:0 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);background:#f8faf7;font-size:11px;white-space:nowrap}
-    #customers-ui .tablewrap{border:0;border-radius:0}#customers-ui th{padding:10px 14px;background:#f7f9f6}#customers-ui td{padding:12px 14px;vertical-align:middle}
-    #customers-ui .customer-name{display:flex;align-items:center;gap:10px}.customer-avatar,.customer-profile-avatar{display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(145deg,#dceee2,#f0f7f1);color:var(--green);font-weight:800}#customers-ui .customer-avatar{width:34px;height:34px;border-radius:10px;font-size:11px}#customers-ui .customer-name b{display:block}.customer-id{color:var(--green);font-weight:750}
-    body .modalback:has(.customer-profile){align-items:stretch;padding:0}body .modal:has(.customer-profile){position:relative;width:min(760px,calc(100% - 24px));height:100%;max-height:none;padding:0;background:#fff;border-radius:0;overflow:auto}body .modal:has(.customer-profile) .modalhead{top:0;margin:0;padding:15px 20px;background:#fff}body .modal:has(.customer-profile) .modalhead .eyebrow{display:none}body .modal:has(.customer-profile) .modalhead h2{margin:0;font-size:17px}
-    .customer-profile-title{display:flex;align-items:center;gap:12px}.customer-profile-avatar{width:46px;height:46px;border-radius:50%;font-size:13px}.customer-profile-title>span:last-child{display:flex;flex-direction:column;gap:2px}.customer-profile-title small{color:var(--muted);font-size:10px;font-weight:550}
-    .customer-profile{padding:0 20px 82px}.customer-tabs{position:sticky;top:77px;z-index:4;display:flex;gap:5px;overflow:auto;padding:12px 0 9px;border-bottom:1px solid var(--line);background:#fff;scrollbar-width:none}.customer-tabs .btn{min-height:34px;padding:7px 11px;border-color:transparent;color:#687a70;white-space:nowrap}.customer-tabs .btn.selected{border-color:#c9ded0;background:#edf6f0;color:var(--green)}
-    .customer-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:15px 0 18px}.customer-profile-stat{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #dfe7df;border-radius:10px;background:#fbfcfa}.customer-profile-stat>span{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--mint);color:var(--green);font-weight:800}.customer-profile-stat small,.customer-profile-stat strong{display:block}.customer-profile-stat small{color:var(--muted);font-size:9px}.customer-profile-stat strong{font-size:15px;margin-top:2px}
-    .customer-section{margin:0 0 19px}.customer-section h3{margin:0 0 11px;padding-bottom:8px;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.55px;text-transform:uppercase;color:#52665d}.customer-info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px}.customer-info-grid small,.customer-info-grid b{display:block}.customer-info-grid small{margin-bottom:3px;color:var(--muted);font-size:9px;text-transform:uppercase}.customer-info-grid b{overflow-wrap:anywhere;font-size:11px}.customer-profile .empty{padding:35px 16px;border:1px dashed #dbe4dc;border-radius:10px;background:#fafcf9}
-    .customer-profile-footer{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:flex-end;gap:8px;padding:13px 20px;border-top:1px solid var(--line);background:rgba(255,255,255,.97);backdrop-filter:blur(8px)}
-    @media(max-width:900px){#customers-ui .customer-stats{grid-template-columns:1fr 1fr}#customers-ui .customer-toolbar{grid-template-columns:1fr 180px}.customer-count{grid-column:1/-1}#customers-ui th:nth-child(4),#customers-ui td:nth-child(4){display:none}}
-    @media(max-width:760px){#customers-ui .customer-toolbar{grid-template-columns:1fr}.customer-count{grid-column:auto}#customers-ui th:nth-child(3),#customers-ui td:nth-child(3),#customers-ui th:nth-child(5),#customers-ui td:nth-child(5){display:none}body .modal:has(.customer-profile){width:100%;height:100%}.customer-profile{padding-inline:16px}.customer-info-grid{grid-template-columns:1fr 1fr}.customer-profile-footer{padding:10px 16px}.customer-profile-footer .btn{flex:1}}
-    @media(max-width:480px){#customers-ui .customer-stat{padding:12px;gap:8px}#customers-ui .customer-stat-icon{width:36px;height:36px}#customers-ui .customer-stat strong{font-size:18px}.customer-profile-stats{grid-template-columns:1fr}}
-  `;
-  document.head.appendChild(style);
-}
-injectCustomerStyles();
+/* MODULE mod-customers — quản lý và hồ sơ khách hàng. */
 
 const customerInitials = (name) => String(name || "KH").trim().split(/\s+/).slice(-2).map((part) => part[0]).join("").toUpperCase();
 
+function customerIcon(name) {
+  const icons = { handshake:"handshake",user:"user-plus",pause:"circle-pause",debt:"file-invoice-dollar",search:"magnifying-glass",eye:"eye",edit:"pen",care:"headset" };
+  return systemIcon(icons[name] || icons.user);
+}
+
 function customerRelations(customer) {
-  const bookings = state.bookings.filter((item) => item.client === customer.name);
+  const bookings = state.bookings.filter((item) => item.customerId === customer.id || item.client === customer.name);
   const leads = state.leads.filter((item) => item.name === customer.name || (customer.email && item.email === customer.email));
   const quotes = state.quotes.filter((item) => item.client === customer.name || leads.some((lead) => lead.id === item.lead));
   const care = (state.customerServiceCases || []).filter((item) => item.customer === customer.name);
-  return {bookings, leads, quotes, care, revenue: bookings.reduce((sum, item) => sum + (item.revenue || 0), 0), received: bookings.reduce((sum, item) => sum + (item.received || 0), 0)};
+  const revenue = bookings.reduce((sum, item) => sum + (item.revenue || 0), 0);
+  const received = bookings.reduce((sum, item) => sum + (item.received || 0), 0);
+  return { bookings, leads, quotes, care, revenue, received };
+}
+
+function customerStatus(customer, relation = customerRelations(customer)) {
+  return customer.status || (relation.bookings.length ? "active" : "prospect");
+}
+
+function customerStatusLabel(status) {
+  return status === "active" ? "Đang hợp tác" : status === "paused" ? "Tạm dừng" : "Tiềm năng";
+}
+
+/* Hạng khách: VIP (>=3 tour hoặc doanh số >=150tr), Quay lại (>=2 tour), Mới (1 tour). */
+function customerTier(customer, relation = customerRelations(customer)) {
+  const done = relation.bookings.filter((b) => b.status !== "Cancelled");
+  if (done.length >= 3 || relation.revenue >= 150000000) return { code: "vip", label: "VIP", tone: "amber" };
+  if (done.length >= 2) return { code: "return", label: "Quay lại", tone: "green" };
+  if (done.length === 1) return { code: "new", label: "Mới", tone: "blue" };
+  return { code: "none", label: "Chưa mua", tone: "" };
+}
+
+/* Sự kiện sắp tới: sinh nhật và kỷ niệm tour (trong N ngày). */
+function customerEvents(days = 30) {
+  const today = new Date(todayISO()), out = [];
+  const upcoming = (iso) => {
+    const d = new Date(iso); if (isNaN(d)) return null;
+    let n = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+    if (n < today) n = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());
+    return { date: n, left: Math.round((n - today) / 864e5), years: n.getFullYear() - d.getFullYear() };
+  };
+  state.customers.forEach((c) => {
+    if (c.birthday) { const u = upcoming(c.birthday); if (u && u.left <= days) out.push({ customer: c, kind: "Sinh nhật", left: u.left, note: `${u.years} tuổi` }); }
+    customerRelations(c).bookings.filter((b) => b.status === "Completed" && b.end).forEach((b) => {
+      const u = upcoming(b.end); if (u && u.years > 0 && u.left <= days) out.push({ customer: c, kind: "Kỷ niệm tour", left: u.left, note: `${u.years} năm · ${b.tour}` });
+    });
+  });
+  return out.sort((a, b) => a.left - b.left);
+}
+
+function customerAction(label, icon, action) {
+  return `<button class="customer-action" type="button" onclick="${action}" aria-label="${label}" title="${label}">${buttonActionIcon(label) || customerIcon(icon)}</button>`;
 }
 
 views.customers = () => {
   const all = state.customers;
-  const active = all.filter((customer) => customerRelations(customer).bookings.length).length;
-  const outstanding = all.reduce((sum, customer) => { const relation = customerRelations(customer); return sum + Math.max(0, relation.revenue - relation.received); }, 0);
+  const summary = all.reduce((result, customer) => {
+    const relation = customerRelations(customer), status = customerStatus(customer, relation);
+    result[status] = (result[status] || 0) + 1;
+    result.outstanding += Math.max(0, relation.revenue - relation.received);
+    result.revenue += relation.revenue;
+    return result;
+  }, { active: 0, prospect: 0, paused: 0, outstanding: 0, revenue: 0 });
+  const segments = [...new Set(all.map((customer) => customer.segment || customer.company).filter(Boolean))].sort();
+  const owners = [...new Set(all.map((customer) => customer.owner).filter(Boolean))].sort();
   const rows = all.map((customer) => {
-    const relation = customerRelations(customer), status = relation.bookings.length ? "active" : "prospect";
-    return `<tr class="customerrow" data-status="${status}" data-search="${esc([customer.id,customer.name,customer.company,customer.email,customer.phone,customer.whatsapp].join(" ").toLowerCase())}"><td><span class="customer-id">${esc(customer.id)}</span></td><td><div class="customer-name"><span class="customer-avatar">${esc(customerInitials(customer.name))}</span><div><b>${esc(customer.name)}</b><span class="sub">${esc(customer.company || "Khách cá nhân")}</span></div></div></td><td>${esc(customer.country || "—")}</td><td>${esc(customer.email || "—")}<span class="sub">${esc(customer.phone || customer.whatsapp || "Chưa có số điện thoại")}</span></td><td><b>${relation.bookings.length} đặt chỗ</b><span class="sub">${relation.quotes.length} báo giá · ${money(relation.revenue)}</span></td><td>${badge(status === "active" ? "Đang hợp tác" : "Tiềm năng",status === "active" ? "green" : "amber")}</td><td>${btn("Xem hồ sơ",`customerDetail('${customer.id}')`,"small")}</td></tr>`;
+    const relation = customerRelations(customer), status = customerStatus(customer, relation);
+    const phone = customer.phone || customer.whatsapp || "—", segment = customer.segment || customer.company || "Khách cá nhân";
+    return `<tr class="customerrow" data-status="${status}" data-segment="${esc(segment)}" data-owner="${esc(customer.owner || "")}" data-search="${esc([customer.id, customer.name, customer.contact, customer.company, customer.email, phone].join(" ").toLowerCase())}">
+      <td><div class="customer-name"><span class="customer-avatar">${esc(customerInitials(customer.name))}</span><div><b>${esc(customer.name)}</b><span class="sub customer-id">${esc(customer.id)}</span><span class="sub">${esc(segment)} · ${esc(customer.country || "Chưa cập nhật")}</span></div></div></td>
+      <td><b>${esc(customer.contact || customer.name)}</b></td><td>${esc(phone)}</td><td>${esc(customer.email || "—")}</td>
+      <td class="number-cell"><b>${relation.bookings.length}</b></td><td class="number-cell"><b>${money(relation.revenue)}</b></td>
+      <td>${(customer.careLog || []).length + relation.care.length ? `<button class="care-pill" onclick="customerCareForm('${customer.id}')">${(customer.careLog || []).length + relation.care.length} lần CSKH</button>` : '<span class="sub">Chưa chăm sóc</span>'}</td>
+      <td>${badge(customerStatusLabel(status), status === "active" ? "green" : status === "paused" ? "red" : "amber")}<span class="sub">${badge(customerTier(customer, relation).label, customerTier(customer, relation).tone)}</span></td>
+      <td><div class="customer-actions">${customerAction("Xem hồ sơ", "eye", `customerDetail('${customer.id}')`)}${customerAction("Nhật ký chăm sóc", "care", `customerCareForm('${customer.id}')`)}${customerAction("Sửa thông tin", "edit", `customerForm('${customer.id}')`)}</div></td></tr>`;
   });
-  const list = card("Danh sách khách hàng",`<div class="customer-toolbar"><input id="customerSearch" placeholder="Tìm theo mã, tên, công ty, email…" oninput="filterCustomerRows()" aria-label="Tìm khách hàng"><select id="customerStatus" onchange="filterCustomerRows()" aria-label="Lọc trạng thái"><option value="all">Tất cả trạng thái</option><option value="active">Đang hợp tác</option><option value="prospect">Khách tiềm năng</option></select><span class="customer-count" id="customerCount">${all.length} kết quả</span></div>${table(["MÃ KH","KHÁCH HÀNG","QUỐC GIA","LIÊN HỆ","GIAO DỊCH","TRẠNG THÁI","THAO TÁC"],rows)}`).replace('<section class="card">','<section class="card customer-list">');
-  return `<div id="customers-ui">${title("Quản lý khách hàng",`Tổng ${all.length} khách hàng · Hồ sơ, giao dịch và chăm sóc trên một màn hình`,btn("+ Thêm khách hàng","customerForm()","primary"))}<div class="stats customer-stats"><div class="stat customer-stat"><span class="customer-stat-icon">◆</span><div><small>ĐANG HỢP TÁC</small><strong>${active}</strong></div></div><div class="stat customer-stat"><span class="customer-stat-icon">＋</span><div><small>KHÁCH TIỀM NĂNG</small><strong>${all.length-active}</strong></div></div><div class="stat customer-stat"><span class="customer-stat-icon">◎</span><div><small>TỔNG KHÁCH HÀNG</small><strong>${all.length}</strong></div></div><div class="stat customer-stat"><span class="customer-stat-icon">₫</span><div><small>CÔNG NỢ PHẢI THU</small><strong>${short(outstanding)}</strong></div></div></div>${list}</div>`;
+  return `<div id="customers-ui">
+    <div class="customer-pagehead"><div><div class="eyebrow">KINH DOANH › KHÁCH HÀNG</div><h1>Quản lý khách hàng</h1><p>Tổng ${all.length} khách hàng · Doanh số lũy kế ${money(summary.revenue)}</p></div><div class="customer-page-actions">${btn("Nhắc chăm sóc", "customerCareReminder()")}${btn("Export", "exportCustomers()")}${btn("+ Thêm khách hàng", "customerForm()", "primary")}</div></div>
+    <div class="customer-stats"><div class="customer-stat is-active"><span class="customer-stat-icon">${customerIcon("handshake")}</span><div><small>Đang hợp tác</small><strong>${summary.active}</strong></div></div><div class="customer-stat is-prospect"><span class="customer-stat-icon">${customerIcon("user")}</span><div><small>Khách tiềm năng</small><strong>${summary.prospect}</strong></div></div><div class="customer-stat is-paused"><span class="customer-stat-icon">${customerIcon("pause")}</span><div><small>Tạm dừng</small><strong>${summary.paused}</strong></div></div><div class="customer-stat is-debt"><span class="customer-stat-icon">${customerIcon("debt")}</span><div><small>Công nợ phải thu</small><strong>${short(summary.outstanding)}</strong></div></div></div>
+    <section class="customer-list"><div class="customer-toolbar"><label class="customer-search">${customerIcon("search")}<input id="customerSearch" placeholder="Tìm theo mã, tên, người liên hệ, SĐT…" oninput="filterCustomerRows()" aria-label="Tìm khách hàng"></label><select id="customerSegment" onchange="filterCustomerRows()" aria-label="Lọc nhóm ngành"><option value="all">Tất cả nhóm ngành</option>${segments.map((value) => `<option value="${esc(value)}">${esc(value)}</option>`).join("")}</select><select id="customerStatus" onchange="filterCustomerRows()" aria-label="Lọc trạng thái"><option value="all">Tất cả trạng thái</option><option value="active">Đang hợp tác</option><option value="prospect">Khách tiềm năng</option><option value="paused">Tạm dừng</option></select><select id="customerOwner" onchange="filterCustomerRows()" aria-label="Lọc nhân viên phụ trách"><option value="all">Tất cả nhân viên phụ trách</option>${owners.map((value) => `<option value="${esc(value)}">${esc(value)}</option>`).join("")}</select><span class="customer-count" id="customerCount">${all.length} kết quả</span></div>
+      ${table(["KHÁCH HÀNG", "NGƯỜI LIÊN HỆ", "SỐ ĐIỆN THOẠI", "EMAIL", "ĐƠN HÀNG", "DOANH SỐ", "NHẬT KÝ CSKH", "TRẠNG THÁI", "THAO TÁC"], rows)}</section>
+  </div>`;
 };
 
 function filterCustomerRows() {
-  const query = document.getElementById("customerSearch")?.value.trim().toLowerCase() || "", status = document.getElementById("customerStatus")?.value || "all";
-  let visible = 0;
-  const rows = document.querySelectorAll(".customerrow");
-  rows.forEach((row) => { row.dataset.filteredOut = String(!row.dataset.search.includes(query) || (status !== "all" && row.dataset.status !== status)); if (row.dataset.filteredOut !== "true") visible++; });
-  const wrapper = rows[0]?.closest(".tablewrap");
-  if (wrapper?.dataset.paginated) updateTablePagination(wrapper, true);
-  else rows.forEach((row) => (row.hidden = row.dataset.filteredOut === "true"));
-  const count = document.getElementById("customerCount"); if (count) count.textContent = visible + " kết quả";
+  const query = document.getElementById("customerSearch")?.value.trim().toLowerCase() || "", status = document.getElementById("customerStatus")?.value || "all", segment = document.getElementById("customerSegment")?.value || "all", owner = document.getElementById("customerOwner")?.value || "all";
+  let visible = 0; const rows = document.querySelectorAll(".customerrow");
+  rows.forEach((row) => { const hidden = !row.dataset.search.includes(query) || (status !== "all" && row.dataset.status !== status) || (segment !== "all" && row.dataset.segment !== segment) || (owner !== "all" && row.dataset.owner !== owner); row.dataset.filteredOut = String(hidden); if (!hidden) visible += 1; });
+  const wrapper = rows[0]?.closest(".tablewrap"); if (wrapper?.dataset.paginated) updateTablePagination(wrapper, true); else rows.forEach((row) => (row.hidden = row.dataset.filteredOut === "true"));
+  const count = document.getElementById("customerCount"); if (count) count.textContent = `${visible} kết quả`;
 }
 
-function customerForm() {
-  modal("Thêm khách hàng",`<form onsubmit="saveCustomer(event)"><div class="formgrid"><label>Contact / Họ tên${field("name","text","",true)}</label><label>Company${field("company")}</label><label>Country<select name="country" required><option value="">Chọn thị trường</option>${crmCountries.map((value)=>`<option>${esc(value)}</option>`).join("")}</select></label><label>Email${field("email","email","",true)}</label><label>Phone${field("phone")}</label><label>WhatsApp${field("whatsapp")}</label></div><div class="formfooter"><button class="btn primary">Lưu khách hàng</button></div></form>`,true);
+function customerForm(id = "") {
+  const customer = state.customers.find((item) => item.id === id) || {};
+  modal(id ? "Cập nhật thông tin khách hàng" : "Thêm khách hàng", `<form class="customer-form" onsubmit="saveCustomer(event,'${id}')">${id ? `<p class="customer-form-code">Mã khách hàng: <b>${esc(id)}</b></p>` : ""}<h3>Thông tin khách hàng</h3><div class="formgrid"><label class="full">Tên khách hàng / Công ty${field("name", "text", customer.name || "", true)}</label><label>Nhóm ngành / Dịch vụ${field("segment", "text", customer.segment || customer.company || "")}</label><label>Tỉnh / Thành phố${field("country", "text", customer.country || "")}</label><label class="full">Địa chỉ${field("address", "text", customer.address || "")}</label></div><h3>Đầu mối liên hệ & phụ trách</h3><div class="formgrid"><label>Người liên hệ${field("contact", "text", customer.contact || customer.name || "", true)}</label><label>Số điện thoại${field("phone", "tel", customer.phone || "", true)}</label><label>Email${field("email", "email", customer.email || "")}</label><label>WhatsApp${field("whatsapp", "text", customer.whatsapp || "")}</label><label>Ngày sinh<input name="birthday" type="date" value="${esc(customer.birthday || "")}"></label><label>Nhân viên phụ trách<select name="owner"><option value="">Chưa phân công</option>${crmOwners.map((value) => `<option ${customer.owner === value ? "selected" : ""}>${esc(value)}</option>`).join("")}</select></label><label>Trạng thái<select name="status"><option value="prospect" ${customerStatus(customer) === "prospect" ? "selected" : ""}>Khách tiềm năng</option><option value="active" ${customerStatus(customer) === "active" ? "selected" : ""}>Đang hợp tác</option><option value="paused" ${customerStatus(customer) === "paused" ? "selected" : ""}>Tạm dừng</option></select></label></div><div class="formfooter"><button class="btn" type="button" onclick="closeModal()">Hủy</button><button class="btn primary">${id ? "Lưu thay đổi" : "Lưu khách hàng"}</button></div></form>`, false);
 }
 
-function saveCustomer(event) {
-  event.preventDefault(); const form = new FormData(event.target);
-  state.customers.push({id:"CUS-"+Date.now(),...Object.fromEntries(["name","company","country","email","phone","whatsapp"].map((key)=>[key,form.get(key)])),contact:form.get("name")});
-  log("Thêm khách "+form.get("name")); closeModal(); render();
+function saveCustomer(event, id = "") {
+  event.preventDefault(); if (!requireCapability("customers_manage")) return;
+  const form = new FormData(event.target), values = Object.fromEntries(["name", "segment", "country", "address", "contact", "phone", "email", "whatsapp", "birthday", "owner", "status"].map((key) => [key, String(form.get(key) || "").trim()]));
+  const duplicate = state.customers.find((item) => item.id !== id && values.email && String(item.email).toLowerCase() === values.email.toLowerCase());
+  if (duplicate) return toast(`Email đã tồn tại ở ${duplicate.id}.`);
+  if (id) Object.assign(state.customers.find((item) => item.id === id), values); else state.customers.push({ id: nextBusinessId("customers"), careLog: [], ...values });
+  log(`${id ? "Cập nhật" : "Thêm"} khách hàng ${values.name}`); save(); closeModal(); render(); toast(id ? "Đã cập nhật khách hàng." : "Đã thêm khách hàng mới.");
 }
 
-function customerProfileTable(tab, relation) {
-  if (tab === "bookings") return relation.bookings.length ? table(["MÃ","CHƯƠNG TRÌNH","KHỞI HÀNH","GIÁ TRỊ","TRẠNG THÁI"],relation.bookings.map((item)=>`<tr><td><b>${item.id}</b></td><td>${esc(item.tour)}</td><td>${fmt(item.start)}</td><td>${money(item.revenue||0)}</td><td>${bookStatus(item)}</td></tr>`)) : '<div class="empty">Khách hàng chưa có đặt chỗ.</div>';
-  if (tab === "quotes") return relation.quotes.length ? table(["MÃ","CHƯƠNG TRÌNH","PHIÊN BẢN","GIÁ BÁN","TRẠNG THÁI"],relation.quotes.map((item)=>`<tr><td><b>${item.id}</b></td><td>${esc(item.tour)}</td><td>v${item.version}</td><td>${money(item.amount)}</td><td>${badge(item.status,item.status==="Accepted"?"green":"amber")}</td></tr>`)) : '<div class="empty">Khách hàng chưa có báo giá.</div>';
-  if (tab === "debt") return relation.bookings.length ? table(["BOOKING","GIÁ TRỊ","ĐÃ THU","CÒN PHẢI THU"],relation.bookings.map((item)=>`<tr><td><b>${item.id}</b></td><td>${money(item.revenue||0)}</td><td class="moneypositive">${money(item.received||0)}</td><td>${money(Math.max(0,(item.revenue||0)-(item.received||0)))}</td></tr>`)) : '<div class="empty">Khách hàng chưa phát sinh công nợ.</div>';
-  return relation.care.length ? table(["CASE","BOOKING","PHỤ TRÁCH","CSAT","TRẠNG THÁI"],relation.care.map((item)=>`<tr><td><b>${item.id}</b></td><td>${item.bookingId}</td><td>${esc(item.owner)}</td><td>${item.feedback?item.feedback.overall+"/5":"—"}</td><td>${badge(item.status,item.status==="CLOSED"?"green":"amber")}</td></tr>`)) : '<div class="empty">Chưa có hồ sơ chăm sóc khách hàng.</div>';
+function customerProfileTable(tab, relation, customer) {
+  if (tab === "bookings") return relation.bookings.length ? table(["MÃ", "CHƯƠNG TRÌNH", "KHỞI HÀNH", "GIÁ TRỊ", "TRẠNG THÁI"], relation.bookings.map((item) => `<tr><td>${entityLink("booking", item.id)}</td><td>${esc(item.tour)}</td><td>${fmt(item.start)}</td><td>${money(item.revenue || 0)}</td><td>${bookingBadge(item)}</td></tr>`)) : '<div class="empty">Khách hàng chưa có đặt chỗ.</div>';
+  if (tab === "quotes") return relation.quotes.length ? table(["MÃ", "CHƯƠNG TRÌNH", "PHIÊN BẢN", "GIÁ BÁN", "TRẠNG THÁI"], relation.quotes.map((item) => `<tr><td>${entityLink("quote", item.id)}</td><td>${esc(item.tour)}</td><td>v${item.version}</td><td>${money(item.amount)}</td><td>${quoteBadge(item.status)}</td></tr>`)) : '<div class="empty">Khách hàng chưa có báo giá.</div>';
+  if (tab === "debt") return relation.bookings.length ? table(["BOOKING", "GIÁ TRỊ", "ĐÃ THU", "CÒN PHẢI THU"], relation.bookings.map((item) => `<tr><td>${entityLink("booking", item.id)}</td><td>${money(item.revenue || 0)}</td><td class="moneypositive">${money(item.received || 0)}</td><td>${money(Math.max(0, (item.revenue || 0) - (item.received || 0)))}</td></tr>`)) : '<div class="empty">Khách hàng chưa phát sinh công nợ.</div>';
+  const logs = customer.careLog || [];
+  return logs.length ? `<div class="customer-care-timeline">${logs.slice().reverse().map((item) => `<article><span>${customerIcon("care")}</span><div><b>${esc(item.method)} · ${fmt(item.date)}</b><p>${esc(item.note)}</p><small>${esc(item.owner || "Chưa phân công")}</small></div></article>`).join("")}</div>` : '<div class="empty">Chưa có nhật ký chăm sóc khách hàng.</div>';
 }
 
 function customerDetail(id, tab = "overview") {
-  const customer = state.customers.find((item)=>item.id===id); if (!customer) return;
-  const relation = customerRelations(customer), debt = Math.max(0,relation.revenue-relation.received);
-  const tabs = [["overview","Tổng quan"],["bookings",`Đặt chỗ (${relation.bookings.length})`],["quotes",`Báo giá (${relation.quotes.length})`],["debt","Công nợ"],["care","Nhật ký CSKH"]];
-  const overview = `<div class="customer-profile-stats"><div class="customer-profile-stat"><span>▣</span><div><small>Tổng đặt chỗ</small><strong>${relation.bookings.length}</strong></div></div><div class="customer-profile-stat"><span>₫</span><div><small>Doanh số lũy kế</small><strong>${short(relation.revenue)}</strong></div></div><div class="customer-profile-stat"><span>≋</span><div><small>Công nợ</small><strong>${short(debt)}</strong></div></div></div><section class="customer-section"><h3>Thông tin khách hàng</h3><div class="customer-info-grid"><div><small>Mã khách hàng</small><b class="customer-id">${esc(customer.id)}</b></div><div><small>Tên đầy đủ</small><b>${esc(customer.name)}</b></div><div><small>Công ty</small><b>${esc(customer.company||"Khách cá nhân")}</b></div><div><small>Quốc gia</small><b>${esc(customer.country||"—")}</b></div><div><small>Trạng thái</small><b>${relation.bookings.length?"Đang hợp tác":"Khách tiềm năng"}</b></div><div><small>Lead liên quan</small><b>${relation.leads.length}</b></div></div></section><section class="customer-section"><h3>Đầu mối liên hệ</h3><div class="customer-info-grid"><div><small>Người liên hệ</small><b>${esc(customer.contact||customer.name)}</b></div><div><small>Điện thoại</small><b>${esc(customer.phone||"—")}</b></div><div><small>WhatsApp</small><b>${esc(customer.whatsapp||"—")}</b></div><div><small>Email</small><b>${esc(customer.email||"—")}</b></div></div></section>`;
-  modal(`<span class="customer-profile-title"><span class="customer-profile-avatar">${esc(customerInitials(customer.name))}</span><span>${esc(customer.name)}<small>${esc(customer.id)} · ${esc(customer.company||customer.country||"Khách cá nhân")}</small></span></span>`,`<div class="customer-profile"><nav class="customer-tabs" aria-label="Nội dung hồ sơ">${tabs.map(([value,label])=>`<button class="btn ${tab===value?"selected":""}" onclick="customerDetail('${id}','${value}')">${label}</button>`).join("")}</nav>${tab==="overview"?overview:`<section class="customer-section" style="margin-top:15px"><h3>${tabs.find(([value])=>value===tab)?.[1]||"Chi tiết"}</h3>${customerProfileTable(tab,relation)}</section>`}<footer class="customer-profile-footer">${btn("Đóng","closeModal()")}${btn("Tạo báo giá","closeModal();go('design')","primary")}</footer></div>`);
+  const customer = state.customers.find((item) => item.id === id); if (!customer) return;
+  const relation = customerRelations(customer), debt = Math.max(0, relation.revenue - relation.received), tabs = [["overview", "Tổng quan"], ["bookings", "Đơn hàng"], ["quotes", "Báo giá"], ["debt", "Công nợ"], ["care", "Nhật ký CSKH"]];
+  const overview = `<div class="customer-profile-stats"><div class="customer-profile-stat"><span>${customerIcon("debt")}</span><div><small>Tổng đơn hàng</small><strong>${relation.bookings.length}</strong></div></div><div class="customer-profile-stat"><span>₫</span><div><small>Doanh số lũy kế</small><strong>${short(relation.revenue)}</strong></div></div><div class="customer-profile-stat"><span>${customerIcon("debt")}</span><div><small>Công nợ</small><strong>${short(debt)}</strong></div></div><div class="customer-profile-stat"><span>★</span><div><small>Hạng khách</small><strong>${esc(customerTier(customer, relation).label)}</strong></div></div></div><section class="customer-section"><h3>Thông tin doanh nghiệp / khách hàng</h3><div class="customer-info-grid"><div><small>Mã khách hàng</small><b class="customer-id">${esc(customer.id)}</b></div><div><small>Tên đầy đủ</small><b>${esc(customer.name)}</b></div><div><small>Nhóm ngành</small><b>${esc(customer.segment || customer.company || "Khách cá nhân")}</b></div><div><small>Địa chỉ</small><b>${esc(customer.address || customer.country || "—")}</b></div></div></section><section class="customer-section"><h3>Đầu mối liên hệ</h3><div class="customer-info-grid"><div><small>Người liên hệ</small><b>${esc(customer.contact || customer.name)}</b></div><div><small>Số điện thoại</small><b>${esc(customer.phone || "—")}</b></div><div><small>Email</small><b>${esc(customer.email || "—")}</b></div><div><small>NV phụ trách</small><b>${esc(customer.owner || "Chưa phân công")}</b></div><div><small>Ngày sinh</small><b>${customer.birthday ? fmt(customer.birthday) : "—"}</b></div></div></section><section class="customer-section"><h3>Lịch sử tour</h3>${relation.bookings.length ? `<div class="customer-care-timeline">${relation.bookings.slice().sort((a, b) => String(b.start).localeCompare(String(a.start))).map((b) => `<article><span>${customerIcon("handshake")}</span><div><b>${entityLink("booking", b.id)} · ${esc(b.tour)}</b><p>${fmt(b.start)} – ${fmt(b.end)} · ${money(b.revenue || 0)}${b.feedback?.score ? " · hài lòng " + b.feedback.score + "/5" : ""}</p></div></article>`).join("")}</div>` : '<div class="empty">Chưa có tour nào.</div>'}</section>`;
+  const lead = relation.leads[0];
+  modal(`<span class="customer-profile-title"><span class="customer-profile-avatar">${esc(customerInitials(customer.name))}</span><span>${esc(customer.name)}<small>${esc(customer.id)} · ${esc(customer.segment || customer.company || customer.country || "Khách cá nhân")}</small></span></span>`, `<div class="customer-profile"><nav class="customer-tabs" aria-label="Nội dung hồ sơ">${tabs.map(([value, label]) => `<button class="btn ${tab === value ? "selected" : ""}" onclick="customerDetail('${id}','${value}')">${label}</button>`).join("")}</nav>${tab === "overview" ? overview : `<section class="customer-section customer-tab-content"><h3>${tabs.find(([value]) => value === tab)?.[1]}</h3>${customerProfileTable(tab, relation, customer)}</section>`}<footer class="customer-profile-footer">${btn("Đóng", "closeModal()")}${btn("Sửa thông tin", `customerForm('${id}')`)}${btn("Nhật ký CSKH", `customerCareForm('${id}')`)}${btn("Tạo báo giá", `closeModal();go('design')${lead ? `;selectLead('${lead.id}')` : ""}`, "primary")}</footer></div>`);
+}
+
+function customerCareForm(id) {
+  const customer = state.customers.find((item) => item.id === id); if (!customer) return; const logs = customer.careLog || [];
+  modal("Nhật ký chăm sóc khách hàng", `<div class="customer-care-modal"><p>${esc(customer.name)} · Mã KH: ${esc(customer.id)} · SĐT: ${esc(customer.phone || customer.whatsapp || "—")}</p><form onsubmit="saveCustomerCare(event,'${id}')"><h3>Thêm nội dung chăm sóc mới</h3><div class="formgrid"><label>Ngày thực hiện<input name="date" type="date" value="${new Date().toLocaleDateString("en-CA")}" required></label><label>Hình thức chăm sóc<select name="method"><option>Gọi điện</option><option>Gặp trực tiếp</option><option>Email</option><option>WhatsApp</option></select></label><label class="full">Nội dung ghi chú<textarea name="note" required placeholder="Nhập chi tiết cuộc gọi, tư vấn báo giá, yêu cầu của khách hàng…"></textarea></label></div><div class="formfooter"><button class="btn primary">Lưu nhật ký chăm sóc</button></div></form><section><h3>Lịch sử chăm sóc (${logs.length})</h3>${customerProfileTable("care", customerRelations(customer), customer)}</section></div>`, false);
+}
+
+function saveCustomerCare(event, id) {
+  event.preventDefault(); if (!requireCapability("customers_manage")) return;
+  const customer = state.customers.find((item) => item.id === id), form = new FormData(event.target); customer.careLog ||= [];
+  customer.careLog.push({ date: form.get("date"), method: form.get("method"), note: form.get("note").trim(), owner: customer.owner || currentUser?.fullName || "" });
+  log(`Chăm sóc khách hàng ${id}: ${form.get("method")}`); save(); customerCareForm(id); toast("Đã lưu nhật ký chăm sóc.");
+}
+
+function customerCareReminder() {
+  const due = state.customers.filter((customer) => !(customer.careLog || []).length || customerStatus(customer) === "prospect");
+  const events = customerEvents(30);
+  const eventHtml = events.length ? `<h3>Sinh nhật & kỷ niệm trong 30 ngày tới</h3><div class="customer-reminder-list">${events.map((e) => `<button onclick="customerCareForm('${e.customer.id}')"><span class="customer-avatar">${esc(customerInitials(e.customer.name))}</span><span><b>${esc(e.customer.name)}</b><small>${e.kind} · ${e.left ? "còn " + e.left + " ngày" : "hôm nay"} · ${esc(e.note)}</small></span><i>›</i></button>`).join("")}</div><h3>Chưa được chăm sóc</h3>` : "";
+  modal("Khách hàng cần chăm sóc", eventHtml + (due.length ? `<div class="customer-reminder-list">${due.map((customer) => `<button onclick="customerCareForm('${customer.id}')"><span class="customer-avatar">${esc(customerInitials(customer.name))}</span><span><b>${esc(customer.name)}</b><small>${esc(customer.id)} · ${esc(customer.phone || customer.email || "Chưa có liên hệ")}</small></span><i>›</i></button>`).join("")}</div>` : '<div class="empty">Không có khách hàng cần nhắc chăm sóc.</div>'), true);
+}
+
+function exportCustomers() {
+  const rows = [["Mã khách hàng", "Tên khách hàng", "Người liên hệ", "Điện thoại", "Email", "Nhóm ngành", "Trạng thái"]].concat(state.customers.map((customer) => [customer.id, customer.name, customer.contact || customer.name, customer.phone || customer.whatsapp || "", customer.email || "", customer.segment || customer.company || "", customerStatusLabel(customerStatus(customer))]));
+  const csv = rows.map((row) => row.map((value) => `"${String(value || "").replaceAll('"', '""')}"`).join(",")).join("\n");
+  downloadFile(`khach-hang-${new Date().toLocaleDateString("en-CA")}.csv`, "\uFEFF" + csv, "text/csv;charset=utf-8");
 }

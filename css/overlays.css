@@ -1,0 +1,111 @@
+/* Shared overlay polish. Loaded last so feature modules cannot turn dialogs into drawers. */
+.notification-popover {
+  position: fixed;
+  top: var(--popover-top, 70px);
+  right: var(--popover-right, 24px);
+  z-index: 80;
+  width: min(500px, calc(100vw - 24px));
+  max-height: min(680px, calc(100dvh - var(--popover-top, 70px) - 16px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dfe6ef;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(26, 47, 75, .2), 0 3px 12px rgba(26, 47, 75, .08);
+  animation: popover-in .16s ease-out;
+}
+
+.notification-popover > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8edf3;
+}
+
+.notification-popover > header > div { display: flex; align-items: center; gap: 10px; }
+.notification-popover > header strong { font-size: 16px; }
+.notification-popover > header span {
+  padding: 4px 9px;
+  border-radius: 7px;
+  color: #657790;
+  background: #f0f4f9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.notification-popover > header button,
+.notification-popover > footer button {
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid #dce5ef;
+  border-radius: 8px;
+  color: #31445e;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.notification-popover > header button:disabled { color: #96a2b2; background: #f5f7fa; cursor: default; }
+
+.notification-scroll { min-height: 0; overflow-y: auto; padding: 12px; scrollbar-width: thin; }
+.notification-popover .notification-list { gap: 6px; }
+.notification-popover .notification-item { border-color: transparent; padding: 9px 10px; }
+.notification-popover .notification-item:hover { border-color: #d7e4f3; background: #f6f9fd; }
+.notification-popover > footer { padding: 10px 12px; border-top: 1px solid #e8edf3; text-align: center; }
+.notification-popover > footer button { width: 100%; color: #1769d2; border: 0; }
+
+/* Long record profiles keep the list in context, so they use a right-side drawer. */
+body .modalback:has(.crm-profile),
+body .modalback:has(.care-profile),
+body .modalback:has(.customer-profile) {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+  background: rgba(15, 27, 45, .48);
+  backdrop-filter: blur(2px);
+}
+
+body .modal:has(.crm-profile),
+body .modal:has(.care-profile),
+body .modal:has(.customer-profile) {
+  width: min(var(--drawer-width, 820px), 78vw);
+  height: 100dvh;
+  max-height: none;
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+  box-shadow: -18px 0 55px rgba(8, 28, 45, .22);
+  animation: drawer-enter .22s ease-out;
+}
+
+body .modal:has(.crm-profile) { --drawer-width: 760px; }
+body .modal:has(.care-profile) { --drawer-width: 820px; }
+body .modal:has(.customer-profile) { --drawer-width: 900px; }
+
+@keyframes popover-in {
+  from { transform: translateY(-6px) scale(.985); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes drawer-enter {
+  from { transform: translateX(28px); opacity: .75; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 760px) {
+  .modalback { align-items: center; padding: 12px; }
+  .modal, .modal.narrow { width: 100%; max-height: calc(100dvh - 24px); border-radius: 14px; }
+  body .modalback:has(.crm-profile),
+  body .modalback:has(.care-profile),
+  body .modalback:has(.customer-profile) { align-items: stretch; padding: 0; }
+  body .modal:has(.crm-profile),
+  body .modal:has(.care-profile),
+  body .modal:has(.customer-profile) { width: 100%; height: 100dvh; max-height: none; border-radius: 0; }
+  .notification-popover { right: 12px; width: calc(100vw - 24px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal, .notification-popover { animation: none; }
+}

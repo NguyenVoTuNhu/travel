@@ -1,0 +1,31 @@
+/* Unified Guide Mobile Tour Container */
+.guideapp-container {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.mobiletour {
+  max-width: 400px;
+  margin: 0;
+  border: 7px solid #142a22;
+  border-radius: 28px;
+  padding: 18px;
+  background: var(--white);
+  box-shadow: 0 12px 36px rgba(18, 43, 35, 0.12);
+}
+
+.mobiletour h2 {
+  font-size: 20px;
+  margin: 4px 0 2px;
+}
+
+.mobiletour .hero {
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+
+.mobiletour .hero h3 {
+  font-size: 14.5px;
+}

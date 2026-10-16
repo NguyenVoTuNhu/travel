@@ -1,0 +1,295 @@
+/* ERP UI layer — liên kết giữa các trang, Booking 360°, lịch điều hành, cổng HDV. Nạp sau cùng. */
+:root {
+  --ok: #15803d; --ok-soft: #e8f6ee;
+  --warn: #b45309; --warn-soft: #fff4e0;
+  --bad: #b91c1c; --bad-soft: #fdeceb;
+  --info: #2563eb; --info-soft: #eef4ff;
+}
+
+/* Liên kết thực thể */
+.entity-link { appearance: none; border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--info); cursor: pointer; text-decoration: none; border-bottom: 1px dashed rgba(37,99,235,.45); }
+.entity-link:hover { color: #1d4ed8; border-bottom-style: solid; }
+.entity-text { font-weight: 600; color: var(--ink); }
+.text-warn { color: var(--warn); } .text-bad { color: var(--bad); } .text-good { color: var(--ok); }
+
+/* Thanh hành trình Lead → Báo giá → Booking → … */
+.journey-bar { display: flex; gap: 0; list-style: none; margin: 0 0 16px; padding: 0; overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+.journey-bar li { flex: 1 0 auto; min-width: 128px; position: relative; padding: 10px 12px 10px 28px; display: grid; gap: 1px; border-right: 1px solid var(--line-light); }
+.journey-bar li:last-child { border-right: 0; }
+.journey-bar li i { position: absolute; left: 10px; top: 14px; width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
+.journey-bar li b { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.journey-bar li span { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.journey-bar li span .entity-link { font-size: 12px; }
+.journey-bar li small { color: var(--muted); font-size: 11px; }
+.journey-bar li.is-done i { background: var(--ok); }
+.journey-bar li.is-current { background: var(--info-soft); }
+.journey-bar li.is-current i { background: var(--info); box-shadow: 0 0 0 4px rgba(37,99,235,.18); }
+.journey-bar--cancelled { padding: 12px 16px; background: var(--bad-soft); color: var(--bad); font-weight: 700; }
+
+/* Tab */
+.tabbar { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 14px 0; overflow-x: auto; }
+.tabbar button { appearance: none; border: 0; background: none; padding: 9px 14px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabbar button:hover { color: var(--info); }
+.tabbar button.active { color: var(--info); border-bottom-color: var(--info); }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+
+/* Booking 360° */
+.booking360 { display: grid; gap: 4px; }
+.booking-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.booking-title .badge { display: inline-flex; width: auto; }
+.booking-title small { flex: 0 0 100%; font-weight: 500; color: var(--muted); }
+.booking-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: var(--mint-light); border: 1px solid var(--line-light); border-radius: 12px; padding: 12px 14px; }
+.booking-meta small { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.next-action { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--blue-line); background: var(--info-soft); }
+.next-action small { font-weight: 800; letter-spacing: .06em; color: var(--info); }
+.next-action p { margin: 3px 0 0; font-weight: 600; }
+.next-action--amber { background: var(--warn-soft); border-color: #f5d49b; } .next-action--amber small { color: var(--warn); }
+.next-action--green { background: var(--ok-soft); border-color: #b7e2c6; } .next-action--green small { color: var(--ok); }
+.next-action--red { background: var(--bad-soft); border-color: #f4c2bf; } .next-action--red small { color: var(--bad); }
+.detail-footer { position: static !important; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin: 18px 0 0 !important; padding: 14px 0 0 !important; background: transparent !important; backdrop-filter: none; border-top: 1px solid var(--line-light); }
+.stats--compact { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.stats--compact .stat { padding: 12px 14px; }
+
+/* Kiểm tra điều kiện */
+.precheck { display: grid; gap: 4px; margin: 10px 0; }
+.checkitem { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line-light); }
+.checkitem .grow { flex: 1; }
+.checkitem > span { width: 22px; flex: 0 0 22px; text-align: center; }
+.checkitem .ok { color: var(--ok); } .checkitem .no { color: var(--bad); } .checkitem .warn { color: var(--warn); }
+
+/* Bảng điều hành (kanban) */
+.ops-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; align-items: start; }
+.ops-col { background: #eef2f8; border-radius: 14px; padding: 10px; }
+.ops-col > header { display: flex; justify-content: space-between; padding: 4px 6px 10px; font-size: 13px; }
+.ops-col > header span { background: #fff; border-radius: 99px; padding: 0 9px; font-weight: 700; }
+.ops-col-body { display: grid; gap: 10px; }
+
+/* Lịch Gantt HDV / xe */
+.sched { overflow-x: auto; }
+.sched-row { display: grid; grid-template-columns: 170px 1fr; align-items: center; border-bottom: 1px solid var(--line-light); }
+.sched-name { padding: 6px 8px; font-weight: 600; font-size: 13px; }
+.sched-name small { display: block; color: var(--muted); font-weight: 400; font-size: 10px; }
+.sched-cells { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(12px, 1fr); gap: 1px; padding: 6px 0; }
+.sched-cells i { display: block; height: 22px; background: #f1f4f8; border-radius: 2px; }
+.sched-cells i.is-booked { background: var(--ok); cursor: pointer; }
+.sched-cells i.is-pending { background: #f0b34a; cursor: pointer; }
+.sched-cells i.is-done { background: #94a3b8; cursor: pointer; }
+.sched-cells i.is-blocked { background: repeating-linear-gradient(45deg,#fca5a5,#fca5a5 3px,#fee2e2 3px,#fee2e2 6px); }
+.sched-cells i.is-today { box-shadow: inset 0 0 0 2px var(--info); }
+.sched-cells--head b { font-size: 10px; color: var(--muted); font-weight: 600; overflow: visible; white-space: nowrap; }
+.sched-head { border-bottom: 1px solid var(--line); }
+.sched-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.sched-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: #f1f4f8; }
+.sched-legend i.is-booked { background: var(--ok); } .sched-legend i.is-pending { background: #f0b34a; } .sched-legend i.is-done { background: #94a3b8; } .sched-legend i.is-blocked { background: #fca5a5; }
+
+/* Phễu CRM */
+.funnel { display: grid; gap: 8px; }
+.funnel-row { display: grid; grid-template-columns: 130px 1fr 36px; gap: 10px; align-items: center; font-size: 13px; }
+.funnel-row .bar, .bar { height: 8px; background: #e8eef7; border-radius: 99px; overflow: hidden; }
+.funnel-row .bar i, .bar > i { display: block; height: 100%; background: var(--info); border-radius: 99px; }
+
+/* Thiết kế tour / báo giá */
+.design-margin { padding: 10px 12px; border-radius: 10px; font-weight: 600; background: #f1f4f8; }
+.design-margin.is-ok { background: var(--ok-soft); color: var(--ok); }
+.design-margin.is-low { background: var(--bad-soft); color: var(--bad); }
+.quote-finance .warning, .warning { color: var(--bad); }
+.nav-count { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 800; background: #ef4444; color: #fff; border-radius: 99px; padding: 1px 7px; }
+
+/* Cổng HDV (mobile-first) */
+.guide-portal { max-width: 720px; margin: 0 auto; display: grid; gap: 14px; }
+.guide-tabs { overflow-x: auto; flex-wrap: nowrap !important; padding-bottom: 4px; }
+.guide-tabs .btn { white-space: nowrap; }
+.guide-tour { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-card); }
+.guide-tour h3 { margin: 4px 0 6px; font-size: 17px; }
+.guide-tour-state { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.guide-tour-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.guide-tour-actions .btn { min-height: 44px; }
+
+@media (max-width: 720px) {
+  .sched-row { grid-template-columns: 110px 1fr; }
+  .funnel-row { grid-template-columns: 90px 1fr 28px; }
+}
+
+/* Chi tiết báo giá */
+.quote-detail { padding: 4px 0 8px !important; }
+.quote-mark { background: linear-gradient(135deg, #1d4ed8, #3b82f6) !important; box-shadow: 0 4px 14px rgba(37,99,235,.25) !important; }
+.quote-day b { color: var(--info) !important; }
+.quote-finance .positive { border-color: #b7e2c6 !important; background: var(--ok-soft) !important; }
+.quote-finance .positive strong, .quote-finance .positive span { color: var(--ok) !important; }
+.quote-finance .warning { border-color: #f4c2bf; background: var(--bad-soft); }
+.quote-finance .warning strong, .quote-finance .warning span { color: var(--bad); }
+.quote-side { display: grid; gap: 0; align-content: start; min-width: 0; }
+.quote-detail-summary { display: grid; gap: 2px; margin-bottom: 12px; }
+@media (max-width: 860px) { .quote-detail-grid { grid-template-columns: 1fr !important; } .detail-summary { grid-template-columns: repeat(2, minmax(0,1fr)) !important; } .quote-finance { grid-template-columns: 1fr !important; } }
+
+/* ===== Thiết kế tour ===== */
+.dz-page { display: grid; gap: 18px; container-type: inline-size; max-width: 1500px; margin: 0 auto; }
+.dz-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.dz-head-icon { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; display: grid; place-items: center; font-size: 21px; flex: 0 0 52px; box-shadow: 0 10px 24px rgba(37,99,235,.2); }
+.dz-eyebrow { display: block; margin-bottom: 2px; color: var(--info); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.dz-head h1 { margin: 0; font-size: 24px; }
+.dz-head p { margin: 3px 0 0; color: var(--muted); font-size: 13px; max-width: 760px; }
+.dz-head-actions { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.dz-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 8px; position: relative; box-shadow: 0 8px 28px rgba(15,23,42,.05); }
+.dz-step { appearance: none; border: 0; background: none; display: flex; gap: 10px; align-items: center; text-align: left; padding: 6px 8px; cursor: pointer; font: inherit; position: relative; min-width: 0; }
+.dz-step:hover { background: #f8fafc; border-radius: 12px; }
+.dz-step:not(:last-child)::after { content: ""; position: absolute; right: -5px; top: 50%; width: 10px; height: 1px; background: var(--line); }
+.dz-step-no { flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: #dbe7ff; color: #fff; font-size: 14px; }
+.dz-step b { display: block; font-size: 13px; color: var(--ink); }
+.dz-step small { display: block; font-size: 11px; color: var(--muted); }
+.dz-step.is-current .dz-step-no { background: var(--info); box-shadow: 0 0 0 4px rgba(37,99,235,.15); }
+.dz-step.is-current { background: var(--info-soft); border-radius: 12px; }
+.dz-step.is-done .dz-step-no { background: var(--ok); }
+.dz-step span:last-child { min-width: 0; }
+.dz-grid { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr) minmax(280px, 330px); gap: 16px; align-items: start; }
+.dz-col { display: grid; gap: 16px; min-width: 0; align-content: start; }
+.dz-col .card { margin: 0; }
+.dz-stage { display: grid; gap: 16px; scroll-margin-top: 18px; }
+.dz-stage-head { display: flex; align-items: center; gap: 14px; padding: 0 4px; }
+.dz-stage-head > span { flex: 0 0 auto; padding: 6px 9px; border-radius: 8px; background: #e8efff; color: #1d4ed8; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.dz-stage-head h2 { margin: 0; font-size: 18px; }
+.dz-stage-head p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+.dz-stage-single { width: min(100%, 920px); margin: 0 auto; }
+.dz-stage-single > .card, .dz-stage-split .card, .dz-preview .card { margin: 0; }
+.dz-stage-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 16px; align-items: start; }
+.dz-stage-split > .dz-summary-pane, .dz-preview { display: grid; gap: 16px; }
+.dz-preview { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+.dz-preview .dz-actions { grid-column: 1 / -1; }
+.dz-stage-nav { position: sticky; bottom: 12px; z-index: 3; display: flex; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid rgba(213,222,234,.9); border-radius: 16px; background: rgba(255,255,255,.92); box-shadow: 0 10px 30px rgba(15,23,42,.1); backdrop-filter: blur(12px); }
+.dz-stage-nav .btn { min-height: 44px; }
+.dz-num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--info-soft); color: var(--info); font-size: 12px; font-weight: 800; margin-right: 6px; }
+.dz-form { display: grid; gap: 12px; }
+.dz-row { display: grid; gap: 10px; }
+.dz-row--head { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.dz-row--2 { grid-template-columns: 1fr 1fr; }
+.dz-row--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dz-field { display: grid; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--ink-light); min-width: 0; }
+.dz-field .req { color: var(--bad); font-style: normal; }
+.dz-field input, .dz-field select, .dz-field textarea, .dz-item input, .dz-day input, .dz-day textarea, .dz-search, .dz-filters select, .dz-inline select, .dz-inline input { width: 100%; min-width: 0; box-sizing: border-box; padding: 9px 11px; border: 1px solid #d5deea; border-radius: 10px; background: #fff; font: inherit; font-weight: 500; color: var(--ink); }
+.dz-field textarea { min-height: 84px; resize: vertical; }
+.dz-inline { display: grid; grid-template-columns: 1fr 76px; gap: 6px; }
+.dz-count { justify-self: end; color: var(--muted); font-weight: 400; }
+.dz-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 12px; overflow-x: auto; }
+.dz-tabs button { appearance: none; border: 0; background: none; padding: 8px 12px; font: inherit; font-weight: 600; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+.dz-tabs button.active { background: var(--info); color: #fff; border-radius: 8px 8px 0 0; }
+.dz-tabs button:not(.active):hover { color: var(--info); }
+.dz-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.dz-filters select { padding: 8px; font-size: 12px; }
+.dz-search { margin-bottom: 10px; }
+.dz-tpl-list { display: grid; gap: 8px; }
+.dz-tpl { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fafcff; }
+.dz-tpl b { display: block; font-size: 13px; }
+.dz-tpl small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.dz-empty { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 26px 16px; background: linear-gradient(180deg, #f7faff, #fff); border-radius: 14px; }
+.dz-empty-art { width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #dbe9ff, #eef4ff); color: var(--info); display: grid; place-items: center; font-size: 30px; margin-bottom: 4px; }
+.dz-empty b { font-size: 15px; }
+.dz-empty p { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; max-width: 420px; }
+.dz-tools { display: flex; gap: 8px; flex-wrap: wrap; margin: -4px 0 12px; justify-content: flex-end; }
+.dz-day { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: #fff; }
+.dz-day-head { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin-bottom: 8px; }
+.dz-day-no { font-weight: 800; color: var(--info); font-size: 12px; background: var(--info-soft); padding: 5px 10px; border-radius: 8px; white-space: nowrap; }
+.dz-day textarea { min-height: 64px; resize: vertical; }
+.dz-day-tools, .dz-item { display: flex; gap: 6px; align-items: center; }
+.dz-day-tools button, .dz-item button { appearance: none; border: 1px solid var(--line); background: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: var(--muted); flex: 0 0 32px; }
+.dz-day-tools button:hover:not(:disabled), .dz-item button:hover { color: var(--bad); border-color: #f4c2bf; }
+.dz-day-tools button:disabled { opacity: .35; cursor: default; }
+.dz-overview { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.dz-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.dz-pills button { appearance: none; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 14px; font: inherit; font-weight: 600; font-size: 13px; color: var(--ink-light); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.dz-pills button.active { background: var(--info); border-color: var(--info); color: #fff; }
+.dz-pills em { font-style: normal; background: rgba(255,255,255,.28); border-radius: 99px; padding: 0 7px; font-size: 11px; }
+.dz-pills button:not(.active) em { background: var(--info-soft); color: var(--info); }
+.dz-item { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto 32px; gap: 8px; margin-bottom: 8px; }
+.dz-kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line-light); font-size: 13px; }
+.dz-kv span { color: var(--muted); } .dz-kv b { text-align: right; font-weight: 600; }
+.dz-cost { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; }
+.dz-cost span { display: inline-flex; gap: 10px; align-items: center; color: var(--ink-light); }
+.dz-cost span i { width: 18px; text-align: center; color: var(--info); }
+.dz-total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 12px 14px; border-radius: 12px; background: var(--info-soft); color: var(--info); font-weight: 800; }
+.dz-total b { font-size: 18px; }
+.dz-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.dz-seg button { appearance: none; border: 0; background: #fff; padding: 5px 12px; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer; color: var(--muted); }
+.dz-seg button.active { background: var(--info); color: #fff; }
+.dz-margin { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px; padding: 10px 14px; border-radius: 12px; background: #f1f4f8; font-weight: 600; }
+.dz-margin b { font-size: 18px; }
+.dz-margin.is-ok { background: var(--ok-soft); color: var(--ok); }
+.dz-margin.is-low { background: var(--bad-soft); color: var(--bad); }
+.dz-actions { display: grid; gap: 10px; }
+.dz-actions h3 { margin: 0; font-size: 15px; }
+.dz-actions .btn { width: 100%; justify-content: center; }
+.dz-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dz-actions-row .btn { padding-inline: 8px; font-size: 12.5px; }
+.dz-link { appearance: none; border: 0; background: none; color: var(--info); font: inherit; font-weight: 600; font-size: 12.5px; cursor: pointer; text-align: center; }
+@container (max-width: 1000px) { .dz-stage-split { grid-template-columns: 1fr; } .dz-stage-split > .dz-summary-pane { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dz-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 760px) { .dz-steps { grid-template-columns: repeat(5, minmax(72px, 1fr)); overflow-x: auto; } .dz-step { justify-content: center; } .dz-step > span:last-child { display: none; } .dz-step:not(:last-child)::after { display: none; } .dz-row--3 { grid-template-columns: 1fr 1fr; } .dz-item { grid-template-columns: 1fr 120px 32px; } .dz-item .sub { display: none; } .dz-head-actions { margin-left: 0; } .dz-stage-split > .dz-summary-pane, .dz-preview { grid-template-columns: 1fr; } }
+@container (max-width: 520px) { .dz-row--2, .dz-row--3, .dz-row--head { grid-template-columns: 1fr; } .dz-head-actions { width: 100%; } .dz-head-actions .btn { flex: 1; justify-content: center; } .dz-stage-head { align-items: flex-start; } .dz-stage-nav { bottom: 6px; } .dz-stage-nav .btn { flex: 1; padding-inline: 10px; } }
+.entity-link { white-space: nowrap; }
+.journey-bar { scrollbar-width: thin; }
+.journey-bar li { min-width: 104px; }
+
+/* Dashboard KPI: 6 thẻ chia đều, không rớt dòng lẻ */
+.dashboard-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:1760px){.dashboard-kpi-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:760px){.dashboard-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Phễu CRM: nhãn trái, thanh tiến độ, số bên phải */
+.funnel-row{background:none;border:0;padding:4px 0;text-align:left;cursor:pointer;color:inherit;font:inherit;width:100%}
+.funnel-row>span{white-space:nowrap}
+.funnel-row>i{display:block;height:10px;background:#e8eef7;border-radius:99px;position:relative;overflow:hidden}
+.funnel-row>i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w,0%);min-width:4px;background:var(--info);border-radius:99px}
+.funnel-row>b{text-align:right}
+.funnel-row:hover>i::after{background:#1d4ed8}
+
+/* Lịch nội dung */
+.cal-head{display:flex;gap:8px;margin-bottom:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-dow{font-size:11px;font-weight:700;color:#64748b;text-align:center;padding:4px 0}
+.cal-cell{min-height:78px;border:1px solid #e5ebf4;border-radius:8px;padding:4px 6px;display:flex;flex-direction:column;gap:2px;background:#fff;overflow:hidden}
+.cal-cell>b{font-size:11px;color:#64748b}
+.cal-empty{background:transparent;border-color:transparent}
+.cal-today{border-color:#2563eb;box-shadow:inset 0 0 0 1px #2563eb}
+.cal-item{font-size:11px;border-radius:5px;padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-green{background:#dcfce7;color:#166534}.cal-blue{background:#dbeafe;color:#1e40af}.cal-amber{background:#fef3c7;color:#92400e}
+
+/* Mục tiêu doanh thu tháng */
+.target-panel{width:min(100%,540px);margin-bottom:18px}
+.target-panel>header{min-height:62px}
+.target-body{display:grid;grid-template-columns:minmax(180px,1fr) 1.2fr;gap:18px;align-items:center;padding:10px 18px 16px}
+.target-value strong{display:block;font-size:30px;line-height:1.2}
+.target-bar{height:12px;background:#e8eef7;border-radius:99px;overflow:hidden}
+.target-bar span{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);border-radius:99px}
+.target-meta{margin-top:6px;font-size:13px;color:#475569}
+@media (max-width:760px){.target-body{grid-template-columns:1fr}}
+.dz-lib{margin:10px 0}
+.photo-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.photo-row img{width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid #e5ebf4}
+.tour-builder-modal .dz-form>.dz-row{grid-column:1/-1}
+.dz-quick-cost{display:grid;gap:12px}.dz-quick-cost>div:not(.dz-margin){display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px solid var(--line-light);font-size:13px}.dz-quick-cost>div>span{color:var(--muted)}.dz-quick-cost>small{color:var(--muted)}
+.dz-suggestions{margin:0 0 16px;padding:13px;border:1px solid #dce7f7;border-radius:13px;background:#f8fbff}.dz-suggestions-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.dz-suggestions-head b{font-size:12.5px}.dz-suggestions-head span{color:var(--muted);font-size:10.5px}.dz-suggestion-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:210px;overflow-y:auto;scrollbar-width:thin}.dz-suggestion{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:11px;background:#fff}.dz-suggestion-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--info-soft);color:var(--info)}.dz-suggestion b,.dz-suggestion small,.dz-suggestion strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dz-suggestion b{font-size:12px}.dz-suggestion small{margin:2px 0;color:var(--muted);font-size:10px}.dz-suggestion strong{color:var(--info);font-size:11px}.dz-suggestion .btn{min-height:34px;padding:6px 10px}.dz-suggestion.is-busy{opacity:.58}.dz-suggestion-empty,.dz-manual-empty{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;padding:11px 13px;border:1px dashed #cad5e4;border-radius:11px;color:var(--muted);font-size:12px}.dz-suggestion-empty{background:#fafcff}.dz-manual-empty{margin:0;background:#fff}
+@media(max-width:900px){.dz-suggestion-list{grid-template-columns:1fr}.dz-suggestions-head{align-items:flex-start;flex-direction:column}}
+
+/* Thư viện chương trình tour + trình thiết kế toàn màn hình */
+.tour-library{display:grid;gap:18px;max-width:1460px;margin:0 auto}.tour-library-head{display:flex;align-items:center;justify-content:space-between;gap:18px}.tour-library-head h1{margin:0;font-size:26px}.tour-library-head p{margin:5px 0 0;color:var(--muted)}.tour-library-head>.btn{min-height:44px;padding-inline:18px}.tour-library-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tour-library-stats>div{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:15px;background:#fff}.tour-library-stats span{grid-row:1/3;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:var(--info-soft);color:var(--info);font-size:18px}.tour-library-stats small{color:var(--muted)}.tour-library-stats b{font-size:21px}.tour-library-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px}.tour-library-toolbar label{display:flex;align-items:center;gap:10px;width:min(540px,100%);padding:0 14px;border:1px solid #d5deea;border-radius:12px;background:#fff;color:var(--muted)}.tour-library-toolbar input{width:100%;min-height:44px;border:0;outline:0;font:inherit}.tour-library-toolbar>span{color:var(--muted);font-size:13px}.tour-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}.tour-grid>.dz-empty{grid-column:1/-1;min-height:300px}.tour-card{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.04);cursor:pointer;transition:border-color .18s,box-shadow .18s}.tour-card:hover,.tour-card:focus-visible{border-color:#a9c5ff;box-shadow:0 14px 34px rgba(37,99,235,.11)}.tour-card-cover{display:flex;align-items:flex-start;justify-content:space-between;height:92px;padding:16px;background:linear-gradient(135deg,#eef4ff,#f8fbff)}.tour-card-cover>span{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#fff;color:var(--info);font-size:18px;box-shadow:0 5px 16px rgba(37,99,235,.12)}.tour-card-cover em{padding:5px 9px;border-radius:99px;background:#fff3d7;color:#9a6700;font-size:10px;font-style:normal;font-weight:700}.tour-card-cover em.is-ready{background:#dcfce7;color:#15803d}.tour-card-body{padding:15px}.tour-card-title{display:flex;justify-content:space-between;gap:12px}.tour-card-title small{color:var(--info);font-weight:700}.tour-card-title h3{margin:3px 0 0;font-size:16px}.tour-card-title>span{color:var(--muted)}.tour-card-body>p{margin:9px 0 14px;color:var(--muted);font-size:12.5px}.tour-card-meta{display:flex;gap:8px;flex-wrap:wrap}.tour-card-meta span{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:8px;background:#f5f7fb;color:#526177;font-size:11.5px}.tour-card footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-top:1px solid var(--line-light);background:#fcfdff}.tour-card footer span b,.tour-card footer span small{display:block}.tour-card footer span b{font-size:11.5px}.tour-card footer span small,.tour-card footer time{color:var(--muted);font-size:10px}
+body .modalback:has(.tour-builder-modal){align-items:center;padding:38px 44px;background:rgba(15,23,42,.56)}body .modal:has(.tour-builder-modal){position:relative;width:min(1776px,100%);height:calc(100dvh - 76px);max-height:none;padding:0;overflow:hidden;border-radius:18px;background:#f7f9fc}body .modal:has(.tour-builder-modal)>.modalhead{height:96px;box-sizing:border-box;margin:0;padding:23px 28px;border-bottom:1px solid #dfe6ef;background:#fff}body .modal:has(.tour-builder-modal)>.modalhead .eyebrow{display:none}body .modal:has(.tour-builder-modal)>.modalhead h2{margin:0;font-size:20px}body .modal:has(.tour-builder-modal)>.modalhead h2:after{content:"Hoàn thiện thông tin theo từng bước để xây dựng chương trình và báo giá chính xác.";display:block;margin-top:6px;color:var(--muted);font-size:13px;font-weight:400}body .modal:has(.tour-builder-modal)>.modalhead .close{width:42px;height:42px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;color:#64748b}.tour-builder-modal{display:grid;grid-template-rows:90px minmax(0,1fr);height:calc(100% - 96px);overflow:hidden;background:#f6f8fb}.tour-builder-modal>.dz-steps{align-self:stretch;margin:0;padding:15px 38px;border:0;border-bottom:1px solid #dfe6ef;border-radius:0;box-shadow:none}.tour-builder-modal .dz-step{padding:8px 12px}.tour-builder-modal .dz-step.is-current{background:transparent}.tour-builder-modal .dz-step.is-current b{color:var(--info)}.tour-builder-modal .dz-step-no{width:36px;height:36px;flex-basis:36px;background:#fff;border:1px solid #cbd7e7;color:#526177}.tour-builder-modal .dz-step.is-current .dz-step-no{border-color:var(--info);background:var(--info);color:#fff;box-shadow:0 0 0 5px rgba(37,99,235,.12)}.tour-builder-modal .dz-step.is-done:not(.is-current) .dz-step-no{border-color:var(--ok);background:var(--ok);color:#fff}.tour-builder-modal .dz-step:not(:last-child):after{right:-4px;width:18%;background:#cbd7e7}.tour-builder-scroll{overflow-y:auto;overflow-x:hidden;padding:44px 40px 104px;scrollbar-width:thin}.tour-builder-scroll>#dz-stage{width:min(100%,1680px);margin:0 auto}.tour-builder-modal .dz-stage{gap:0}.tour-builder-modal .dz-stage-head{display:none}.tour-builder-modal .dz-stage-single{width:100%;margin:0}.tour-builder-modal .dz-stage-single>.card,.tour-builder-modal .dz-stage-split .card{border:1px solid #dce4ee;border-radius:16px;box-shadow:none}.tour-builder-modal .card>h3{padding-bottom:15px;border-bottom:1px solid var(--line);font-size:16px}.tour-builder-modal .dz-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px}.tour-builder-modal .dz-form>.dz-row,.tour-builder-modal .dz-form>.dz-field{min-width:0}.tour-builder-modal .dz-form>.dz-row--head,.tour-builder-modal .dz-form>.dz-field:nth-child(2),.tour-builder-modal .dz-form>.dz-field:last-child{grid-column:1/-1}.tour-builder-modal .dz-field input,.tour-builder-modal .dz-field select,.tour-builder-modal .dz-field textarea{min-height:48px;border-radius:9px}.tour-builder-modal .dz-stage-nav{position:absolute;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:space-between;margin:0;padding:16px 28px;border:0;border-top:1px solid #dfe6ef;border-radius:0;background:rgba(255,255,255,.98);box-shadow:0 -8px 24px rgba(15,23,42,.05);backdrop-filter:blur(10px)}.tour-builder-modal .dz-stage-nav>div{display:flex;align-items:center;gap:10px}.tour-builder-modal .dz-stage-nav .btn{min-height:46px}.tour-builder-modal .dz-stage-nav .btn.primary{min-width:210px}.dz-required{color:#718198;font-size:12px}.dz-required i{color:var(--bad);font-style:normal}
+body .modal:has(.tour-detail){width:min(1120px,calc(100% - 32px));padding:0}body .modal:has(.tour-detail)>.modalhead{margin:0;padding:16px 22px}.tour-detail{padding:20px 22px 0}.tour-detail>header{display:flex;justify-content:space-between;gap:20px;padding:4px 0 18px}.tour-detail>header h2{margin:7px 0 3px;font-size:23px}.tour-detail>header p{margin:0;color:var(--muted)}.tour-detail-status{padding:5px 9px;border-radius:99px;background:var(--info-soft);color:var(--info);font-size:10px;font-weight:800}.tour-detail-owner{text-align:right}.tour-detail-owner small,.tour-detail-owner b,.tour-detail-owner span{display:block}.tour-detail-owner small,.tour-detail-owner span{color:var(--muted);font-size:11px}.tour-detail-owner b{margin:4px 0}.tour-detail-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.tour-detail-kpis div{padding:13px;border:1px solid var(--line);border-radius:12px;background:#f9fbff}.tour-detail-kpis small,.tour-detail-kpis b{display:block}.tour-detail-kpis small{color:var(--muted);font-size:10px}.tour-detail-kpis b{margin-top:4px;font-size:15px}.tour-detail-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:22px}.tour-detail h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}.tour-detail-days{display:grid;gap:10px;margin:0;padding:0;list-style:none}.tour-detail-days li{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px}.tour-detail-days li>span{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--info-soft);color:var(--info);font-size:11px;font-weight:800}.tour-detail-days li b{font-size:13px}.tour-detail-days li p{margin:4px 0 0;color:var(--muted);font-size:12px;white-space:pre-line}.tour-detail-services{display:grid;gap:1px;margin-bottom:14px}.tour-detail-services>div,.tour-detail-info span{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-light);font-size:12px}.tour-detail-services span{display:flex;align-items:center;gap:7px;color:var(--muted)}.tour-detail-total{display:flex;justify-content:space-between;padding:12px;margin:0 0 20px;border-radius:11px;background:var(--ok-soft);color:var(--ok)}.tour-detail-info{display:grid}.tour-detail>footer{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;margin:20px -22px 0;padding:12px 22px;border-top:1px solid var(--line);background:rgba(255,255,255,.96);backdrop-filter:blur(10px)}
+@media(max-width:900px){body .modalback:has(.tour-builder-modal){padding:0}body .modal:has(.tour-builder-modal){width:100%;height:100dvh;border-radius:0}.tour-builder-modal{grid-template-rows:72px minmax(0,1fr)}.tour-builder-modal>.dz-steps{padding:10px 14px}.tour-builder-modal .dz-step>span:last-child{display:none}.tour-builder-scroll{padding:22px 16px 112px}.tour-builder-modal .dz-form{grid-template-columns:1fr}.tour-builder-modal .dz-form>*{grid-column:1!important}.tour-builder-modal .dz-stage-nav{padding:12px 16px}.tour-builder-modal .dz-stage-nav>div{width:100%;justify-content:flex-end}.tour-builder-modal .dz-stage-nav .btn{padding-inline:11px}.tour-builder-modal .dz-stage-nav .btn.primary{min-width:0}.dz-required{display:none}}
+@media(max-width:760px){.tour-library-head{align-items:flex-start;flex-direction:column}.tour-library-head>.btn{width:100%;justify-content:center}.tour-library-stats{grid-template-columns:1fr}.tour-library-toolbar{align-items:flex-start;flex-direction:column}.tour-grid{grid-template-columns:1fr}.tour-builder-modal .dz-stage-nav .btn:nth-child(2){display:none}.tour-detail{padding-inline:16px}.tour-detail>header{flex-direction:column}.tour-detail-owner{text-align:left}.tour-detail-kpis{grid-template-columns:1fr 1fr}.tour-detail-grid{grid-template-columns:1fr}.tour-detail>footer{margin-inline:-16px;padding-inline:16px}}
+
+/* Hồ sơ Đặt tour: nội dung không được tràn khỏi khung modal */
+.booking360{grid-template-columns:minmax(0,1fr)}
+.booking360>*{min-width:0}
+.booking360 .journey-bar{max-width:100%;overflow-x:auto}
+.modal .stats{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.dz-suggestion-list{grid-template-columns:repeat(4,minmax(0,1fr));max-height:none;overflow:visible}
+@media(max-width:1250px){.dz-suggestion-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.dz-suggestion-list{grid-template-columns:1fr}}
+
+/* Tour builder: giữ mỗi bước gọn trong một khung nhìn desktop. */
+@media (min-width:901px) {
+  .tour-builder-scroll{padding:24px 32px 88px}
+  .tour-builder-modal .card{padding:18px 20px}
+  .tour-builder-modal .dz-empty{padding:20px 14px}
+  .tour-builder-modal .dz-empty-art{width:62px;height:62px;font-size:24px}
+  .tour-builder-modal .dz-preview{gap:14px}
+  .tour-builder-modal .dz-preview .dz-kv,.tour-builder-modal .dz-preview .dz-cost{padding:6px 0}
+  .tour-builder-modal .dz-preview .dz-total{padding:9px 12px}
+}

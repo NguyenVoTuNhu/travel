@@ -1,0 +1,78 @@
+body main #crm-sales{--crm-shadow:var(--shadow-module)}
+.crm-workspace-tabs{display:flex;gap:7px;overflow-x:auto;margin:0 0 14px;padding:6px;background:var(--white);border:1px solid var(--line);border-radius:12px;box-shadow:var(--crm-shadow)}
+.crm-workspace-tabs .btn{min-height:36px;flex:0 0 auto;border-color:transparent;box-shadow:none}
+.crm-workspace-tabs .btn.selected{color:var(--green);background:var(--mint);border-color:#c9ded0}
+.crm-performance-filter{display:flex;justify-content:flex-end;margin-bottom:12px}
+.crm-performance-filter label{min-width:220px;color:var(--muted);font-size:10px;font-weight:700}
+.crm-performance-filter select{display:block;width:100%;margin-top:4px}
+    body main #crm-sales .pagetop{margin-bottom:16px}
+    body main #crm-sales .pagetop h1{font-size:26px;margin:3px 0}
+    body main #crm-sales .pagetop p{max-width:680px}
+    body main #crm-sales>.stats{gap:12px;margin-bottom:14px}
+    body main #crm-sales>.stats .stat{padding:14px 16px;border-color:var(--line);box-shadow:var(--crm-shadow)}
+    body main #crm-sales>.stats .stat strong{font-size:22px;margin:4px 0}
+    body main #crm-sales .crmsection{margin-top:14px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--crm-shadow)}
+    body main #crm-sales .crmsectionhead{align-items:center;margin-bottom:12px}
+    body main #crm-sales .crmsectionhead h2{font-size:16px;letter-spacing:-.15px}
+    body main #crm-sales .crmsectionhead p{font-size:11px;margin-top:2px}
+    body main #crm-sales .crmflow{gap:8px;margin:0}
+    body main #crm-sales .crmstep{min-height:74px;padding:11px 13px;border-radius:8px;background:var(--mint-light)}
+    body main #crm-sales .crmstep:not(:last-child):after{top:25px}
+    body main #crm-sales .crmstep small{font-size:9px;margin-bottom:4px;letter-spacing:.45px}
+    body main #crm-sales .crmstep b{font-size:12px}
+    body main #crm-sales .crmstatus{font-size:10px;margin-top:3px}
+    body main #crm-sales .filters{padding:10px;background:var(--mint-light);border:1px solid var(--line-light);border-radius:9px;margin-bottom:10px;gap:8px}
+    body main #crm-sales .filters input,body main #crm-sales .filters select{padding:8px 10px;background:var(--white)}
+    body main #crm-sales .crmsection>.card,body main #crm-sales #crmtable>.card,body main #crm-sales #crmtasks>.card{padding:0;border:0;border-radius:0;margin:0;box-shadow:none}
+    body main #crm-sales .cardhead:has(+.tablewrap):has(h3:empty){display:none}
+    body main #crm-sales .tablewrap{border:1px solid var(--line-light);border-radius:9px}
+    body main #crm-sales table{table-layout:auto}
+    body main #crm-sales th{padding:9px 10px;background:var(--mint-light);color:#5f7166}
+    body main #crm-sales td{padding:10px;font-size:11px;vertical-align:middle}
+    body main #crm-sales tbody tr{transition:background-color .15s ease}
+    body main #crm-sales tbody tr:hover{background:var(--mint-light)}
+    body main #crm-sales td .btn.small{min-height:30px;white-space:nowrap}
+    body main #crm-sales .kanban{gap:9px;padding:2px 0 5px}
+    body main #crm-sales .column{min-height:235px;padding:9px;border:1px solid var(--line);background:var(--bg)}
+    body main #crm-sales .columnhead{margin-bottom:8px}
+    body main #crm-sales .lead{padding:11px;margin-bottom:7px;box-shadow:0 2px 8px rgba(20,43,43,.035)}
+    body main #crm-sales .lead p{margin:5px 0;line-height:1.45}
+    body main #crm-sales .lead select{margin-top:7px}
+    body main #crm-sales>.notice{margin:12px 2px 0}
+    body .modal:has(form[onsubmit^="addLead"]),body .modal:has(form[onsubmit^="saveFollowup"]){width:min(680px,100%)}
+    body .modal form[onsubmit^="addLead"] .formgrid{gap:11px 14px}
+    body .modal form[onsubmit^="addLead"] label{margin-bottom:0}
+    body .modal form[onsubmit^="addLead"] input,body .modal form[onsubmit^="addLead"] select,body .modal form[onsubmit^="addLead"] textarea{padding:9px 10px;margin-top:4px}
+    body .modalback:has(.crm-profile){align-items:stretch;padding:0}
+    body .modal:has(.crm-profile){position:relative;width:min(680px,calc(100% - 24px));height:100%;max-height:none;padding:0;background:var(--white);border-radius:0;overflow:auto}
+    body .modal:has(.crm-profile) .modalhead{position:sticky;top:0;z-index:5;margin:0;padding:18px 24px;background:var(--white);border-bottom:1px solid var(--line);align-items:center}
+    body .modal:has(.crm-profile) .modalhead .eyebrow{display:none}
+    body .modal:has(.crm-profile) .modalhead h2{display:flex;align-items:center;gap:12px;margin:0;font-size:18px}
+    body .modal:has(.crm-profile) .close{width:40px;height:40px;border-radius:10px}
+    body .crm-profile-title{display:flex;align-items:center;gap:12px}
+    body .crm-profile-avatar{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#226d53,#4a9274);color:var(--white);font-size:15px;font-weight:800;box-shadow:0 7px 18px rgba(34,109,83,.22)}
+    body .crm-profile-title>span:last-child{display:flex;flex-direction:column;gap:2px}
+    body .crm-profile-title small{font-size:11px;color:var(--muted);font-weight:550}
+    body .crm-profile{padding:18px 20px 80px}
+    body .crm-profile-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:18px}
+    body .crm-profile-summary>div{border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fbfcfa}
+    body .crm-profile-summary small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}
+    body .crm-profile-summary strong{font-size:14px;color:var(--ink)}
+    body .crm-profile-content{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(245px,.92fr);gap:18px}
+    body .crm-profile-section{margin-bottom:22px}
+    body .crm-profile-section h3{margin:0;padding:0 0 9px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.7px;text-transform:uppercase;color:#718277}
+    body .crm-profile-fields{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
+    body .crm-profile-field{padding:10px 0;border-bottom:1px solid #edf0ea}
+    body .crm-profile-field small{display:block;color:#88958e;font-size:9px;text-transform:uppercase;letter-spacing:.55px;margin-bottom:3px}
+    body .crm-profile-field b{font-size:12px;overflow-wrap:anywhere}
+    body .crm-profile-note{margin:12px 0 0;padding:11px 13px;background:var(--mint-light);border-left:3px solid var(--green);border-radius:0 7px 7px 0;font-size:12px}
+    body .crm-profile .metricline{padding:9px 0}
+    body .crm-profile .metricline span,body .crm-profile .metricline b{font-size:11px}
+    body .crm-profile-footer{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:13px 24px;background:var(--mint-light);border-top:1px solid var(--line)}
+    body .crm-profile-footer .btn{min-height:38px}
+    body #overlay:has(.crm-profile)+#toast .toast{left:auto;right:24px;bottom:82px;transform:none;max-width:min(420px,calc(100vw - 48px))}
+    @media(max-width:1100px){body main #crm-sales .crmflow{grid-template-columns:repeat(3,1fr)}body main #crm-sales .crmstep:after{display:none}}
+    @media(max-width:760px){body main #crm-sales .pagetop{gap:10px}body main #crm-sales .pagetop .actions{width:100%}body main #crm-sales .pagetop .btn{flex:1}body main #crm-sales>.stats{grid-template-columns:repeat(2,1fr)}body main #crm-sales .crmsection{padding:13px;margin-top:11px}body main #crm-sales .crmsectionhead{align-items:flex-start}body main #crm-sales .crmflow{grid-template-columns:1fr 1fr}body main #crm-sales #crmtable th:nth-child(2),body main #crm-sales #crmtable td:nth-child(2),body main #crm-sales #crmtable th:nth-child(5),body main #crm-sales #crmtable td:nth-child(5),body main #crm-sales #crmtable th:nth-child(7),body main #crm-sales #crmtable td:nth-child(7){display:none}body .modalback:has(.crm-profile){align-items:stretch;padding:0}body .modal:has(.crm-profile){width:100%;height:100%;max-height:none;border-radius:0}body .crm-profile{padding:16px 16px 96px}body .crm-profile-content{grid-template-columns:1fr;gap:0}body .crm-profile-summary{grid-template-columns:1fr 1fr}body .crm-profile-footer{padding:10px 16px}body .crm-profile-footer .btn{flex:1}body #overlay:has(.crm-profile)+#toast .toast{right:16px;bottom:118px;max-width:calc(100vw - 32px)}}
+    @media(max-width:480px){body main #crm-sales .crmflow{grid-template-columns:1fr}body main #crm-sales>.stats{grid-template-columns:1fr 1fr}body main #crm-sales .filters>*{width:100%;max-width:none}body main #crm-sales #crmtable th:nth-child(4),body main #crm-sales #crmtable td:nth-child(4){display:none}}
+    @media(min-width:561px) and (max-width:760px){body .modal:has(.crm-profile){width:min(680px,calc(100% - 24px))}}
+    @media(prefers-reduced-motion:reduce){body main #crm-sales tbody tr{transition:none}}

@@ -1,0 +1,108 @@
+body main #customer-service{--care-shadow:var(--shadow-module)}
+body main #customer-service .pagetop{margin-bottom:16px}
+body main #customer-service .pagetop h1{font-size:26px;margin:3px 0}
+body main #customer-service>.stats{gap:12px;margin-bottom:14px}
+body main #customer-service>.stats .stat{padding:14px 16px;border-color:var(--line);box-shadow:var(--care-shadow)}
+body main #customer-service>.stats .stat strong{font-size:22px;margin:4px 0}
+body main #customer-service .care-flow{gap:8px;margin-bottom:14px}
+body main #customer-service .care-step{min-height:74px;padding:11px 13px;border-radius:8px;background:var(--mint-light)}
+body main #customer-service .care-step:not(:last-child):after{top:25px}
+body main #customer-service .care-step small{font-size:9px;margin-bottom:4px;letter-spacing:.45px}
+body main #customer-service .care-step b{font-size:12px}
+body main #customer-service .care-step span{font-size:10px;margin-top:3px}
+body main #customer-service .care-section{margin-top:12px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--care-shadow)}
+body main #customer-service .care-heading{align-items:center;margin-bottom:11px}
+body main #customer-service .care-heading h2{font-size:16px;letter-spacing:-.15px}
+body main #customer-service .care-heading p{font-size:11px;margin-top:2px}
+.care-view-switch{display:flex;gap:6px;flex:0 0 auto}
+.care-view-switch .selected{color:var(--green);background:var(--mint);border-color:#c9ded0}
+body main #customer-service .care-pipeline{gap:8px;padding-bottom:4px}
+body main #customer-service .care-column{min-height:165px;padding:8px;border:1px solid var(--line);background:var(--bg)}
+body main #customer-service .care-column-head{margin-bottom:7px;padding:0 2px}
+body main #customer-service .care-ticket{padding:10px;margin-bottom:6px;box-shadow:0 2px 8px rgba(20,43,43,.035)}
+body main #customer-service .care-ticket p{margin:4px 0;line-height:1.45}
+body main #customer-service .care-score{font-size:16px}
+body main #customer-service .filters{padding:10px;background:var(--mint-light);border:1px solid var(--line-light);border-radius:9px;margin-bottom:10px;gap:8px}
+body main #customer-service .filters input,body main #customer-service .filters select{padding:8px 10px;background:var(--white)}
+body main #customer-service #care-table>.card{padding:0;border:0;border-radius:0;margin:0;box-shadow:none}
+body main #customer-service #care-table>.card>.cardhead{margin:2px 0 10px}
+body main #customer-service .tablewrap{border:1px solid var(--line-light);border-radius:9px}
+body main #customer-service th{padding:9px 10px;background:var(--mint-light);color:#5f7166}
+body main #customer-service td{padding:10px;font-size:11px;vertical-align:middle}
+body main #customer-service tbody tr{transition:background-color .15s ease}
+body main #customer-service tbody tr:hover{background:var(--mint-light)}
+body main #customer-service td .btn.small{min-height:30px;white-space:nowrap}
+body .modal:has(form[onsubmit^="saveFeedback"]),body .modal:has(form[onsubmit^="saveReferral"]){width:min(720px,100%)}
+body .modal form[onsubmit^="saveFeedback"] .score-grid{gap:10px}
+body .modal form[onsubmit^="saveFeedback"] label,body .modal form[onsubmit^="saveReferral"] label{margin-bottom:0}
+body .modal form[onsubmit^="saveFeedback"] select,body .modal form[onsubmit^="saveFeedback"] textarea,body .modal form[onsubmit^="saveReferral"] input,body .modal form[onsubmit^="saveReferral"] textarea{padding:9px 10px;margin-top:4px}
+body .modalback:has(.care-profile){align-items:stretch;padding:0}
+body .modal:has(.care-profile){position:relative;width:min(720px,calc(100% - 24px));height:100%;max-height:none;padding:0;background:var(--white);border-radius:0;overflow:auto}
+body .modal:has(.care-profile) .modalhead{position:sticky;top:0;z-index:5;margin:0;padding:18px 24px;background:var(--white);border-bottom:1px solid var(--line);align-items:center}
+body .modal:has(.care-profile) .modalhead .eyebrow{display:none}
+body .modal:has(.care-profile) .modalhead h2{display:flex;align-items:center;gap:12px;margin:0;font-size:18px}
+body .modal:has(.care-profile) .close{width:40px;height:40px;border-radius:10px}
+body .care-profile-title{display:flex;align-items:center;gap:12px}
+body .care-profile-avatar{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#226d53,#4a9274);color:var(--white);font-size:15px;font-weight:800;box-shadow:0 7px 18px rgba(34,109,83,.22)}
+body .care-profile-title>span:last-child{display:flex;flex-direction:column;gap:2px}
+body .care-profile-title small{font-size:11px;color:var(--muted);font-weight:550}
+body .care-profile{padding:16px 20px 80px}
+body .care-profile .flow{margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-wrap:nowrap;overflow:auto}
+body .care-profile .flow span{white-space:nowrap;padding:6px 10px}
+body .care-profile-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:18px}
+body .care-profile-summary>div{border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fbfcfa}
+body .care-profile-summary small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}
+body .care-profile-summary strong{font-size:14px;color:var(--ink)}
+body .care-profile-content{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(260px,.92fr);gap:18px}
+body .care-profile .card{padding:0;border:0;border-radius:0;margin:0 0 22px;box-shadow:none;background:transparent}
+body .care-profile .cardhead{margin:0}
+body .care-profile .cardhead h3{width:100%;padding:0 0 9px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.7px;text-transform:uppercase;color:#718277}
+body .care-profile .metricline{padding:9px 0}
+body .care-profile .metricline span,body .care-profile .metricline b{font-size:11px}
+body .care-profile .card>p{font-size:12px;line-height:1.6}
+body .care-profile-footer{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:13px 24px;background:var(--mint-light);border-top:1px solid var(--line)}
+body .care-profile-footer .btn{min-height:38px}
+body #overlay:has(.care-profile)+#toast .toast{left:auto;right:24px;bottom:82px;transform:none;max-width:min(420px,calc(100vw - 48px))}
+@media(max-width:1100px){body main #customer-service .care-flow{grid-template-columns:repeat(3,1fr)}body main #customer-service .care-step:after{display:none}}
+@media(max-width:760px){body main #customer-service .pagetop{gap:10px}body main #customer-service .pagetop .actions{width:100%}body main #customer-service .pagetop .btn{flex:1}body main #customer-service>.stats{grid-template-columns:repeat(2,1fr)}body main #customer-service .care-section{padding:13px;margin-top:10px}body main #customer-service .care-flow{grid-template-columns:1fr 1fr}body main #customer-service #care-table th:nth-child(3),body main #customer-service #care-table td:nth-child(3),body main #customer-service #care-table th:nth-child(4),body main #customer-service #care-table td:nth-child(4),body main #customer-service #care-table th:nth-child(6),body main #customer-service #care-table td:nth-child(6){display:none}body .modalback:has(.care-profile){align-items:stretch;padding:0}body .modal:has(.care-profile){width:100%;height:100%;max-height:none;border-radius:0}body .care-profile{padding:14px 16px 96px}body .care-profile-content{grid-template-columns:1fr;gap:0}body .care-profile-summary{grid-template-columns:1fr 1fr}body .care-profile-footer{padding:10px 16px}body .care-profile-footer .btn{flex:1}body #overlay:has(.care-profile)+#toast .toast{right:16px;bottom:118px;max-width:calc(100vw - 32px)}}
+@media(max-width:480px){body main #customer-service .care-flow{grid-template-columns:1fr}body main #customer-service>.stats{grid-template-columns:1fr 1fr}body main #customer-service .filters>*{width:100%;max-width:none}body main #customer-service #care-table th:nth-child(7),body main #customer-service #care-table td:nth-child(7){display:none}}
+@media(min-width:561px) and (max-width:760px){body .modal:has(.care-profile){width:min(720px,calc(100% - 24px))}}
+@media(prefers-reduced-motion:reduce){body main #customer-service tbody tr{transition:none}}
+
+/* Care tickets pipeline */
+.care-pipeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.care-column {
+  min-height: 180px;
+  padding: 10px;
+  border: 1px solid #dfe5df;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.care-column-head {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #4b6256;
+}
+
+.care-ticket {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 6px rgba(18, 43, 35, 0.04);
+}
+
+.care-score {
+  font-size: 16px;
+  font-weight: 800;
+}

@@ -3,6 +3,7 @@
 let careSearch = "";
 let careStatus = "all";
 let careScore = "all";
+let careView = "table";
 
 const careStatuses = [
   "PENDING",
@@ -24,88 +25,7 @@ const careStatusLabels = {
   CLOSED: "Hoàn tất",
 };
 
-function injectCustomerServiceFrontendStyles() {
-  if (
-    typeof document === "undefined" ||
-    document.getElementById("customer-service-ui")
-  )
-    return;
-  let style = document.createElement("style");
-  style.id = "customer-service-ui";
-  style.textContent = `
-    body main #customer-service{--care-shadow:0 8px 24px rgba(20,43,43,.055)}
-    body main #customer-service .pagetop{margin-bottom:16px}
-    body main #customer-service .pagetop h1{font-size:26px;margin:3px 0}
-    body main #customer-service>.stats{gap:12px;margin-bottom:14px}
-    body main #customer-service>.stats .stat{padding:14px 16px;border-color:#dfe7df;box-shadow:var(--care-shadow)}
-    body main #customer-service>.stats .stat strong{font-size:22px;margin:4px 0}
-    body main #customer-service .care-flow{gap:8px;margin-bottom:14px}
-    body main #customer-service .care-step{min-height:74px;padding:11px 13px;border-radius:8px;background:#f8faf7}
-    body main #customer-service .care-step:not(:last-child):after{top:25px}
-    body main #customer-service .care-step small{font-size:9px;margin-bottom:4px;letter-spacing:.45px}
-    body main #customer-service .care-step b{font-size:12px}
-    body main #customer-service .care-step span{font-size:10px;margin-top:3px}
-    body main #customer-service .care-section{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--care-shadow)}
-    body main #customer-service .care-heading{align-items:center;margin-bottom:11px}
-    body main #customer-service .care-heading h2{font-size:16px;letter-spacing:-.15px}
-    body main #customer-service .care-heading p{font-size:11px;margin-top:2px}
-    body main #customer-service .care-pipeline{gap:8px;padding-bottom:4px}
-    body main #customer-service .care-column{min-height:165px;padding:8px;border:1px solid #e3e9e1;background:#f1f4ee}
-    body main #customer-service .care-column-head{margin-bottom:7px;padding:0 2px}
-    body main #customer-service .care-ticket{padding:10px;margin-bottom:6px;box-shadow:0 2px 8px rgba(20,43,43,.035)}
-    body main #customer-service .care-ticket p{margin:4px 0;line-height:1.45}
-    body main #customer-service .care-score{font-size:16px}
-    body main #customer-service .filters{padding:10px;background:#f7f9f5;border:1px solid #e6ebe4;border-radius:9px;margin-bottom:10px;gap:8px}
-    body main #customer-service .filters input,body main #customer-service .filters select{padding:8px 10px;background:#fff}
-    body main #customer-service #care-table>.card{padding:0;border:0;border-radius:0;margin:0;box-shadow:none}
-    body main #customer-service #care-table>.card>.cardhead{margin:2px 0 10px}
-    body main #customer-service .tablewrap{border:1px solid #e7ece5;border-radius:9px}
-    body main #customer-service th{padding:9px 10px;background:#f5f8f3;color:#5f7166}
-    body main #customer-service td{padding:10px;font-size:11px;vertical-align:middle}
-    body main #customer-service tbody tr{transition:background-color .15s ease}
-    body main #customer-service tbody tr:hover{background:#f8fbf7}
-    body main #customer-service td .btn.small{min-height:30px;white-space:nowrap}
-    body .modal:has(form[onsubmit^="saveFeedback"]),body .modal:has(form[onsubmit^="saveReferral"]){width:min(720px,100%)}
-    body .modal form[onsubmit^="saveFeedback"] .score-grid{gap:10px}
-    body .modal form[onsubmit^="saveFeedback"] label,body .modal form[onsubmit^="saveReferral"] label{margin-bottom:0}
-    body .modal form[onsubmit^="saveFeedback"] select,body .modal form[onsubmit^="saveFeedback"] textarea,body .modal form[onsubmit^="saveReferral"] input,body .modal form[onsubmit^="saveReferral"] textarea{padding:9px 10px;margin-top:4px}
-    body .modalback:has(.care-profile){align-items:stretch;padding:0}
-    body .modal:has(.care-profile){position:relative;width:min(720px,calc(100% - 24px));height:100%;max-height:none;padding:0;background:#fff;border-radius:0;overflow:auto}
-    body .modal:has(.care-profile) .modalhead{position:sticky;top:0;z-index:5;margin:0;padding:18px 24px;background:#fff;border-bottom:1px solid var(--line);align-items:center}
-    body .modal:has(.care-profile) .modalhead .eyebrow{display:none}
-    body .modal:has(.care-profile) .modalhead h2{display:flex;align-items:center;gap:12px;margin:0;font-size:18px}
-    body .modal:has(.care-profile) .close{width:40px;height:40px;border-radius:10px}
-    body .care-profile-title{display:flex;align-items:center;gap:12px}
-    body .care-profile-avatar{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#226d53,#4a9274);color:#fff;font-size:15px;font-weight:800;box-shadow:0 7px 18px rgba(34,109,83,.22)}
-    body .care-profile-title>span:last-child{display:flex;flex-direction:column;gap:2px}
-    body .care-profile-title small{font-size:11px;color:var(--muted);font-weight:550}
-    body .care-profile{padding:16px 20px 80px}
-    body .care-profile .flow{margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-wrap:nowrap;overflow:auto}
-    body .care-profile .flow span{white-space:nowrap;padding:6px 10px}
-    body .care-profile-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:18px}
-    body .care-profile-summary>div{border:1px solid #dfe7df;border-radius:9px;padding:10px 11px;background:#fbfcfa}
-    body .care-profile-summary small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}
-    body .care-profile-summary strong{font-size:14px;color:var(--ink)}
-    body .care-profile-content{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(260px,.92fr);gap:18px}
-    body .care-profile .card{padding:0;border:0;border-radius:0;margin:0 0 22px;box-shadow:none;background:transparent}
-    body .care-profile .cardhead{margin:0}
-    body .care-profile .cardhead h3{width:100%;padding:0 0 9px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.7px;text-transform:uppercase;color:#718277}
-    body .care-profile .metricline{padding:9px 0}
-    body .care-profile .metricline span,body .care-profile .metricline b{font-size:11px}
-    body .care-profile .card>p{font-size:12px;line-height:1.6}
-    body .care-profile-footer{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:13px 24px;background:#f8faf7;border-top:1px solid var(--line)}
-    body .care-profile-footer .btn{min-height:38px}
-    body #overlay:has(.care-profile)+#toast .toast{left:auto;right:24px;bottom:82px;transform:none;max-width:min(420px,calc(100vw - 48px))}
-    @media(max-width:1100px){body main #customer-service .care-flow{grid-template-columns:repeat(3,1fr)}body main #customer-service .care-step:after{display:none}}
-    @media(max-width:760px){body main #customer-service .pagetop{gap:10px}body main #customer-service .pagetop .actions{width:100%}body main #customer-service .pagetop .btn{flex:1}body main #customer-service>.stats{grid-template-columns:repeat(2,1fr)}body main #customer-service .care-section{padding:13px;margin-top:10px}body main #customer-service .care-flow{grid-template-columns:1fr 1fr}body main #customer-service #care-table th:nth-child(3),body main #customer-service #care-table td:nth-child(3),body main #customer-service #care-table th:nth-child(4),body main #customer-service #care-table td:nth-child(4),body main #customer-service #care-table th:nth-child(6),body main #customer-service #care-table td:nth-child(6){display:none}body .modalback:has(.care-profile){align-items:stretch;padding:0}body .modal:has(.care-profile){width:100%;height:100%;max-height:none;border-radius:0}body .care-profile{padding:14px 16px 96px}body .care-profile-content{grid-template-columns:1fr;gap:0}body .care-profile-summary{grid-template-columns:1fr 1fr}body .care-profile-footer{padding:10px 16px}body .care-profile-footer .btn{flex:1}body #overlay:has(.care-profile)+#toast .toast{right:16px;bottom:118px;max-width:calc(100vw - 32px)}}
-    @media(max-width:480px){body main #customer-service .care-flow{grid-template-columns:1fr}body main #customer-service>.stats{grid-template-columns:1fr 1fr}body main #customer-service .filters>*{width:100%;max-width:none}body main #customer-service #care-table th:nth-child(7),body main #customer-service #care-table td:nth-child(7){display:none}}
-    @media(min-width:561px) and (max-width:760px){body .modal:has(.care-profile){width:min(720px,calc(100% - 24px))}}
-    @media(prefers-reduced-motion:reduce){body main #customer-service tbody tr{transition:none}}
-  `;
-  document.head.appendChild(style);
-}
 
-injectCustomerServiceFrontendStyles();
 const careNow = () => new Date().toISOString();
 const careToday = () => new Date().toLocaleDateString("en-CA");
 
@@ -130,9 +50,7 @@ function initializeCustomerService() {
       let hasFeedback = !!booking.feedback;
       let score = booking.feedback?.score || null;
       state.customerServiceCases.push({
-        id:
-          "CS-" +
-          String(state.customerServiceCases.length + 1).padStart(3, "0"),
+        id: nextBusinessId("customerServiceCases", booking.end),
         bookingId: booking.id,
         customer: booking.client,
         tour: booking.tour,
@@ -245,34 +163,13 @@ views.care = () => {
     ? Math.round((responses.length / all.length) * 100)
     : 0;
 
-  return `<div id="customer-service"><style>
-    #customer-service .care-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
-    #customer-service .care-step{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;position:relative;min-height:92px}
-    #customer-service .care-step:not(:last-child):after{content:'→';position:absolute;right:-10px;top:34px;color:var(--green);font-weight:800;z-index:2}
-    #customer-service .care-step small{display:block;color:var(--green);font-weight:700;margin-bottom:7px}
-    #customer-service .care-step span{display:block;color:var(--muted);font-size:11px;margin-top:6px}
-    #customer-service .care-section{margin-top:24px}
-    #customer-service .care-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:12px}
-    #customer-service .care-heading h2{font-size:20px;margin:0}
-    #customer-service .care-heading p{color:var(--muted);margin:4px 0 0}
-    #customer-service .care-pipeline{display:grid;grid-template-columns:repeat(7,minmax(145px,1fr));gap:10px;overflow:auto;padding-bottom:8px}
-    #customer-service .care-column{background:#edf0e9;border-radius:10px;padding:11px;min-height:210px}
-    #customer-service .care-column-head{font-size:10px;font-weight:750;display:flex;justify-content:space-between;margin-bottom:10px}
-    #customer-service .care-ticket{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px}
-    #customer-service .care-ticket b{display:block;font-size:12px}
-    #customer-service .care-ticket p{font-size:10px;color:var(--muted);margin:6px 0}
-    #customer-service .care-score{font-size:18px;font-weight:750;color:var(--green)}
-    #customer-service .care-score.low{color:var(--red)}
-    #customer-service .overdue{color:var(--red);font-weight:700}
-    #customer-service .score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    @media(max-width:900px){#customer-service .care-flow{grid-template-columns:1fr 1fr}#customer-service .care-step:after{display:none}}
-    @media(max-width:600px){#customer-service .care-flow,#customer-service .score-grid{grid-template-columns:1fr}}
-  </style>${title(
+  return `<div id="customer-service">${title(
     "Customer Service",
     "Feedback Form → CSAT → Review → Referral",
     btn("Xuất CSV", "exportCustomerServiceCSV()") +
-      btn("Làm mới cases", "syncCustomerServiceCases()", "primary"),
-  )}<div class="stats">${stat("AFTER-TOUR CASES", all.length, "Tự tạo từ tour Completed")}${stat("TỶ LỆ PHẢN HỒI", responseRate + "%", responses.length + " khách đã trả lời")}${stat("CSAT TRUNG BÌNH", average ? average.toFixed(1) + "/5" : "—", "Điểm hài lòng tổng thể")}${stat("CẦN RECOVERY", recovery, "Phản hồi dưới 4 hoặc chưa xử lý")}</div>${careJourney()}<section class="care-section"><div class="care-heading"><div><h2>Pipeline chăm sóc</h2><p>Theo dõi toàn bộ hành trình sau tour</p></div></div>${carePipeline(cases)}</section><section class="care-section"><div class="care-heading"><div><h2>Customer Service Cases</h2><p>${cases.length} kết quả theo bộ lọc hiện tại</p></div></div>${careFilters()}<div id="care-table">${careCaseTable(cases)}</div></section></div>`;
+      (can("care_manage") ? btn("+ Ghi nhận khiếu nại", "complaintForm()") : "") +
+      (can("care_manage") ? btn("Làm mới cases", "syncCustomerServiceCases()", "primary") : ""),
+  )}<div class="stats">${stat("AFTER-TOUR CASES", all.length, "Tự tạo từ tour Completed")}${stat("TỶ LỆ PHẢN HỒI", responseRate + "%", responses.length + " khách đã trả lời")}${stat("CSAT TRUNG BÌNH", average ? average.toFixed(1) + "/5" : "—", "Điểm hài lòng tổng thể")}${stat("CẦN RECOVERY", recovery, "Phản hồi dưới 4 hoặc chưa xử lý")}</div>${careJourney()}<section class="care-section"><div class="care-heading"><div><h2>Hồ sơ chăm sóc khách hàng</h2><p>${cases.length} kết quả theo bộ lọc hiện tại</p></div><div class="care-view-switch" role="group" aria-label="Kiểu hiển thị"><button class="btn small ${careView === "table" ? "selected" : ""}" onclick="careView='table';render()">Dạng bảng</button><button class="btn small ${careView === "pipeline" ? "selected" : ""}" onclick="careView='pipeline';render()">Pipeline</button></div></div>${careFilters()}<div id="care-table">${careView === "pipeline" ? carePipeline(cases) : careCaseTable(cases)}</div></section></div>`;
 };
 
 function careJourney() {
@@ -324,6 +221,7 @@ function refreshCustomerService() {
 }
 
 function syncCustomerServiceCases() {
+  if (!requireCapability("care_manage")) return;
   let before = state.customerServiceCases?.length || 0;
   initializeCustomerService();
   let created = state.customerServiceCases.length - before;
@@ -340,7 +238,7 @@ function openCareCase(id) {
   let item = state.customerServiceCases.find((value) => value.id === id);
   let booking = state.bookings.find((value) => value.id === item.bookingId);
   let actions = [];
-  if (["PENDING", "SENT"].includes(item.status)) {
+  if (can("care_manage") && ["PENDING", "SENT"].includes(item.status)) {
     actions.push(
       btn(
         item.status === "PENDING" ? "Gửi Feedback Form" : "Gửi nhắc",
@@ -350,13 +248,13 @@ function openCareCase(id) {
     );
     actions.push(btn("Nhập phản hồi", `feedbackForm('${id}')`));
   }
-  if (item.status === "RECOVERY")
+  if (can("care_manage") && item.status === "RECOVERY")
     actions.push(btn("Xử lý Recovery", `recoveryForm('${id}')`, "danger"));
-  if (["RESPONDED", "REVIEW"].includes(item.status))
+  if (can("care_manage") && ["RESPONDED", "REVIEW"].includes(item.status))
     actions.push(btn("Ghi nhận Review", `reviewForm('${id}')`, "primary"));
-  if (["REVIEW", "REFERRAL"].includes(item.status))
+  if (can("care_manage") && ["REVIEW", "REFERRAL"].includes(item.status))
     actions.push(btn("Ghi nhận Referral", `referralForm('${id}')`));
-  if (canCloseCareCase(item))
+  if (can("care_manage") && canCloseCareCase(item))
     actions.push(btn("Đóng case", `closeCareCase('${id}')`, "primary"));
 
   let initials = item.customer
@@ -367,7 +265,7 @@ function openCareCase(id) {
     .toUpperCase();
   modal(
     `<span class="care-profile-title"><span class="care-profile-avatar">${esc(initials)}</span><span>${esc(item.customer)}<small>${item.id} · ${item.bookingId} · ${esc(item.owner)}</small></span></span>`,
-    `<div class="care-profile"><div class="flow">${careStatuses.map((status) => `<span class="${careStatuses.indexOf(status) <= careStatuses.indexOf(item.status) ? "on" : ""}">${careStatusLabels[status]}</span>`).join("")}</div><div class="care-profile-summary"><div><small>Booking</small><strong>${item.bookingId}</strong></div><div><small>CSAT</small><strong>${item.feedback ? item.feedback.overall + "/5" : "—"}</strong></div><div><small>Owner</small><strong>${esc(item.owner)}</strong></div><div><small>Hạn xử lý</small><strong>${fmt(item.dueDate)}</strong></div></div><div class="care-profile-content"><div>${careFeedbackCard(item)}${careRecoveryCard(item)}</div><div>${careReviewReferralCard(item)}${careHistoryCard(item)}</div></div><div class="care-profile-footer">${actions.join("")}</div></div>`,
+    `<div class="care-profile"><div class="flow">${careStatuses.map((status) => `<span class="${careStatuses.indexOf(status) <= careStatuses.indexOf(item.status) ? "on" : ""}">${careStatusLabels[status]}</span>`).join("")}</div><div class="care-profile-summary"><div><small>Booking</small><strong>${item.bookingId}</strong></div><div><small>CSAT</small><strong>${item.feedback ? item.feedback.overall + "/5" : "—"}</strong></div><div><small>Owner</small><strong>${esc(item.owner)}</strong></div><div><small>Hạn xử lý</small><strong>${fmt(item.dueDate)}</strong></div></div><div class="care-profile-content"><div>${careFeedbackCard(item)}${careRecoveryCard(item)}</div><div>${careReviewReferralCard(item)}${careNextTourCard(item)}${careHistoryCard(item)}</div></div><div class="care-profile-footer">${actions.join("")}</div></div>`,
   );
 }
 
@@ -400,6 +298,44 @@ function careFeedbackCard(item) {
   );
 }
 
+/* SLA khiếu nại: HIGH 1 ngày, MEDIUM 3 ngày, LOW 7 ngày. */
+const careSlaDays = { HIGH: 1, MEDIUM: 3, LOW: 7 };
+function careSlaBadge(due) {
+  const left = Math.ceil((new Date(due) - new Date(careToday())) / 864e5);
+  return left < 0 ? badge("Quá SLA " + Math.abs(left) + " ngày", "red") : left === 0 ? badge("Hết hạn hôm nay", "amber") : badge("Còn " + left + " ngày", "green");
+}
+function complaintForm() {
+  const bs = state.bookings.filter((b) => ["Running", "Completed"].includes(b.status));
+  if (!bs.length) return toast("Chưa có tour đang chạy hoặc đã hoàn tất để ghi nhận khiếu nại.");
+  modal("Ghi nhận khiếu nại", `<form onsubmit="saveComplaint(event)"><div class="formgrid"><label class="full">Booking<select name="booking">${bs.map((b) => `<option value="${b.id}">${b.id} · ${esc(b.client)} · ${esc(b.tour)}</option>`).join("")}</select></label><label>Mức độ<select name="priority"><option value="HIGH">Cao — xử lý trong 1 ngày</option><option value="MEDIUM" selected>Trung bình — 3 ngày</option><option value="LOW">Thấp — 7 ngày</option></select></label><label>Nhóm vấn đề<select name="category"><option>Trải nghiệm tour</option><option>Hướng dẫn viên</option><option>Khách sạn</option><option>Xe vận chuyển</option><option>Thanh toán</option><option>Khác</option></select></label><label class="full">Nội dung khiếu nại<textarea name="description" required></textarea></label></div><div class="formfooter"><button class="btn primary">Tạo hồ sơ khiếu nại</button></div></form>`, true);
+}
+function saveComplaint(event) {
+  event.preventDefault();
+  if (!requireCapability("care_manage")) return;
+  const f = new FormData(event.target), b = findBooking(f.get("booking"));
+  initializeCustomerService();
+  let item = state.customerServiceCases.find((x) => x.bookingId === b.id);
+  const due = careAddDays(careToday(), careSlaDays[f.get("priority")] || 3);
+  const recovery = { category: f.get("category"), priority: f.get("priority"), description: f.get("description").trim(), action: "", status: "OPEN", dueDate: due };
+  if (!item) {
+    item = { id: nextBusinessId("customerServiceCases", careToday()), bookingId: b.id, customer: b.client, tour: b.tour, tourEnd: b.end, owner: careOwners[0] || actor().name, status: "RECOVERY", dueDate: due, feedbackRequest: { status: "NOT_SENT", channel: "Email", sentAt: "", reminderCount: 0 }, feedback: null, recovery, review: null, referral: null, history: [] };
+    state.customerServiceCases.push(item);
+  } else { item.recovery = recovery; item.status = "RECOVERY"; item.dueDate = due; }
+  addCareHistory(item, `Ghi nhận khiếu nại (${f.get("priority")}) · hạn ${fmt(due)}`);
+  audit("care", item.id, "COMPLAINT", `Khiếu nại ${b.id}: ${recovery.category}`);
+  closeModal(); render(); openCareCase(item.id); toast("Đã tạo hồ sơ khiếu nại với hạn xử lý " + fmt(due) + ".");
+}
+
+/* Gợi ý tour kế tiếp: mẫu tour khách chưa đi, ưu tiên cùng thị trường; hiện khi khách đã hài lòng. */
+function careNextTourCard(item) {
+  if (!item.feedback || item.feedback.overall < 4) return "";
+  const customer = findCustomerByName(item.customer);
+  const done = state.bookings.filter((b) => b.client === item.customer).map((b) => b.tour);
+  const sugg = (state.tourTemplates || []).filter((t) => !done.includes(t.name)).slice(0, 3);
+  const lead = state.leads.find((l) => l.name === item.customer);
+  return card("Đề xuất tour kế tiếp", sugg.length ? sugg.map((t) => `<div class="metricline"><span><b>${esc(t.name)}</b><span class="sub">${(t.itinerary || []).length} ngày${t.country ? " · " + esc(t.country) : ""}</span></span>${can("tour_design_manage") && lead ? btn("Thiết kế", `closeModal();go('design');selectLead('${lead.id}');designApplyTemplate('${t.id}')`, "small primary") : ""}</div>`).join("") : '<p class="sub">Chưa có mẫu tour mới để đề xuất.</p>', customer ? `<span class="sub">Khách đã đi ${done.length} tour · hạng ${esc(customerTier(customer).label)}</span>` : "");
+}
+
 function careRecoveryCard(item) {
   if (!item.recovery) return "";
   let recovery = item.recovery;
@@ -410,7 +346,7 @@ function careRecoveryCard(item) {
       badge(recovery.status, recovery.status === "RESOLVED" ? "green" : "red"),
     ) +
       line("Mức độ", recovery.priority) +
-      line("Hạn xử lý", fmt(recovery.dueDate)) +
+      line("Hạn xử lý (SLA)", fmt(recovery.dueDate) + (recovery.status !== "RESOLVED" ? " " + careSlaBadge(recovery.dueDate) : "")) +
       `<p>${esc(recovery.description)}</p>${recovery.action ? `<div class="alert green"><b>Hành động khắc phục</b>${esc(recovery.action)}</div>` : ""}`,
   );
 }
@@ -456,6 +392,7 @@ function addCareHistory(item, text) {
 }
 
 function sendFeedbackRequest(id) {
+  if (!requireCapability("care_manage")) return;
   let item = state.customerServiceCases.find((value) => value.id === id);
   let isReminder = item.status === "SENT";
   item.feedbackRequest.status = "SENT";
@@ -466,12 +403,12 @@ function sendFeedbackRequest(id) {
   addCareHistory(
     item,
     isReminder
-      ? "Gửi nhắc Feedback Form (mô phỏng)"
-      : "Gửi Feedback Form (mô phỏng)",
+      ? "Gửi nhắc Feedback Form"
+      : "Gửi Feedback Form",
   );
   log(`${item.id} ${isReminder ? "gửi nhắc" : "gửi Feedback Form"}`);
   openCareCase(id);
-  toast("Đã ghi nhận gửi form. Demo chưa gửi Email/WhatsApp thật.");
+  toast("Đã ghi nhận gửi form phản hồi cho khách.");
 }
 
 function feedbackForm(id) {
@@ -488,6 +425,7 @@ function feedbackForm(id) {
 
 function saveFeedback(event, id) {
   event.preventDefault();
+  if (!requireCapability("care_manage")) return;
   let item = state.customerServiceCases.find((value) => value.id === id);
   let booking = state.bookings.find((value) => value.id === item.bookingId);
   let form = new FormData(event.target);
@@ -556,6 +494,7 @@ function recoveryForm(id) {
 
 function saveRecovery(event, id) {
   event.preventDefault();
+  if (!requireCapability("care_manage")) return;
   let item = state.customerServiceCases.find((value) => value.id === id);
   let form = new FormData(event.target);
   Object.assign(item.recovery, {
@@ -585,6 +524,7 @@ function reviewForm(id) {
 
 function saveReview(event, id) {
   event.preventDefault();
+  if (!requireCapability("care_manage")) return;
   let item = state.customerServiceCases.find((value) => value.id === id);
   let booking = state.bookings.find((value) => value.id === item.bookingId);
   let form = new FormData(event.target);
@@ -614,6 +554,7 @@ function referralForm(id) {
 
 function saveReferral(event, id) {
   event.preventDefault();
+  if (!requireCapability("care_manage")) return;
   let item = state.customerServiceCases.find((value) => value.id === id);
   let booking = state.bookings.find((value) => value.id === item.bookingId);
   let form = new FormData(event.target);
@@ -648,6 +589,7 @@ function canCloseCareCase(item) {
 }
 
 function closeCareCase(id) {
+  if (!requireCapability("care_manage")) return;
   let item = state.customerServiceCases.find((value) => value.id === id);
   if (!canCloseCareCase(item)) return toast("Case chưa đủ điều kiện đóng.");
   item.status = "CLOSED";

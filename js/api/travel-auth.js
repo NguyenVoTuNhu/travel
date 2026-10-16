@@ -3,6 +3,7 @@
 const AUTH_TABLE = `${TRAVEL_CONFIG.tablePrefix}users`;
 const AUTH_ROLES_TABLE = `${TRAVEL_CONFIG.tablePrefix}roles`;
 const AUTH_SESSION_KEY = "typicone_auth_session";
+const AUTH_CACHE_KEY = "typicone_auth_cache";
 let authUsers = [];
 let authRoles = [];
 let currentUser = null;
@@ -48,6 +49,7 @@ function hashesMatch(left, right) {
 }
 
 async function readAuthCollection(table) {
+  await ensureKioSdk();
   if (typeof getKrudList !== "function")
     throw new Error("Không tải được SDK database KIO.");
   const result = await getKrudList({
@@ -70,6 +72,33 @@ async function loadAuthUsers() {
   ]);
   applyRoleConfiguration(authRoles);
   renderLoginRoles();
+  try {
+    sessionStorage.setItem(
+      AUTH_CACHE_KEY,
+      JSON.stringify({
+        roles: authRoles,
+        users: authUsers.map((user) => ({ ...publicUser(user), active: user.active })),
+      }),
+    );
+  } catch (error) {
+    console.warn("Authentication cache error:", error);
+  }
+}
+
+function restoreAuthCache() {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(AUTH_CACHE_KEY) || "null");
+    if (!cached || !Array.isArray(cached.roles) || !Array.isArray(cached.users))
+      return false;
+    authRoles = cached.roles;
+    authUsers = cached.users;
+    applyRoleConfiguration(authRoles);
+    renderLoginRoles();
+    return true;
+  } catch {
+    sessionStorage.removeItem(AUTH_CACHE_KEY);
+    return false;
+  }
 }
 
 function renderLoginRoles() {
@@ -188,6 +217,7 @@ function showAppShell() {
 }
 
 function logout() {
+  clearDatabaseCache();
   sessionStorage.removeItem(AUTH_SESSION_KEY);
   localStorage.removeItem(AUTH_SESSION_KEY);
   currentUser = null;
@@ -222,7 +252,7 @@ function renderCurrentUser() {
     document.getElementById(id).textContent = currentUser.fullName;
   for (const id of ["userRole", "menuUserRole"])
     document.getElementById(id).textContent = label;
-  document.getElementById("permissionMenuItem").hidden = !can("users_manage");
+  document.getElementById("permissionMenuItem").hidden = false;
 }
 
 function toggleAccountMenu() {
@@ -243,7 +273,19 @@ function showAccountInfo() {
 
 function showPermissionInfo() {
   closeAccountMenu();
-  toast(`Role ${rolelabels[currentUser.role]} được truy cập ${rights[currentUser.role].length} menu.`);
+  const policy = rolePolicies[currentUser.role] || {};
+  const menuNames = (rights[currentUser.role] || []).map(
+    (id) => pages.find((page) => page[0] === id)?.[2] || id,
+  );
+  const matrix = can("users_manage")
+    ? Object.values(businessRolePolicies)
+        .map((item) => `<section class="permission-role"><h3>${esc(item.label)}</h3><div class="permission-list">${item.features.map((feature) => `<div><span aria-hidden="true">✓</span>${esc(feature)}</div>`).join("")}</div></section>`)
+        .join("")
+    : `<section class="permission-role"><h3>Chức năng nghiệp vụ</h3><div class="permission-list">${(policy.features || []).map((feature) => `<div><span aria-hidden="true">✓</span>${esc(feature)}</div>`).join("") || '<div>Quyền được cấu hình trực tiếp từ database.</div>'}</div></section>`;
+  modal(
+    can("users_manage") ? "Ma trận vai trò & phân quyền" : `Quyền của ${rolelabels[currentUser.role] || currentUser.role}`,
+    `<div class="permission-summary"><p>Tài khoản <b>${esc(currentUser.fullName)}</b> được sử dụng ${menuNames.length} phân hệ.</p><h3>Phân hệ của tài khoản hiện tại</h3><div class="tagset">${menuNames.map((name) => `<span class="badge green">${esc(name)}</span>`).join("")}</div>${matrix}<div class="notice">Quyền hiển thị và thao tác được kiểm tra bằng capability. API/database vẫn phải kiểm tra lại quyền ở phía máy chủ.</div></div>`,
+  );
 }
 
 function showForgotPassword() {

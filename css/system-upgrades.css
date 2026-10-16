@@ -1,0 +1,20 @@
+/* Shared density and overlay contract. Keep this file last in the cascade. */
+:root{--ui-font-body:12.5px;--ui-font-meta:11.5px;--ui-modal-gutter:20px}
+body{font-size:var(--ui-font-body)}
+body .sub,body small,body .metricline span,body .metricline b{font-size:var(--ui-font-meta);line-height:1.45}
+body label{font-size:12px}
+body th{font-size:11px}
+body td,body input,body select,body textarea,body button{font-size:12px}
+
+body .modal{overscroll-behavior:contain;scrollbar-width:thin}
+body .modal--small{width:min(520px,calc(100% - 32px))}
+body .modal--form{width:min(760px,calc(100% - 32px))}
+body .modal--standard{width:min(860px,calc(100% - 32px))}
+body .modal--profile{width:min(1080px,calc(100% - 32px))}
+body .modal--form>.modalhead,body .modal--standard>.modalhead,body .modal--small>.modalhead{position:sticky;top:-20px}
+body .modal--form>form>.formfooter{position:sticky;bottom:-28px}
+
+.field-invalid{border-color:#dc3545!important;box-shadow:0 0 0 3px rgba(220,53,69,.1)!important}
+.field-error{display:block;margin-top:4px;color:#b4232f;font-size:11px!important;font-weight:600;line-height:1.35}
+
+@media(max-width:760px){:root{--ui-font-body:13px;--ui-font-meta:12px}body .modal--small,body .modal--form,body .modal--standard,body .modal--profile{width:100%;max-width:none;margin:0}body .modalback{padding:10px}}

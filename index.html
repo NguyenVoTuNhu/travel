@@ -4,34 +4,71 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>TypicOne ERP | Quản lý và điều hành travel</title>
+    <link rel="icon" type="image/jpeg" href="assets/images/dichvuquanhta.jpg" />
     <meta
       name="description"
       content="Demo tương tác hệ thống quản lý và điều hành TypicOne ERP"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/fa/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/modules/dashboard.css" />
+    <link rel="stylesheet" href="css/modules/crm-sales.css" />
+    <link rel="stylesheet" href="css/modules/customers.css" />
+    <link rel="stylesheet" href="css/modules/customer-service.css" />
+    <link rel="stylesheet" href="css/modules/quotes.css" />
+    <link rel="stylesheet" href="css/modules/guide-app.css" />
+    <link rel="stylesheet" href="css/modules/guides.css" />
+    <link rel="stylesheet" href="css/modules/operations.css" />
+    <link rel="stylesheet" href="css/overlays.css" />
+    <link rel="stylesheet" href="css/theme-polish.css" />
+    <link rel="stylesheet" href="css/erp-ui.css" />
+    <link rel="stylesheet" href="css/compact-density.css" />
+    <link rel="stylesheet" href="css/modules/auth.css" />
+    <link rel="stylesheet" href="css/system-upgrades.css" />
   </head>
   <body>
     <div class="auth-boot" id="authBoot" aria-live="polite">
-      <img src="assets/images/travel-mark.svg" alt="" width="52" height="52" />
+      <img src="assets/images/dichvuquanhta.jpg" alt="" width="52" height="52" />
       <strong>TypicOne <em>ERP</em></strong>
       <span>Đang xác thực phiên đăng nhập…</span>
     </div>
     <section class="login-screen" id="loginScreen" hidden>
       <div class="login-orbit" aria-hidden="true"></div>
       <div class="login-card">
-        <div class="login-brand">
-          <img src="assets/images/travel-mark.svg" alt="" width="48" height="48" />
-          <div>
-            <strong>TypicOne <em>ERP</em></strong>
-            <small>TOUR OPERATOR MANAGEMENT SYSTEM</small>
+        <div class="login-promo" aria-hidden="true">
+          <div class="login-promo-brand">
+            <img src="assets/images/dichvuquanhta.jpg" alt="" width="44" height="44" />
+            <div><strong>TypicOne ERP</strong><small>ĐIỀU HÀNH TOUR</small></div>
+          </div>
+          <div class="login-promo-copy">
+            <span class="login-promo-chip"><i class="fa-solid fa-plane-departure"></i> Không gian làm việc</span>
+            <h2>Một hệ thống.<br />Toàn bộ hành trình.</h2>
+            <p>Quản lý khách hàng, thiết kế tour, báo giá và vận hành tập trung trên cùng một nền tảng.</p>
+          </div>
+          <div class="login-promo-features">
+            <span><i class="fa-solid fa-route"></i> Thiết kế tour</span>
+            <span><i class="fa-solid fa-chart-line"></i> Theo dõi vận hành</span>
+            <span><i class="fa-solid fa-shield-halved"></i> Dữ liệu bảo mật</span>
           </div>
         </div>
-        <div class="login-heading">
-          <h1>Đăng nhập</h1>
-          <p>Đăng nhập để tiếp tục quản lý hệ thống</p>
-        </div>
-        <div class="login-roles" id="loginRoles" aria-label="Chọn vai trò đăng nhập"></div>
-        <form id="loginForm" onsubmit="login(event)" novalidate>
+        <div class="login-panel">
+          <div class="login-brand login-brand-mobile">
+            <img src="assets/images/dichvuquanhta.jpg" alt="" width="40" height="40" />
+            <div><strong>TypicOne <em>ERP</em></strong><small>TOUR OPERATOR MANAGEMENT SYSTEM</small></div>
+          </div>
+          <div class="login-heading">
+            <span>CHÀO MỪNG TRỞ LẠI</span>
+            <h1>Đăng nhập hệ thống</h1>
+            <p>Chọn tài khoản nhanh hoặc nhập thông tin đăng nhập.</p>
+          </div>
+          <div class="login-roles" id="loginRoles" aria-label="Chọn vai trò đăng nhập"></div>
+          <form id="loginForm" onsubmit="login(event)" novalidate>
           <label for="loginUsername">Tên đăng nhập</label>
           <div class="login-field">
             <span aria-hidden="true">◯</span>
@@ -73,8 +110,9 @@
           </div>
           <p class="login-error" id="loginError" role="alert" aria-live="polite"></p>
           <button class="login-submit" id="loginSubmit" type="submit">Đăng nhập</button>
-        </form>
-        <div class="login-status"><span></span> Xác thực qua database TypicOne</div>
+          </form>
+          <div class="login-status"><span></span> Kết nối an toàn với cơ sở dữ liệu TypicOne</div>
+        </div>
       </div>
     </section>
 
@@ -82,12 +120,17 @@
       <aside>
       <div class="brand">
         <img
-          src="assets/images/travel-mark.svg"
+          src="assets/images/dichvuquanhta.jpg"
           alt=""
-          width="26"
-          height="26"
-          style="vertical-align: middle; margin-right: 5px"
-        />TypicOne <em>ERP</em><small>HỆ THỐNG QUẢN LÝ ĐIỀU HÀNH TOUR</small>
+          width="40"
+          height="40"
+        />
+        <div class="brand-copy">
+          <strong>TypicOne <em>ERP</em></strong>
+        </div>
+        <button class="sidebar-mobile-close" type="button" onclick="toggleMobileNav(false)" aria-label="Đóng menu điều hướng">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
       </div>
       <nav id="nav"></nav>
       <div class="asidefoot">
@@ -100,24 +143,28 @@
       <div class="layout">
       <header class="app-header">
         <div class="header-context">
-          <button class="mobile-nav-toggle" type="button" onclick="toggleMobileNav()" aria-label="Mở menu điều hướng" aria-expanded="false">☰</button>
+          <button class="sidebar-collapse-toggle" type="button" onclick="toggleSidebarCollapsed()" aria-label="Thu gọn thanh điều hướng" aria-expanded="true">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          </button>
+          <button class="mobile-nav-toggle" type="button" onclick="toggleMobileNav()" aria-label="Mở menu điều hướng" aria-expanded="false">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          </button>
           <div class="crumb">
             <span id="crumbSection">ĐIỀU HÀNH DU LỊCH</span>
             <i aria-hidden="true">›</i>
             <b id="crumb">Tổng quan điều hành</b>
           </div>
         </div>
+        <label class="header-search" for="globalSearch">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="globalSearch" type="search" placeholder="Tìm trên trang hiện tại..." autocomplete="off" oninput="filterCurrentView(this.value)" />
+          <kbd>Ctrl K</kbd>
+        </label>
         <div class="headright">
           <div class="header-tools" aria-label="Tiện ích">
-            <button type="button" onclick="toast('Giao diện đang dùng chế độ sáng.')" aria-label="Giao diện sáng">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
-            </button>
-            <button class="notification-button" type="button" onclick="openNotifications()" aria-label="Mở thông báo">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
+            <button class="notification-button" type="button" onclick="openNotifications()" aria-label="Mở thông báo" aria-haspopup="dialog" aria-expanded="false">
+              <i class="fa-solid fa-bell" aria-hidden="true"></i>
               <span class="notification-badge" id="notificationBadge" hidden>0</span>
-            </button>
-            <button type="button" onclick="go('help')" aria-label="Trợ giúp">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.8 9a2.3 2.3 0 1 1 3.5 2c-1 .6-1.3 1.1-1.3 2M12 17h.01" /></svg>
             </button>
           </div>
           <div class="account-wrap">
@@ -133,7 +180,7 @@
                 ><strong id="userName">Người dùng</strong
                 ><small id="userRole">Vai trò</small></span
               >
-              <span class="account-chevron" aria-hidden="true">⌄</span>
+              <i class="fa-solid fa-chevron-down account-chevron" aria-hidden="true"></i>
             </button>
             <div class="account-menu" id="accountMenu" hidden>
               <div class="account-menu-head">
@@ -144,10 +191,11 @@
                 </div>
               </div>
               <div class="account-menu-line"></div>
-              <button onclick="showAccountInfo()"><span>●</span> Hồ sơ cá nhân</button>
-              <button id="permissionMenuItem" onclick="showPermissionInfo()"><span>◆</span> Người dùng &amp; phân quyền</button>
+              <button onclick="showAccountInfo()"><i class="fa-solid fa-user" aria-hidden="true"></i> Hồ sơ cá nhân</button>
+              <button id="permissionMenuItem" onclick="showPermissionInfo()"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Vai trò &amp; phân quyền</button>
+              <button onclick="passwordForm()"><i class="fa-solid fa-key" aria-hidden="true"></i> Đổi mật khẩu</button>
               <div class="account-menu-line"></div>
-              <button class="logout-button" onclick="logout()"><span>↪</span> Đăng xuất</button>
+              <button class="logout-button" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Đăng xuất</button>
             </div>
           </div>
         </div>
@@ -158,13 +206,12 @@
     </div>
     <div id="overlay"></div>
     <div id="toast"></div>
-    <script src="https://kio.dvqt.vn/krud.js"></script>
-    <script src="https://kio.dvqt.vn/list.js"></script>
     <script src="js/data/data.js"></script>
     <script src="js/api/travel-config.js"></script>
     <script src="js/api/travel-api.js"></script>
     <script src="js/api/travel-auth.js"></script>
     <script src="js/core/app.core.js"></script>
+    <script src="js/core/workflow.js"></script>
     <script src="js/modules/mod-dashboard.js"></script>
     <script src="js/modules/mod-crm-sales.js"></script>
     <script src="js/modules/mod-customers.js"></script>
@@ -180,8 +227,8 @@
     <script src="js/modules/mod-documents.js"></script>
     <script src="js/modules/mod-customer-service.js"></script>
     <script src="js/modules/mod-guide-app.js"></script>
-    <script src="js/modules/mod-help.js"></script>
-    <script src="js/modules/mod-ai.js"></script>
+    <script src="js/modules/mod-approvals.js"></script>
+    <script src="js/modules/mod-admin.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

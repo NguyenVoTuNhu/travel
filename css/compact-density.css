@@ -1,0 +1,492 @@
+/* Compact desktop density — closer to a professional operations console. */
+@media (min-width: 901px) {
+  :root {
+    --sidebar-w: 244px;
+    --header-h: 56px;
+    --radius-lg: 10px;
+    --radius-xl: 13px;
+  }
+
+  body { font-size: 12.25px; line-height: 1.45; }
+
+  aside { padding-inline: 11px; padding-bottom: 11px; }
+  .brand { gap: 10px; padding-inline: 4px; }
+  .brand img { width: 32px; height: 32px; flex-basis: 32px; }
+  .brand-copy strong { font-size: 16px; }
+  .nav-eyebrow { padding: 8px 8px 4px; font-size: 10.5px; }
+  nav { padding: 4px 4px 9px 0; }
+  .nav-overview { min-height: 36px; margin-bottom: 4px; padding: 4px 8px; font-size: 13.5px; font-weight: 700; }
+  .navgroup + .navgroup { margin-top: 5px; }
+  .navgroup-title { min-height: 36px; padding: 5px 8px; font-size: 13.5px; font-weight: 750; letter-spacing: .15px; }
+  .navgroup-items { margin: 2px 0 5px 8px; padding-left: 8px; }
+  .navgroup-items > button { min-height: 37px; margin-bottom: 2px; padding: 5px 8px; gap: 8px; border-radius: 7px; font-size: 13.5px; font-weight: 650; }
+  .nav-icon { width: 17px; height: 17px; flex-basis: 17px; }
+  .asidefoot { padding: 8px 7px 0; font-size: 9.5px; }
+
+  .app-header { padding-inline: 21px; gap: 13px; }
+  .sidebar-collapse-toggle { width: 39px; height: 39px; flex-basis: 39px; }
+  .app-header .crumb { font-size: 12px; }
+  .app-header .crumb span { font-size: 10.5px; }
+  .app-header .crumb b { font-size: 12.5px; }
+  .header-search { height: 39px; width: min(440px,34vw); }
+  .header-tools button { width: 37px; height: 37px; }
+  .account-button { gap: 7px; padding: 3px 9px 3px 4px; border-radius: 9px; }
+  .avatar { width: 29px; height: 29px; }
+  .account-copy strong { font-size: 12px; }
+  .account-copy small { font-size: 9.5px; }
+
+  .content { padding: 14px 20px 24px; }
+  .pagetop { gap: 12px; margin-bottom: 12px; padding-bottom: 10px; }
+  .eyebrow { margin-bottom: 2px; font-size: 9.5px; }
+  .pagetop h1 { margin: 1px 0 2px; font-size: 19px; letter-spacing: -.35px; }
+  .pagetop p { font-size: 11px; }
+
+  .btn { min-height: 32px; padding: 5px 10px; border-radius: 7px; font-size: 11px; }
+  .btn.small { min-height: 27px; padding: 3px 7px; font-size: 10px; }
+  .btn i { font-size: 11px; }
+  .badge { padding: 2px 7px; font-size: 9.5px; }
+
+  .stats { grid-auto-columns: minmax(160px,1fr); gap: 9px; margin-bottom: 12px; padding-bottom: 1px; }
+  .stats > .stat { min-height: 80px; padding: 8px 11px; border-radius: 9px; box-shadow: 0 2px 8px rgba(30,64,175,.04); }
+  .stats > .stat .stat-head { gap: 8px; }
+  .stats > .stat .stat-icon { width: 27px; height: 27px; border-radius: 7px; }
+  .stats > .stat .stat-icon svg { width: 13px; height: 13px; }
+  .stats > .stat small { font-size: 9.5px; }
+  .stats > .stat strong { margin: 2px 0 1px; font-size: clamp(18px,1.25vw,21px); }
+  .stats > .stat .meta { font-size: 9px; }
+
+  .customer-stats .customer-stat { min-height: 88px; padding: 10px 12px; border-radius: 10px; }
+  .customer-stats .customer-stat strong { font-size: 21px; }
+  .customer-stats .customer-stat small { font-size: 10px; }
+
+  .grid { gap: 10px; }
+  .split { gap: 9px; }
+  .card { margin-bottom: 10px; padding: 12px 14px; border-radius: 9px; box-shadow: 0 2px 8px rgba(30,64,175,.04); }
+  .cardhead { gap: 8px; margin-bottom: 8px; }
+  .cardhead h3 { font-size: 12.5px; }
+  .cardhead i { font-size: 12px; }
+  .sub { font-size: 10px; }
+
+  .tablewrap { border-radius: 8px; }
+  body main th { padding: 7px 8px; font-size: 9.5px; }
+  body main td { padding: 7px 8px; font-size: 11px; }
+  body main td .sub { font-size: 9px; }
+  .filters { gap: 8px; margin-bottom: 10px; }
+  .filters input, .filters select { min-height: 36px; padding: 7px 10px; font-size: 11.5px; }
+
+  .tabs, .crm-workspace-tabs, .care-view-switch, .customer-tabs { gap: 5px; }
+  .tabs .btn, .crm-workspace-tabs .btn, .care-view-switch .btn, .customer-tabs .btn {
+    min-height: 31px;
+    padding: 5px 9px;
+    font-size: 10.5px;
+  }
+  .tabs i, .crm-workspace-tabs i, .care-view-switch i, .customer-tabs i { font-size: 11px; }
+  .metricline { padding-block: 6px; font-size: 11px; }
+  .detail-summary { gap: 7px; }
+  .detail-summary > div { padding: 9px 10px; }
+  .detail-summary small { font-size: 9px; }
+  .detail-summary strong { font-size: 12px; }
+
+  .hero { gap: 18px; margin-bottom: 13px; padding: 17px 20px; }
+  .hero h2 { font-size: 19px; }
+  .hero p { margin-bottom: 10px; font-size: 11.5px; }
+
+  .pagination { min-height: 42px; padding: 7px 9px; }
+  .pagination-summary { font-size: 10px; }
+  .pagination-page, .pagination-arrow { min-width: 28px; height: 28px; font-size: 10px; }
+
+  /* Keep dialogs comfortable while the workspace itself stays dense. */
+  .modal { font-size: 11.5px; }
+  .modalhead h2 { font-size: 15px; }
+  body .modal:has(.tour-builder-modal) { font-size: 11.5px; }
+}
+
+/* Flat workspace: one visual container per data section, no card-inside-card effect. */
+body main .card:has(.tablewrap) {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #dbe4f0;
+  border-top: 3px solid #2f6df6;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(31, 53, 82, .045);
+}
+
+body main .card:has(.tablewrap) > .cardhead {
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e4eaf2;
+  background: #fff;
+}
+
+body main .card:has(.tablewrap) > .filters,
+body main .card:has(.tablewrap) > .tabs,
+body main .card:has(.tablewrap) > .actions {
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e4eaf2;
+  background: #fbfcfe;
+}
+
+body main .card:has(.tablewrap) > .tablewrap {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body main .card:has(.tablewrap) > .pagination,
+body main .card:has(.tablewrap) > .tablewrap + .pagination {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #e4eaf2;
+  border-radius: 0;
+  background: #fff;
+}
+
+body main .card:has(.tablewrap) table {
+  border: 0;
+  border-radius: 0;
+}
+
+body main .card:has(.tablewrap) thead th {
+  background: #f7f9fc;
+  border-bottom-color: #dbe4f0;
+}
+
+body main .card .card {
+  margin: 0;
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body main .card .card + .card {
+  border-top: 1px solid #e6ebf2;
+}
+
+body main .card .card > .cardhead {
+  margin-bottom: 8px;
+}
+
+body main .tablewrap + .notice,
+body main .card:has(.tablewrap) > .notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Compact tour builder form — dense but still readable. */
+@media (min-width: 901px) {
+  body .modal:has(.tour-builder-modal) > .modalhead {
+    height: 82px;
+    padding: 18px 24px;
+  }
+
+  body .modal:has(.tour-builder-modal) > .modalhead h2 { font-size: 17px; }
+  body .modal:has(.tour-builder-modal) > .modalhead h2::after {
+    margin-top: 4px;
+    font-size: 11.5px;
+  }
+
+  body .modal:has(.tour-builder-modal) > .modalhead .close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tour-builder-modal {
+    grid-template-rows: 76px minmax(0, 1fr);
+    height: calc(100% - 82px);
+    font-size: 11.5px;
+  }
+
+  .tour-builder-modal > .dz-steps { padding: 11px 28px; }
+  .tour-builder-modal .dz-step { gap: 8px; padding: 6px 9px; }
+  .tour-builder-modal .dz-step-no {
+    width: 31px;
+    height: 31px;
+    flex-basis: 31px;
+    font-size: 11px;
+  }
+  .tour-builder-modal .dz-step b { font-size: 11.5px; }
+  .tour-builder-modal .dz-step small { margin-top: 1px; font-size: 9.5px; }
+
+  .tour-builder-scroll { padding: 20px 28px 72px; }
+  .tour-builder-modal .card { padding: 14px 17px; }
+  .tour-builder-modal .card > h3 {
+    margin-bottom: 11px;
+    padding-bottom: 11px;
+    font-size: 13px;
+  }
+  .tour-builder-modal .dz-num {
+    width: 19px;
+    height: 19px;
+    font-size: 10px;
+  }
+
+  .tour-builder-modal .dz-form { gap: 10px 14px; }
+  .tour-builder-modal .dz-row { gap: 9px; }
+  .tour-builder-modal .dz-field { gap: 3px; font-size: 10.5px; }
+  .tour-builder-modal .dz-field input,
+  .tour-builder-modal .dz-field select,
+  .tour-builder-modal .dz-field textarea,
+  .tour-builder-modal .dz-item input,
+  .tour-builder-modal .dz-day input,
+  .tour-builder-modal .dz-day textarea,
+  .tour-builder-modal .dz-search,
+  .tour-builder-modal .dz-filters select {
+    min-height: 38px;
+    padding: 7px 9px;
+    border-radius: 7px;
+    font-size: 11.5px;
+  }
+  .tour-builder-modal .dz-field textarea { min-height: 58px; }
+  .tour-builder-modal .dz-count { font-size: 9px; }
+
+  .tour-builder-modal .dz-tabs { margin-bottom: 9px; }
+  .tour-builder-modal .dz-tabs button { padding: 6px 9px; font-size: 10.5px; }
+  .tour-builder-modal .dz-pills { gap: 6px; margin-bottom: 10px; }
+  .tour-builder-modal .dz-pills button {
+    min-height: 32px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 10.5px;
+  }
+  .tour-builder-modal .dz-tools { gap: 6px; margin-bottom: 9px; }
+  .tour-builder-modal .dz-empty { padding: 16px 12px; }
+  .tour-builder-modal .dz-empty-art { width: 52px; height: 52px; font-size: 20px; }
+  .tour-builder-modal .dz-empty b { font-size: 12.5px; }
+  .tour-builder-modal .dz-empty p { font-size: 10.5px; }
+
+  .tour-builder-modal .dz-stage-nav { padding: 10px 22px; }
+  .tour-builder-modal .dz-stage-nav .btn { min-height: 36px; font-size: 11px; }
+  .tour-builder-modal .dz-stage-nav .btn.primary { min-width: 175px; }
+  .tour-builder-modal .dz-required { font-size: 10.5px; }
+}
+
+/* Quote detail modal: wide workspace, fixed chrome, no horizontal scrolling. */
+body .modalback:has(.quote-detail) {
+  align-items: center;
+  padding: 20px;
+}
+
+body .modal:has(.quote-detail) {
+  position: relative;
+  width: min(1180px, calc(100vw - 40px));
+  height: min(820px, calc(100dvh - 40px));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f6f8fb;
+}
+
+body .modal:has(.quote-detail) > .modalhead {
+  position: static;
+  height: 64px;
+  margin: 0;
+  padding: 13px 20px;
+  background: #fff;
+}
+
+body .modal:has(.quote-detail) > .modalhead .eyebrow { display: none; }
+body .modal:has(.quote-detail) > .modalhead h2 { font-size: 16px; }
+
+body .modal:has(.quote-detail) .quote-detail {
+  height: calc(100% - 64px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px 20px 72px !important;
+  scrollbar-width: thin;
+}
+
+body .modal:has(.quote-detail) .journey-bar {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: 100%;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: 9px;
+}
+
+body .modal:has(.quote-detail) .journey-bar li {
+  min-width: 0;
+  padding: 8px 7px 8px 22px;
+}
+
+body .modal:has(.quote-detail) .journey-bar li i {
+  left: 8px;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+}
+
+body .modal:has(.quote-detail) .journey-bar li b,
+body .modal:has(.quote-detail) .journey-bar li span,
+body .modal:has(.quote-detail) .journey-bar li small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body .modal:has(.quote-detail) .journey-bar li b { font-size: 9px; }
+body .modal:has(.quote-detail) .journey-bar li span,
+body .modal:has(.quote-detail) .journey-bar li span .entity-link { font-size: 10.5px; }
+body .modal:has(.quote-detail) .journey-bar li small { font-size: 9px; }
+
+body .modal:has(.quote-detail) .quote-identity { margin-bottom: 10px; }
+body .modal:has(.quote-detail) .quote-mark { width: 38px; height: 38px; flex-basis: 38px; }
+body .modal:has(.quote-detail) .quote-identity h3 { font-size: 16px; }
+body .modal:has(.quote-detail) .quote-identity p { font-size: 10.5px; }
+body .modal:has(.quote-detail) .detail-summary,
+body .modal:has(.quote-detail) .quote-finance { gap: 7px; margin-bottom: 9px; }
+body .modal:has(.quote-detail) .detail-summary > div,
+body .modal:has(.quote-detail) .quote-finance > div { padding: 8px 10px; }
+body .modal:has(.quote-detail) .quote-finance strong { font-size: 14px; }
+body .modal:has(.quote-detail) .quote-detail-grid { grid-template-columns: minmax(0, 1.65fr) minmax(280px, .85fr); gap: 10px; }
+body .modal:has(.quote-detail) .detail-section { margin-bottom: 9px; padding: 11px 13px; }
+body .modal:has(.quote-detail) .detail-section-head { margin-bottom: 7px; padding-bottom: 6px; }
+body .modal:has(.quote-detail) .quote-day { padding: 6px 0; }
+
+body .modal:has(.quote-detail) .detail-footer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 12;
+  min-height: 58px;
+  margin: 0;
+  padding: 11px 20px;
+  border-top: 1px solid #dfe6ef;
+  background: rgba(255, 255, 255, .97);
+}
+
+@media (max-width: 760px) {
+  body .modalback:has(.quote-detail) { padding: 0; }
+  body .modal:has(.quote-detail) { width: 100%; height: 100dvh; border-radius: 0; }
+  body .modal:has(.quote-detail) .quote-detail { padding: 12px 12px 78px !important; }
+  body .modal:has(.quote-detail) .journey-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .modal:has(.quote-detail) .journey-bar li:nth-child(n+3) { border-top: 1px solid var(--line); }
+  body .modal:has(.quote-detail) .detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .modal:has(.quote-detail) .quote-finance,
+  body .modal:has(.quote-detail) .quote-detail-grid { grid-template-columns: 1fr; }
+  body .modal:has(.quote-detail) .detail-footer { overflow-x: auto; flex-wrap: nowrap; }
+}
+
+/* Shared large record modals: Booking and Operations use the same shell. */
+body .modalback:has(.booking360),
+body .modalback:has(.operation-detail) {
+  align-items: center;
+  padding: 20px;
+}
+
+body .modal:has(.booking360),
+body .modal:has(.operation-detail) {
+  position: relative;
+  width: min(1180px, calc(100vw - 40px));
+  height: min(820px, calc(100dvh - 40px));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f6f8fb;
+}
+
+body .modal:has(.booking360) > .modalhead,
+body .modal:has(.operation-detail) > .modalhead {
+  position: static;
+  height: 64px;
+  margin: 0;
+  padding: 13px 20px;
+  background: #fff;
+}
+
+body .modal:has(.booking360) > .modalhead .eyebrow,
+body .modal:has(.operation-detail) > .modalhead .eyebrow { display: none; }
+
+body .modal:has(.booking360) .booking360,
+body .modal:has(.operation-detail) .operation-detail {
+  height: calc(100% - 64px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 14px 18px 72px;
+  scrollbar-width: thin;
+}
+
+/* Every workflow journey fits its modal instead of becoming a horizontal scroller. */
+body .modal .journey-bar {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: 100%;
+  overflow: hidden;
+}
+
+body .modal .journey-bar li {
+  min-width: 0;
+  padding: 8px 7px 8px 22px;
+}
+
+body .modal .journey-bar li b,
+body .modal .journey-bar li span,
+body .modal .journey-bar li small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body .modal:has(.booking360) .booking-meta { gap: 7px; }
+body .modal:has(.booking360) .booking-meta > div { padding: 8px 10px; }
+body .modal:has(.booking360) .tabbar {
+  gap: 4px;
+  overflow: visible;
+  padding: 7px;
+}
+body .modal:has(.booking360) .tabbar button { min-height: 32px; padding: 5px 9px; font-size: 10.5px; }
+body .modal:has(.booking360) .detail-footer,
+body .modal:has(.operation-detail) .operation-detail > .actions {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 12;
+  min-height: 58px;
+  margin: 0;
+  padding: 11px 20px;
+  border-top: 1px solid #dfe6ef;
+  background: rgba(255,255,255,.97);
+}
+
+/* Side profile drawers: remove inner horizontal scrollers and keep one scroll surface. */
+body .modal:has(.crm-profile),
+body .modal:has(.care-profile),
+body .modal:has(.customer-profile) { overflow-x: hidden; }
+
+body .crm-profile .journey-bar,
+body .care-profile .journey-bar,
+body .customer-profile .journey-bar {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body .care-profile > .flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+body .care-profile > .flow span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 760px) {
+  body .modalback:has(.booking360),
+  body .modalback:has(.operation-detail) { padding: 0; }
+  body .modal:has(.booking360),
+  body .modal:has(.operation-detail) { width: 100%; height: 100dvh; border-radius: 0; }
+  body .modal:has(.booking360) .booking360,
+  body .modal:has(.operation-detail) .operation-detail { padding: 12px 12px 76px; }
+  body .modal .journey-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .care-profile > .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

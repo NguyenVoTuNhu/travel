@@ -17,22 +17,26 @@
     />
     <link rel="stylesheet" href="assets/fa/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/modules/dashboard.css" />
-    <link rel="stylesheet" href="css/modules/crm-sales.css" />
-    <link rel="stylesheet" href="css/modules/customers.css" />
-    <link rel="stylesheet" href="css/modules/customer-service.css" />
-    <link rel="stylesheet" href="css/modules/quotes.css" />
-    <link rel="stylesheet" href="css/modules/guide-app.css" />
-    <link rel="stylesheet" href="css/modules/guides.css" />
-    <link rel="stylesheet" href="css/modules/operations.css" />
+    <link rel="stylesheet" href="css/mod-dashboard.css" />
+    <link rel="stylesheet" href="css/mod-crm.css" />
+    <link rel="stylesheet" href="css/mod-customers.css" />
+    <link rel="stylesheet" href="css/mod-care.css" />
+    <link rel="stylesheet" href="css/mod-quotes.css" />
+    <link rel="stylesheet" href="css/mod-guideapp.css?v=2" />
+    <link rel="stylesheet" href="css/mod-guides.css" />
+    <link rel="stylesheet" href="css/mod-operations.css" />
+    <link rel="stylesheet" href="css/mod-admin.css" />
     <link rel="stylesheet" href="css/overlays.css" />
     <link rel="stylesheet" href="css/theme-polish.css" />
     <link rel="stylesheet" href="css/erp-ui.css" />
     <link rel="stylesheet" href="css/compact-density.css" />
-    <link rel="stylesheet" href="css/modules/auth.css" />
+    <link rel="stylesheet" href="css/mod-auth.css" />
     <link rel="stylesheet" href="css/system-upgrades.css" />
+    <link rel="stylesheet" href="css/erp-modern.css" />
+    <link rel="stylesheet" href="css/erp-v4.css" />
   </head>
   <body>
+    <a class="skip-link" href="#app">Bỏ qua điều hướng</a>
     <div class="auth-boot" id="authBoot" aria-live="polite">
       <img src="assets/images/dichvuquanhta.jpg" alt="" width="52" height="52" />
       <strong>TypicOne <em>ERP</em></strong>
@@ -71,7 +75,7 @@
           <form id="loginForm" onsubmit="login(event)" novalidate>
           <label for="loginUsername">Tên đăng nhập</label>
           <div class="login-field">
-            <span aria-hidden="true">◯</span>
+            <span aria-hidden="true"><i class="fa-solid fa-user"></i></span>
             <input
               id="loginUsername"
               name="username"
@@ -82,7 +86,7 @@
           </div>
           <label for="loginPassword">Mật khẩu</label>
           <div class="login-field">
-            <span aria-hidden="true">▣</span>
+            <span aria-hidden="true"><i class="fa-solid fa-lock"></i></span>
             <input
               id="loginPassword"
               name="password"
@@ -96,7 +100,7 @@
               type="button"
               onclick="togglePassword()"
               aria-label="Hiện hoặc ẩn mật khẩu"
-            >◉</button>
+            ><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
           </div>
           <div class="login-options">
             <label class="remember"
@@ -117,7 +121,7 @@
     </section>
 
     <div id="appShell" hidden>
-      <aside>
+      <aside aria-label="Điều hướng chính">
       <div class="brand">
         <img
           src="assets/images/dichvuquanhta.jpg"
@@ -134,10 +138,7 @@
       </div>
       <nav id="nav"></nav>
       <div class="asidefoot">
-        <span class="online">●</span> TypicOne ERP · Không gian làm việc<br /><span
-          style="color: #8da397"
-          >Database KIO · Đồng bộ theo tenant</span
-        >
+        <span class="online" aria-hidden="true"></span><span>Hệ thống đang hoạt động</span><small>Database KIO · Đồng bộ theo tenant</small>
       </div>
       </aside>
       <div class="layout">
@@ -185,14 +186,17 @@
             <div class="account-menu" id="accountMenu" hidden>
               <div class="account-menu-head">
                 <span class="avatar" id="menuUserAvatar">TT</span>
-                <div>
+              <div>
                   <strong id="menuUserName">Người dùng</strong>
                   <small id="menuUserRole">Vai trò</small>
+                  <span id="menuUsername">@username</span>
                 </div>
               </div>
               <div class="account-menu-line"></div>
               <button onclick="showAccountInfo()"><i class="fa-solid fa-user" aria-hidden="true"></i> Hồ sơ cá nhân</button>
               <button id="permissionMenuItem" onclick="showPermissionInfo()"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Vai trò &amp; phân quyền</button>
+              <button id="usersMenuItem" onclick="closeAccountMenu();go('users')"><i class="fa-solid fa-users-gear" aria-hidden="true"></i> Người dùng</button>
+              <button id="settingsMenuItem" onclick="closeAccountMenu();go('settings')"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Cài đặt hệ thống</button>
               <button onclick="passwordForm()"><i class="fa-solid fa-key" aria-hidden="true"></i> Đổi mật khẩu</button>
               <div class="account-menu-line"></div>
               <button class="logout-button" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Đăng xuất</button>
@@ -206,29 +210,29 @@
     </div>
     <div id="overlay"></div>
     <div id="toast"></div>
-    <script src="js/data/data.js"></script>
-    <script src="js/api/travel-config.js"></script>
-    <script src="js/api/travel-api.js"></script>
-    <script src="js/api/travel-auth.js"></script>
-    <script src="js/core/app.core.js"></script>
-    <script src="js/core/workflow.js"></script>
-    <script src="js/modules/mod-dashboard.js"></script>
-    <script src="js/modules/mod-crm-sales.js"></script>
-    <script src="js/modules/mod-customers.js"></script>
-    <script src="js/modules/quote-engine.js"></script>
-    <script src="js/modules/mod-quotes.js"></script>
-    <script src="js/modules/mod-bookings.js"></script>
-    <script src="js/modules/mod-operations.js"></script>
-    <script src="js/modules/mod-suppliers.js"></script>
-    <script src="js/modules/mod-guides.js"></script>
-    <script src="js/modules/mod-vehicles.js"></script>
-    <script src="js/modules/mod-accounting.js"></script>
-    <script src="js/modules/mod-marketing.js"></script>
-    <script src="js/modules/mod-documents.js"></script>
-    <script src="js/modules/mod-customer-service.js"></script>
-    <script src="js/modules/mod-guide-app.js"></script>
-    <script src="js/modules/mod-approvals.js"></script>
-    <script src="js/modules/mod-admin.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/travel-config.js?v=3"></script>
+    <script src="js/travel-api.js"></script>
+    <script src="js/travel-auth.js?v=2"></script>
+    <script src="js/app.core.js?v=2"></script>
+    <script src="js/workflow.js"></script>
+    <script src="js/mod-dashboard.js"></script>
+    <script src="js/mod-crm.js"></script>
+    <script src="js/mod-customers.js"></script>
+    <script src="js/mod-design.js"></script>
+    <script src="js/mod-quotes.js"></script>
+    <script src="js/mod-bookings.js"></script>
+    <script src="js/mod-operations.js"></script>
+    <script src="js/mod-suppliers.js"></script>
+    <script src="js/mod-guides.js"></script>
+    <script src="js/mod-vehicles.js"></script>
+    <script src="js/mod-accounting.js"></script>
+    <script src="js/mod-marketing.js"></script>
+    <script src="js/mod-documents.js"></script>
+    <script src="js/mod-care.js"></script>
+    <script src="js/mod-guideapp.js?v=2"></script>
+    <script src="js/mod-approvals.js"></script>
+    <script src="js/mod-admin.js"></script>
+    <script src="js/app.js?v=2"></script>
   </body>
 </html>

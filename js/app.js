@@ -6,8 +6,10 @@ window.addEventListener("keydown", (event) => {
     document.getElementById("globalSearch")?.focus();
   }
   if (event.key === "Escape") {
-    closeModal();
-    closeAccountMenu();
+    if (document.querySelector(".modal")) closeModal();
+    else if (document.querySelector(".notification-popover")) closeNotifications();
+    else if (document.body.classList.contains("navopen")) toggleMobileNav(false);
+    else closeAccountMenu();
   }
 });
 
@@ -65,7 +67,7 @@ async function enterApplication(user) {
   } catch (error) {
     console.error("Database startup error:", error);
     if (hasCache) toast("Đang dùng dữ liệu gần nhất vì database tạm thời mất kết nối.");
-    else app.innerHTML = `<div class="alert red"><b>Không thể kết nối database</b>${esc(error.message)}. Hãy kiểm tra kết nối tới kio.dvqt.vn rồi tải lại trang.</div>`;
+    else app.innerHTML = `<div class="alert red"><b>Không thể kết nối database</b>${esc(databaseErrorMessage(error))}</div>`;
   }
 }
 
@@ -90,7 +92,7 @@ async function startApplication() {
     else showLogin();
   } catch (error) {
     console.error("Authentication startup error:", error);
-    showLogin(`${error.message} Hãy kiểm tra kết nối tới kio.dvqt.vn.`);
+    showLogin(databaseErrorMessage(error));
   }
 }
 

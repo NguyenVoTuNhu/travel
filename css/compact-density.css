@@ -28,7 +28,7 @@
   .app-header .crumb { font-size: 12px; }
   .app-header .crumb span { font-size: 10.5px; }
   .app-header .crumb b { font-size: 12.5px; }
-  .header-search { height: 39px; width: min(440px,34vw); }
+  .header-search { width: min(360px,30vw); height: 39px; margin-right: auto; }
   .header-tools button { width: 37px; height: 37px; }
   .account-button { gap: 7px; padding: 3px 9px 3px 4px; border-radius: 9px; }
   .avatar { width: 29px; height: 29px; }

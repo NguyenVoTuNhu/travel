@@ -1,0 +1,133 @@
+/* TypicOne ERP v4 — giao diện thống nhất lấy cảm hứng từ dashboard quản trị hiện đại. */
+:root {
+  --v4-radius: 13px;
+  --v4-shadow: 0 1px 2px rgba(15, 32, 56, .035), 0 8px 24px rgba(15, 32, 56, .045);
+}
+
+.app-header {
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 8px rgba(15, 32, 56, .035);
+}
+
+.content {
+  width: auto; max-width: none; margin: 0;
+  padding: 18px 20px 30px;
+}
+.pagetop { min-height: 58px; margin-bottom: 14px; }
+.pagetop h1 { margin-bottom: 4px; font-size: clamp(20px, 1.7vw, 25px); }
+.pagetop p { font-size: 12.5px; line-height: 1.5; }
+.pagetop .actions { align-self: flex-start; }
+
+/* Một lớp điều hướng trong mỗi màn hình; không lặp thêm khi module đã có tab riêng. */
+.tabs, .crm-workspace-tabs, .module-menu {
+  gap: 5px; margin: 0 0 14px; padding: 6px;
+  border: 1px solid var(--color-border); border-radius: var(--v4-radius);
+  background: var(--color-surface); box-shadow: var(--v4-shadow);
+}
+.tabs { display: flex; flex-wrap: wrap; }
+.tabs .btn, .crm-workspace-tabs .btn, .module-menu button {
+  min-height: 38px; border-color: transparent; border-radius: 8px; box-shadow: none;
+}
+.tabs .btn:hover, .crm-workspace-tabs .btn:hover { background: var(--color-primary-light); }
+.tabs .btn.selected, .crm-workspace-tabs .btn.selected, .module-menu button.is-active {
+  color: #fff; border-color: var(--color-primary); background: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, .18);
+}
+
+/* KPI thấp và dễ quét như các UI tham chiếu. */
+.stats { gap: 12px; margin-bottom: 14px; }
+.stats > .stat {
+  min-height: 92px; display: grid; grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto auto auto; column-gap: 10px; align-content: center;
+  padding: 13px 15px; border-radius: 12px; box-shadow: none;
+}
+.stats > .stat::before { display: none; }
+.stats > .stat .stat-head {
+  grid-column: 1 / -1; grid-row: 1; display: grid;
+  grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center;
+}
+.stats > .stat .stat-icon {
+  grid-column: 1; width: 38px; height: 38px;
+  display: grid; place-items: center; border-radius: 10px;
+}
+.stats > .stat .stat-head small {
+  grid-column: 2; width: auto; min-width: 0; max-width: none;
+  color: var(--color-text-muted); font-size: 11px; font-weight: 600;
+  line-height: 1.25; letter-spacing: 0; text-transform: none; white-space: normal;
+}
+.stats > .stat > strong {
+  grid-column: 2; grid-row: 2; margin: -14px 0 0; font-size: clamp(19px, 1.7vw, 24px);
+  line-height: 1.1; letter-spacing: -.025em;
+}
+.stats > .stat > .meta {
+  grid-column: 2; grid-row: 3; margin-top: 5px; overflow: hidden;
+  color: #8190a5; font-size: 10.5px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Card, bộ lọc và bảng dùng chung trên toàn bộ phân hệ. */
+.card, .user-management-card, .care-section {
+  border-color: var(--color-border); border-radius: var(--v4-radius); box-shadow: var(--v4-shadow);
+}
+.card { margin-bottom: 14px; padding: 18px 20px; }
+.cardhead { min-height: 38px; margin-bottom: 13px; padding-bottom: 11px; }
+.cardhead h3 { color: var(--color-text); font-size: 14px; font-weight: 750; }
+.filters {
+  min-height: 54px; gap: 9px; margin: 0 0 13px; padding: 8px;
+  border-color: var(--color-border); border-radius: 10px; background: #f8fafd;
+}
+.filters:focus-within { border-color: #b8cae8; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+.filters input, .filters select { min-height: 38px; background: #fff; }
+
+.tablewrap {
+  border-color: var(--color-border); border-radius: 10px; background: #fff;
+  scrollbar-color: #c7d2e2 transparent;
+}
+.card > .tablewrap:last-child {
+  width: calc(100% + 40px); margin: 0 -20px -18px;
+  border-right: 0; border-bottom: 0; border-left: 0; border-radius: 0 0 var(--v4-radius) var(--v4-radius);
+}
+table { font-variant-numeric: tabular-nums; }
+thead th {
+  height: 40px; padding: 9px 12px; color: #73839c; background: #f5f7fa;
+  font-size: 10px; font-weight: 800; letter-spacing: .045em;
+}
+tbody td { height: 54px; padding: 9px 12px; border-bottom-color: #e9eef5; }
+tbody tr { transition: background 140ms ease; }
+tbody tr:hover { background: #f7faff; }
+tbody tr:last-child td { border-bottom: 0; }
+.tablewrap .link, .entity-link { color: var(--color-primary); font-weight: 750; }
+
+.badge { border-radius: 999px; }
+.btn.primary { box-shadow: 0 4px 12px rgba(37,99,235,.18); }
+.btn.primary:hover { box-shadow: 0 6px 16px rgba(37,99,235,.22); }
+.icon-action { border-color: #dbe4f0; background: #fff; }
+.icon-action:hover { color: var(--color-primary); border-color: #b9cceb; background: var(--color-primary-light); }
+
+/* Modal/chi tiết có header cố định, nội dung cuộn riêng và không chồng footer. */
+.modal { display: flex; flex-direction: column; overflow: hidden; }
+.modalhead { flex: 0 0 auto; background: rgba(255,255,255,.96); }
+.modal > form, .modal > .booking360, .modal > .quote-detail, .modal > .crm-profile,
+.modal > .customer-profile, .modal > .care-profile, .modal > .guide-profile {
+  min-height: 0; overflow-y: auto;
+}
+.modal .formfooter { position: sticky; bottom: 0; z-index: 3; background: rgba(255,255,255,.96); backdrop-filter: blur(10px); }
+
+@media (max-width: 1100px) {
+  .stat { min-height: 88px; }
+  .content { padding-inline: 16px; }
+}
+
+@media (max-width: 767px) {
+  .content { padding: 14px 12px 24px; }
+  .pagetop { min-height: 0; }
+  .tabs, .crm-workspace-tabs, .module-menu { flex-wrap: nowrap; overflow-x: auto; }
+  .tabs .btn, .crm-workspace-tabs .btn, .module-menu button { min-height: 44px; flex: 0 0 auto; }
+  .stat { min-height: 88px; }
+  .card { padding: 15px; }
+  .card > .tablewrap:last-child { width: calc(100% + 30px); margin: 0 -15px -15px; }
+  tbody td { height: 50px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, tbody tr { transition: none; }
+}

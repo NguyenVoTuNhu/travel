@@ -1,0 +1,9 @@
+# Thư mục cache tỷ giá VCB: không liệt kê, không cho truy cập trực tiếp từ web.
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Deny from all
+</IfModule>

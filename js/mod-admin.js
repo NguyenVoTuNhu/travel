@@ -231,13 +231,22 @@ function settingsBackupTab() {
   return card("Sao lưu dữ liệu", `<p class="sub">Xuất toàn bộ dữ liệu đang nạp từ database ra file JSON.</p>${btn("Tải bản sao lưu", "downloadBackup()", "primary")}`);
 }
 
+function settingsTabBody() {
+  if (settingsTab === "fx") return fxRatesPanel();
+  if (settingsTab === "audit") return settingsAuditTab();
+  if (settingsTab === "roles") return settingsRolesTab();
+  if (settingsTab === "backup") return settingsBackupTab();
+  return settingsPolicyTab();
+}
+
 views.settings = () => {
   if (!can("all")) return title("Cài đặt", "Chỉ Giám đốc được thay đổi cài đặt hệ thống.");
   const tabs = [["policy", "sliders", "Chính sách"], ["audit", "clock-rotate-left", "Nhật ký"], ["roles", "user-shield", "Vai trò & menu"], ["backup", "database", "Sao lưu"]];
+  tabs.splice(1, 0, ["fx", "coins", "Tỷ giá"]);
   return `<div class="settings-page">` +
     title("Cài đặt hệ thống", "Ngưỡng phê duyệt, nhật ký và phân quyền.") +
     `<nav class="tabs settings-tabs" aria-label="Các mục cài đặt">${tabs.map(([k, icon, label]) => `<button class="btn ${settingsTab === k ? "selected" : ""}" onclick="settingsTab='${k}';render()"><i class="fa-solid fa-${icon}" aria-hidden="true"></i>${label}</button>`).join("")}</nav>` +
-    (settingsTab === "audit" ? settingsAuditTab() : settingsTab === "roles" ? settingsRolesTab() : settingsTab === "backup" ? settingsBackupTab() : settingsPolicyTab()) +
+    settingsTabBody() +
     `</div>`;
 };
 

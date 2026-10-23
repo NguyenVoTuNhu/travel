@@ -56,7 +56,7 @@ views.quotes = () => {
       ${stat("TỔNG BÁO GIÁ", all.length, "Trong phạm vi của bạn")}
       ${stat("CHỜ KHÁCH PHẢN HỒI", count("Sent"), count("Draft") + " bản nháp · " + count("PendingApproval") + " chờ CEO duyệt")}
       ${stat("ĐÃ CHẤP NHẬN", count("Accepted"), "Đã chuyển thành Booking")}
-      ${stat("GIÁ TRỊ ĐANG MỞ", short(open.reduce((s, q) => s + (q.amount || 0), 0)), open.length + " báo giá còn hiệu lực")}
+      ${stat("GIÁ TRỊ ĐANG MỞ", fxSumMoney(open, (q) => q.amount), open.length + " báo giá còn hiệu lực")}
     </div>` +
     card(
       "Danh sách báo giá",
@@ -74,7 +74,7 @@ views.quotes = () => {
               filtered.map((q) => {
                 const margin = quoteMargin(q).toFixed(1);
                 const booking = state.bookings.find((b) => b.quote === q.id);
-                return `<tr><td><strong>${q.id}</strong><span class="sub">Phiên bản v${q.version}</span></td><td><strong>${customerLink(q.client)}</strong><span class="sub">${esc(q.tour)}</span></td><td><b class="moneypositive">${money(q.amount)}</b></td><td>${money(q.cost)}</td><td>${badge(margin + "%", Number(margin) >= policy().minMarginPct ? "green" : "amber")}</td><td>${quoteBadge(q.status)}${quoteValidityBadge(q)}</td><td>${entityLink("lead", q.lead)}${booking ? `<span class="sub">${entityLink("booking", booking.id)}</span>` : ""}</td><td>${btn("Xem chi tiết", "quoteDetail('" + q.id + "')", "small")}</td></tr>`;
+                return `<tr><td><strong>${q.id}</strong><span class="sub">Phiên bản v${q.version}</span></td><td><strong>${customerLink(q.client)}</strong><span class="sub">${esc(q.tour)}</span></td><td><b class="moneypositive">${fxMoneyOf(q, q.amount)}</b></td><td>${fxMoneyOf(q, q.cost)}</td><td>${badge(margin + "%", Number(margin) >= policy().minMarginPct ? "green" : "amber")}</td><td>${quoteBadge(q.status)}${quoteValidityBadge(q)}</td><td>${entityLink("lead", q.lead)}${booking ? `<span class="sub">${entityLink("booking", booking.id)}</span>` : ""}</td><td>${btn("Xem chi tiết", "quoteDetail('" + q.id + "')", "small")}</td></tr>`;
               }),
             )
           : '<div class="empty">Không tìm thấy báo giá phù hợp.</div>'),
@@ -92,7 +92,7 @@ function quoteDetail(id) {
   const approval = pendingApproval(q.id, "QUOTE_PRICE");
   const reasons = quoteApprovalReasons(q);
   const history = (q.history || [])
-    .map((item) => `<div class="quote-history-row"><div><b>Phiên bản v${item.version}</b><small>${money(item.amount)} · ${dateTimeVN(item.at)}${item.by ? " · " + esc(item.by) : ""}${item.note ? "<br>" + esc(item.note) : ""}</small></div><span><button class="entity-link" onclick="printQuote('${q.id}',${item.version})">In bản này</button></span></div>`)
+    .map((item) => `<div class="quote-history-row"><div><b>Phiên bản v${item.version}</b><small>${fxMoneyOf(item, item.amount)} · ${dateTimeVN(item.at)}${item.by ? " · " + esc(item.by) : ""}${item.note ? "<br>" + esc(item.note) : ""}</small></div><span><button class="entity-link" onclick="printQuote('${q.id}',${item.version})">In bản này</button></span></div>`)
     .join("");
 
   const canSell = can("quotes_manage");
@@ -130,9 +130,9 @@ function quoteDetail(id) {
         <div><small>Thị trường</small><b>${esc(q.country || lead?.country || "Quốc tế")}</b></div>
       </div>
       <section class="quote-finance">
-        <div><small>Giá bán trọn gói</small><strong>${money(q.amount)}</strong></div>
-        <div><small>Dự toán chi phí</small><strong>${money(q.cost)}</strong></div>
-        <div class="${margin >= policy().minMarginPct ? "positive" : "warning"}"><small>Lợi nhuận gộp dự kiến</small><strong>${money(q.amount - q.cost)}</strong><span>Biên lợi nhuận ${margin.toFixed(1)}%</span></div>
+        <div><small>Giá bán trọn gói</small><strong>${fxMoneyOf(q, q.amount)}</strong>${fxEntryOf(q) ? `<span>${money(q.amount)}</span>` : ""}</div>
+        <div><small>Dự toán chi phí</small><strong>${fxMoneyOf(q, q.cost)}</strong></div>
+        <div class="${margin >= policy().minMarginPct ? "positive" : "warning"}"><small>Lợi nhuận gộp dự kiến</small><strong>${fxMoneyOf(q, q.amount - q.cost)}</strong><span>Biên lợi nhuận ${margin.toFixed(1)}%</span></div>
       </section>
       <div class="quote-detail-grid">
         <section class="detail-section">
@@ -145,7 +145,7 @@ function quoteDetail(id) {
             ${line("Lead", q.lead ? entityLink("lead", q.lead) : "—")}
             ${line("Sales phụ trách", esc(lead?.sales || "—"))}
             ${line("Ngân sách khách", q.budgetNative ? esc(q.budgetNative) + " " + esc(q.currency) : "Báo giá VND")}
-            ${line("Tỷ giá", q.rate ? new Intl.NumberFormat("vi-VN").format(q.rate) + " ₫" : "—")}
+            ${line("Tỷ giá", fxRateLabel(q))}
             ${line("Ngôn ngữ", esc(q.language || "Tiếng Việt"))}
             ${q.sentAt ? line("Đã gửi lúc", dateTimeVN(q.sentAt)) : ""}
             ${q.validUntil ? line("Hiệu lực đến", fmt(q.validUntil)) : ""}
@@ -162,14 +162,33 @@ function quoteDetail(id) {
   );
 }
 
+/* Tiền nhập ở form sửa báo giá: USD khi cả tỷ giá của báo giá và tỷ giá hôm nay đều có USD, không thì VND. */
+function quoteInputCode(q) {
+  const both = fxRate(fxDisplayCurrency, fxEntryOf(q)) && fxRate(fxDisplayCurrency);
+  return both ? fxDisplayCurrency : "VND";
+}
+
+/* Số nhập (tiền `code`) → VND. Không sửa số thì giữ nguyên VND đã lưu; sửa thì quy đổi theo tỷ giá hôm nay. */
+function quoteVndFromInput(input, storedVnd, code, oldEntry) {
+  const value = Number(input);
+  if (value === fxFromVnd(storedVnd, code, oldEntry)) return storedVnd;
+  return fxToVnd(value, code, fxCurrent());
+}
+
 function reviseQuote(id) {
   const q = findQuote(id);
+  const code = quoteInputCode(q);
+  const entry = fxEntryOf(q);
+  const step = code === "VND" ? "500000" : "any";
+  const amount = fxFromVnd(q.amount, code, entry);
+  const cost = fxFromVnd(q.cost, code, entry);
   modal(
     "Điều chỉnh giá · " + id,
     `<form onsubmit="saveRevision(event,'${id}')">
+      <input type="hidden" name="code" value="${esc(code)}">
       <div class="formgrid">
-        <label>Giá bán nhóm (VND)<input name="amount" type="number" min="500000" step="500000" value="${q.amount}" required></label>
-        <label>Dự toán chi phí (VND)<input name="cost" type="number" min="0" step="500000" value="${q.cost}" required></label>
+        <label>Giá bán nhóm (${esc(code)})<input name="amount" type="number" min="0.01" step="${step}" value="${amount}" required></label>
+        <label>Dự toán chi phí (${esc(code)})<input name="cost" type="number" min="0" step="${step}" value="${cost}" required></label>
         <label class="full">Lý do điều chỉnh<input name="note" placeholder="Ví dụ: Khách đề nghị giảm giá / đổi khách sạn" required></label>
       </div>
       <p class="notice">Hệ thống giữ nguyên phiên bản v${q.version} trong lịch sử và tạo phiên bản v${q.version + 1} ở trạng thái bản nháp.</p>
@@ -186,15 +205,29 @@ function saveRevision(e, id) {
     f = new FormData(e.target);
   if (q.status === "Accepted") return toast("Báo giá đã chấp nhận, không thể sửa.");
   q.history = q.history || [];
-  q.history.unshift({ version: q.version, amount: q.amount, cost: q.cost, program: q.program, status: q.status, sentAt: q.sentAt || "", at: nowISO(), by: actor().name, note: f.get("note") });
+  q.history.unshift({
+    version: q.version,
+    amount: q.amount,
+    cost: q.cost,
+    program: q.program,
+    status: q.status,
+    sentAt: q.sentAt || "",
+    at: nowISO(),
+    by: actor().name,
+    note: f.get("note"),
+    fxDate: fxDocDate(q),
+  });
   const wasSent = q.status === "Sent";
-  q.amount = +f.get("amount");
-  const newCost = +f.get("cost");
+  const code = String(f.get("code") || "VND");
+  const oldEntry = fxEntryOf(q);
+  q.amount = quoteVndFromInput(f.get("amount"), q.amount, code, oldEntry);
+  const newCost = quoteVndFromInput(f.get("cost"), q.cost, code, oldEntry);
   if (q.costBreakdown && q.cost > 0) {
     const ratio = newCost / q.cost;
     for (const k of Object.keys(q.costBreakdown)) q.costBreakdown[k] = Math.round(q.costBreakdown[k] * ratio);
   }
   q.cost = newCost;
+  q.fxDate = todayISO();
   q.version++;
   q.status = "Draft";
   q.approval = null;
@@ -228,7 +261,7 @@ function sendQuote(id) {
     `<form onsubmit="composeQuoteEmail(event,'${id}')">
       <label>Email người nhận ${field("to", "email", lead?.email || "", true)}</label>
       <label>Tiêu đề ${field("subject", "text", "Typic Travel — Báo giá " + q.tour + " [" + id + " · v" + q.version + "]", true)}</label>
-      <label>Nội dung<textarea name="body" style="min-height: 150px;">Kính gửi Quý khách ${q.client},\n\nTypic Travel xin gửi Quý khách chương trình "${q.tour}" khởi hành ${fmt(q.start)}, đoàn ${q.pax} khách.\nTổng giá trọn gói: ${money(q.amount)}.\n\nChương trình chi tiết đính kèm theo bản PDF. Rất mong nhận được phản hồi của Quý khách.\n\nTrân trọng,\n${myName()}\nTypic Travel</textarea></label>
+      <label>Nội dung<textarea name="body" style="min-height: 150px;">Kính gửi Quý khách ${q.client},\n\nTypic Travel xin gửi Quý khách chương trình "${q.tour}" khởi hành ${fmt(q.start)}, đoàn ${q.pax} khách.\nTổng giá trọn gói: ${fxDual(q.amount, fxEntryOf(q))}.\n\nChương trình chi tiết đính kèm theo bản PDF. Rất mong nhận được phản hồi của Quý khách.\n\nTrân trọng,\n${myName()}\nTypic Travel</textarea></label>
       <div class="notice">Bấm "Mở hộp thư để gửi" để soạn sẵn thư trong ứng dụng email của bạn. Báo giá sẽ được ghi nhận là <b>Đã gửi</b> và lead chuyển sang <b>Đã gửi báo giá</b>.</div>
       <div class="formfooter">${btn("In / lưu PDF để đính kèm", `printQuote('${id}')`)}<button class="btn primary" type="submit">Mở hộp thư để gửi</button></div>
     </form>`,
@@ -321,6 +354,7 @@ function acceptQuote(id) {
     revenue: q.amount,
     cost: q.cost,
     quoteCost: q.cost,
+    fxDate: fxDocDate(q),
     sales: lead ? lead.sales : myName(),
     operator: "",
     status: p.requireDeposit ? "PendingDeposit" : "Confirmed",
@@ -353,17 +387,45 @@ function acceptQuote(id) {
   toast(`Đã tạo ${bid}. Kế toán sẽ phát hành yêu cầu đặt cọc; sau khi cọc được xác nhận, điều hành sẽ tiếp nhận.`);
 }
 
+/* Dòng "Tỷ giá" ở chi tiết báo giá: 1 tiền của khách = x ₫ theo tỷ giá VCB của ngày tạo báo giá. */
+function fxRateLabel(q) {
+  const code = q.currency;
+  const entry = fxEntryOf(q);
+  const rate = fxRate(code, entry) || Number(q.rate) || 0;
+  if (!code || !rate) return "—";
+  const date = entry?.date ? ` (VCB ${fxDateVN(entry.date)})` : "";
+  return `1 ${esc(code)} = ${new Intl.NumberFormat("vi-VN").format(rate)} ₫${date}`;
+}
+
+/* Các dòng phụ của bản in: tiền của khách (nếu khác USD/VND) và tỷ giá áp dụng. */
+function quotePrintRefRows(q, data, entry) {
+  const rows = [];
+  const code = q.currency;
+  const rate = code && code !== "VND" && code !== fxDisplayCurrency ? fxRate(code, entry) : null;
+  if (rate) {
+    const value = new Intl.NumberFormat("vi-VN").format(Math.round(data.amount / rate));
+    rows.push(`<tr><td>Tham khảo (${esc(code)})</td><td>${value} ${esc(code)}</td></tr>`);
+  }
+  const usdRate = fxRate(fxDisplayCurrency, entry);
+  if (usdRate) {
+    const text = `Vietcombank (giá bán) ngày ${fxDateVN(entry.date)}: 1 ${fxDisplayCurrency} = ${new Intl.NumberFormat("vi-VN").format(usdRate)} ₫`;
+    rows.push(`<tr><td>Tỷ giá áp dụng</td><td>${text}</td></tr>`);
+  }
+  return rows.join("");
+}
+
 function printQuote(id, version) {
   const q = findQuote(id);
   const snap = version && version !== q.version ? (q.history || []).find((h) => h.version === version) : null;
   const data = snap ? { ...q, ...snap } : q;
+  const entry = fxEntryOf(data);
   const program = data.program || q.program || [];
   const logo = `<img src="${new URL("assets/images/dichvuquanhta.jpg", location.href).href}" alt="" width="56" height="56" style="border-radius:10px;vertical-align:middle;margin-right:12px">`;
   printable(
     `Báo giá ${q.id} · v${data.version}`,
     `<div style="display:flex;align-items:center;margin-bottom:8px">${logo}<div><b style="font-size:18px">Typic Travel</b><br><span style="color:#64748b">Báo giá ${q.id} · phiên bản v${data.version}</span></div></div>
     <h2>${esc(q.client)}</h2><p>${esc(q.tour)}<br>${q.pax} khách · khởi hành ${fmt(q.start)} · ${q.days} ngày${q.validUntil ? `<br>Báo giá có hiệu lực đến <b>${fmt(q.validUntil)}</b>` : ""}</p>
-    <table><tr><th>Hạng mục</th><th>Giá trị</th></tr><tr><td>Giá bán nhóm (VND)</td><td>${money(data.amount)}</td></tr><tr><td>Giá bình quân / khách</td><td>${money(Math.round(data.amount / q.pax))}</td></tr>${q.rate ? `<tr><td>Tham khảo (${esc(q.currency || "")})</td><td>${new Intl.NumberFormat("vi-VN").format(Math.round(data.amount / q.rate))} ${esc(q.currency || "")}</td></tr>` : ""}</table>
+    <table><tr><th>Hạng mục</th><th>Giá trị</th></tr><tr><td>Giá bán nhóm</td><td>${fxDual(data.amount, entry)}</td></tr><tr><td>Giá bình quân / khách</td><td>${fxDual(Math.round(data.amount / q.pax), entry)}</td></tr>${quotePrintRefRows(q, data, entry)}</table>
     <h2>Chương trình chi tiết</h2>${program.length ? program.map((p, i) => `<p><b>Ngày ${i + 1}</b> · ${esc(p)}</p>`).join("") : "<p>Chương trình chi tiết sẽ được bổ sung.</p>"}
     <h2>Giá bao gồm</h2><p>${serviceTypes.map((t) => typesVI[t] || t).join(", ") || "Theo chương trình"}.</p>
     <h2>Giá không bao gồm</h2><p>Chi phí cá nhân, đồ uống ngoài chương trình, tip, bảo hiểm du lịch (nếu khách không đăng ký).</p>

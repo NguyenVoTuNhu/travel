@@ -177,7 +177,16 @@ function createInvoice(e) {
   const outstanding = bookingInvoices(b).reduce((n, i) => n + invoiceOutstanding(i), 0);
   if (!Number.isFinite(amount) || amount <= 0 || amount + outstanding > balance(b)) return toast("Tổng hóa đơn chưa thu không được vượt công nợ booking.");
   if (periodLocked(f.get("due"))) return lockMsg(f.get("due"));
-  const inv = { id: nextBusinessId("invoices", f.get("due")), booking: b.id, type: f.get("type"), amount, paid: 0, due: f.get("due"), issuedAt: todayISO(), issuedBy: actor().name };
+  const inv = {
+    id: nextBusinessId("invoices", f.get("due")),
+    booking: b.id,
+    type: f.get("type"),
+    amount,
+    paid: 0,
+    due: f.get("due"),
+    issuedAt: todayISO(),
+    issuedBy: actor().name,
+  };
   state.invoices.push(inv);
   state.docs.push({ id: nextBusinessId("docs"), booking: b.id, type: "Invoice", name: inv.id, date: todayISO(), generated: true });
   audit("booking", b.id, "INVOICE", `${b.id}: phát hành hóa đơn ${inv.id} ${money(amount)}`);
@@ -262,7 +271,16 @@ function payPayable(id) {
   if (!p || p.status !== "Approved") return toast("Khoản chi phải được duyệt trước.");
   p.status = "Paid";
   p.paidAt = todayISO();
-  state.transactions.unshift({ id: nextBusinessId("transactions"), type: "OUT", ref: p.booking, payable: id, amount: p.amount, date: todayISO(), time: new Date().toLocaleString("vi-VN"), by: actor().name });
+  state.transactions.unshift({
+    id: nextBusinessId("transactions"),
+    type: "OUT",
+    ref: p.booking,
+    payable: id,
+    amount: p.amount,
+    date: todayISO(),
+    time: new Date().toLocaleString("vi-VN"),
+    by: actor().name,
+  });
   const b = findBooking(p.booking);
   if (p.kind === "REFUND" && b) b.refunded = (b.refunded || 0) + p.amount;
   audit("booking", p.booking, "PAYMENT_OUT", `Chi ${money(p.amount)} cho ${id}`);
@@ -355,6 +373,7 @@ function cashRows() {
 /* ---------- Giao diện ---------- */
 function accountingTabContent() {
   const bs = state.bookings;
+  if (accountingTab === "fx") return fxRatesPanel();
   if (accountingTab === "invoices") {
     return card(
       "Hóa đơn khách hàng & thanh toán",
@@ -453,6 +472,7 @@ function accountingTabContent() {
 views.accounting = () => {
   const t = accountingTotals();
   const tabs = [["overview", "Tổng quan"], ["invoices", "Hóa đơn & thanh toán"], ["receivable", "Phải thu"], ["payable", "Phải trả NCC"], ["vat", "VAT"], ["settlement", "Chi phí & quyết toán"], ["pnl", "Lãi / lỗ theo tour"], ["cashflow", "Dòng tiền"], ["docs", "Chứng từ"]];
+  if (can("fx_manage")) tabs.push(["fx", "Tỷ giá"]);
   return (
     title("Kế toán", "Hóa đơn, thu cọc, công nợ, chi nhà cung cấp và quyết toán tour.", can("accounting_manage") ? btn("+ Tạo hóa đơn", "invoiceForm()", "primary") : "") +
     `<div class="stats">${stat("ĐÃ THU", short(t.received), "Tiền khách đã trả")}${stat("CÒN PHẢI THU", short(t.receivable), "Công nợ khách hàng")}${stat("PHẢI TRẢ", short(t.payable), "NCC & hoàn tiền chưa chi")}${stat("DÒNG TIỀN RÒNG", short(t.net), "Thu − chi thực tế")}</div>

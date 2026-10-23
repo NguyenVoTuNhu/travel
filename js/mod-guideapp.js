@@ -149,14 +149,16 @@ function saveFinalReport(e, id) {
   if (b.guide !== activeGuideId()) return;
   const f = new FormData(e.target), files = [...e.target.photos.files].slice(0, 3);
   if (files.some((x) => x.size > 300 * 1024)) return toast("Mỗi ảnh phải ≤ 300 KB.");
-  const read = (file) => new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(file); });
-  Promise.all(files.map(read)).then((photos) => {
+  /* Ảnh được lưu vào uploads/guide-reports/, báo cáo chỉ giữ đường dẫn. */
+  const uploads = files.map((file) => uploadFile(file, "guide-reports"));
+  Promise.all(uploads).then((items) => {
+    const photos = items.map((item) => item.path);
     b.finalReport = { at: nowISO(), by: actor().name, summary: f.get("summary").trim(), highlight: f.get("highlight").trim(), issues: f.get("issues").trim(), photos };
     if (b.finalReport.issues) state.issues.push({ id: nextBusinessId("issues"), booking: id, type: "Customer", severity: "LOW", note: "HDV cuối tour: " + b.finalReport.issues, status: "Open", reporter: actor().name, createdAt: nowISO() });
     audit("booking", id, "FINAL_REPORT", `${id}: HDV nộp báo cáo cuối tour`);
     closeModal();
     finishTour(id, "HDV kết thúc tour");
-  });
+  }).catch((error) => toast(error.message));
 }
 
 /* ---------- Tạm ứng & chi phí của HDV ---------- */

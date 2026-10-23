@@ -1,0 +1,26 @@
+# Kho git lưu LF; khi checkout mã nguồn web dùng CRLF (claude.md mục 5.2).
+# Nhờ vậy git status không báo "modified" hàng loạt chỉ vì khác kiểu xuống dòng.
+* text=auto
+*.html text eol=crlf
+*.css text eol=crlf
+*.js text eol=crlf
+*.svg text eol=crlf
+
+# Tệp chạy trên máy chủ Linux và tệp cấu hình: dùng LF
+*.php text eol=lf
+.htaccess text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+*.md text eol=lf
+
+# Tệp nhị phân
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary

@@ -190,7 +190,7 @@ async function performDatabaseFlush() {
       if (!databaseMissingTables.has(collection) || !flushDatabase.warned) {
         flushDatabase.warned = true;
         if (typeof toast === "function")
-          toast(`Chưa lưu được ${databaseTable(collection)}: hãy tạo bảng này trên KIO (xem README_NGHIEP_VU.md).`);
+          toast(`Chưa lưu được ${databaseTable(collection)}: hãy tạo bảng này trên KIO (xem claude.md mục 3.4).`);
       }
       databaseMissingTables.add(collection);
     }
@@ -224,4 +224,37 @@ function log(text) {
   state.activities.unshift({ text, time: new Date().toLocaleString("vi-VN") });
   state.activities = state.activities.slice(0, 80);
   save();
+}
+
+/* ---------- Tệp tải lên: lưu vào thư mục uploads/ trên máy chủ, database chỉ lưu đường dẫn ---------- */
+function uploadErrorMessage(response, result) {
+  if (result?.error) return result.error;
+  if (response.status === 404 || response.status === 405)
+    return "Máy chủ chưa hỗ trợ tải tệp (thiếu upload.php).";
+  return "Không tải được tệp lên máy chủ (mã " + response.status + ").";
+}
+
+async function uploadFile(file, category = "docs") {
+  if (!file || !file.size) throw new Error("Chưa chọn tệp.");
+  if (file.size > TRAVEL_CONFIG.uploadMaxBytes) {
+    const limit = Math.round(TRAVEL_CONFIG.uploadMaxBytes / 1024 / 1024);
+    throw new Error("Tệp phải không quá " + limit + " MB.");
+  }
+  const body = new FormData();
+  body.append("file", file);
+  body.append("category", category);
+  let response;
+  try {
+    response = await fetch(TRAVEL_CONFIG.uploadEndpoint, { method: "POST", body });
+  } catch (error) {
+    throw new Error("Không kết nối được máy chủ để tải tệp.");
+  }
+  let result = null;
+  try {
+    result = await response.json();
+  } catch (error) {
+    result = null;
+  }
+  if (!response.ok || !result?.ok) throw new Error(uploadErrorMessage(response, result));
+  return { path: result.path, name: file.name, size: file.size, mime: result.mime || file.type };
 }

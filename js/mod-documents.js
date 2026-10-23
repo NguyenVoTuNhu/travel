@@ -114,7 +114,7 @@ views.documents = () => {
                 (docExpiryState(d) ? badge(docExpiryState(d).text, docExpiryState(d).tone) : '<span class="sub">—</span>') +
                 "</td><td>" +
                 btn(
-                  d.data ? "Tải tệp" : d.generated ? "Xem / In PDF" : "Thông tin mẫu",
+                  d.path || d.data ? "Tải tệp" : d.generated ? "Xem / In PDF" : "Thông tin mẫu",
                   "openDocument('" + d.id + "')",
                   "small",
                 ) +
@@ -141,27 +141,31 @@ function placeholderDoc() {
 function documentForm() {
   modal(
     "Tải tài liệu",
-    `<form onsubmit="uploadDoc(event)"><label>Booking<select name="booking">${state.bookings.map((b) => "<option>" + b.id + "</option>").join("")}</select></label><label>Type<select name="type">${["Contract", "Invoice", "Passport", "Voucher", "Rooming List"].map((t) => "<option>" + t + "</option>").join("")}</select></label><label>Hạn hiệu lực (hộ chiếu, visa, bảo hiểm…)<input name="expiry" type="date"></label><label>File (tối đa 1 MB)<input name="file" type="file" required></label><p class="notice">File được đưa vào collection tài liệu và đồng bộ qua database.</p><div class="formfooter"><button class="btn primary">Lưu tài liệu</button></div></form>`,
+    `<form onsubmit="uploadDoc(event)"><label>Booking<select name="booking">${state.bookings.map((b) => "<option>" + b.id + "</option>").join("")}</select></label><label>Type<select name="type">${["Contract", "Invoice", "Passport", "Voucher", "Rooming List"].map((t) => "<option>" + t + "</option>").join("")}</select></label><label>Hạn hiệu lực (hộ chiếu, visa, bảo hiểm…)<input name="expiry" type="date"></label><label>File (tối đa 10 MB)<input name="file" type="file" required></label><p class="notice">File được lưu trong thư mục uploads của máy chủ; database chỉ lưu đường dẫn.</p><div class="formfooter"><button class="btn primary">Lưu tài liệu</button></div></form>`,
     true,
   );
 }
 
-function uploadDoc(e) {
+async function uploadDoc(e) {
   e.preventDefault();
   if (!requireCapability("documents_manage")) return;
-  let f = new FormData(e.target),
-    file = f.get("file");
-  if (!file || file.size > 1024 * 1024)
-    return toast("File phải không quá 1 MB.");
-  let reader = new FileReader();
-  reader.onload = () => {
-    let doc = {
+  const form = e.target;
+  const f = new FormData(form);
+  const file = f.get("file");
+  if (!file || !file.size) return toast("Hãy chọn tệp cần tải lên.");
+  const submit = form.querySelector("button.primary");
+  if (submit) submit.disabled = true;
+  try {
+    const uploaded = await uploadFile(file, "docs");
+    const doc = {
       id: nextBusinessId("docs"),
       booking: f.get("booking"),
       type: f.get("type"),
       name: file.name,
       date: new Date().toLocaleDateString("en-CA"),
-      data: reader.result,
+      path: uploaded.path,
+      size: uploaded.size,
+      mime: uploaded.mime,
       expiry: f.get("expiry") || "",
     };
     state.docs.push(doc);
@@ -169,13 +173,20 @@ function uploadDoc(e) {
     closeModal();
     render();
     toast("Đã lưu tài liệu.");
-  };
-  reader.readAsDataURL(file);
+  } catch (error) {
+    if (submit) submit.disabled = false;
+    toast(error.message);
+  }
 }
 
 function openDocument(id) {
   let d = allDocs().find((d) => d.id === id);
   if (!d) return toast("Bạn không có quyền truy cập tài liệu này.");
+  if (d.path) {
+    window.open(d.path, "_blank", "noopener");
+    return;
+  }
+  /* Tài liệu cũ lưu base64 trong database (chưa chuyển sang uploads/) — vẫn tải được. */
   if (d.data) {
     let a = document.createElement("a");
     a.href = d.data;

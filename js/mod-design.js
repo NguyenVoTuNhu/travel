@@ -24,7 +24,7 @@ function designableLeads() {
 }
 
 function blankDesign() {
-  return { id: "", lead: "", name: "", country: "", pax: 2, days: 5, budgetNative: "", currency: travelCurrencies[0] || "", rate: 26000, tourType: "", start: "", language: travelLanguages[0] || "Tiếng Việt", note: "", itNote: "", template: "", program: [], services: {}, amount: 0, tab: "detail", svcTab: "", cur: "VND", sort: false, viewStep: "info" };
+  return { id: "", lead: "", name: "", country: "", pax: 2, days: 5, budgetNative: "", currency: travelCurrencies[0] || "", tourType: "", start: "", language: travelLanguages[0] || "Tiếng Việt", note: "", itNote: "", template: "", program: [], services: {}, amount: 0, tab: "detail", svcTab: "", cur: fxDisplayCurrency, sort: false, viewStep: "info" };
 }
 
 const ensureDesign = () => (design ||= blankDesign());
@@ -34,8 +34,37 @@ const designCost = (d) => svcCats().reduce((n, c) => n + designCatCost(d, c), 0)
 const designMargin = (d) => (d.amount ? ((d.amount - designCost(d)) / d.amount) * 100 : 0);
 
 function designFmt(d, vnd) {
-  if (d.cur !== "VND" && d.currency && d.rate) return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(vnd / d.rate)} ${d.currency}`;
-  return money(vnd);
+  return fxMoney(vnd, d.cur || fxDisplayCurrency);
+}
+
+/* Tỷ giá lấy từ bảng VCB (mod-fx.js), chỉ xem — không nhập tay. */
+function designRateField(d) {
+  const code = d.currency || fxDisplayCurrency;
+  const rate = fxRate(code);
+  const text = rate ? `1 ${code} = ${new Intl.NumberFormat("vi-VN").format(rate)} ₫` : "Chưa có tỷ giá VCB";
+  return `<label class="dz-field">Tỷ giá VCB (giá bán)<input value="${esc(text)}" readonly></label>`;
+}
+
+/* Ô nhập tiền của thiết kế tour theo tiền đang chọn (d.cur, mặc định USD); dữ liệu vẫn lưu bằng VND. */
+function designInputCode(d) {
+  return fxInputCode(d.cur || fxDisplayCurrency);
+}
+
+function designInputValue(d, vnd) {
+  return fxFromVnd(vnd, designInputCode(d));
+}
+
+function designInputStep(d, vndStep) {
+  return designInputCode(d) === "VND" ? String(vndStep) : "any";
+}
+
+function designCurToggle(d) {
+  if (!fxCurrent()) return '<small class="sub">Chưa có tỷ giá VCB · đang hiển thị VND</small>';
+  const buttons = fxViewCurrencies(d.currency).map((code) => {
+    const active = (d.cur || fxDisplayCurrency) === code ? "active" : "";
+    return `<button class="${active}" onclick="designCur('${esc(code)}')">${esc(code)}</button>`;
+  });
+  return `<span class="dz-seg">${buttons.join("")}</span>`;
 }
 
 /* ---------- Trạng thái các bước ---------- */
@@ -71,7 +100,7 @@ function designInfoCard(d) {
       <label class="dz-field"><span>Tên chương trình <i class="req">*</i></span><input value="${esc(d.name)}" placeholder="Ví dụ: Việt Nam Heritage 10 ngày" onchange="designSet('name',this.value)"></label>
       <div class="dz-row dz-row--3"><label class="dz-field">Thị trường${sel("country", crmCountries, d.country, "-- Chọn --")}</label><label class="dz-field">Số khách<input type="number" min="1" max="100" value="${d.pax}" onchange="designSet('pax',this.value)"></label><label class="dz-field">Thời lượng (ngày)<input type="number" min="1" max="60" value="${d.days}" onchange="designSet('days',this.value)"></label></div>
       <div class="dz-row dz-row--2"><label class="dz-field">Ngân sách dự kiến<span class="dz-inline"><input type="number" min="0" value="${esc(d.budgetNative)}" placeholder="3500" onchange="designSet('budgetNative',this.value)"><select onchange="designSet('currency',this.value)">${travelCurrencies.map((c) => `<option ${c === d.currency ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></span></label><label class="dz-field">Loại tour${sel("tourType", tourTypes, d.tourType, "-- Chọn --")}</label></div>
-      <div class="dz-row dz-row--3"><label class="dz-field"><span>Ngày khởi hành <i class="req">*</i></span><input type="date" min="${todayISO()}" value="${esc(d.start)}" onchange="designSet('start',this.value)"></label><label class="dz-field">Ngôn ngữ chương trình${sel("language", travelLanguages, d.language)}</label><label class="dz-field">Tỷ giá sang VND<input type="number" min="1" value="${d.rate}" onchange="designSet('rate',this.value)"></label></div>
+      <div class="dz-row dz-row--3"><label class="dz-field"><span>Ngày khởi hành <i class="req">*</i></span><input type="date" min="${todayISO()}" value="${esc(d.start)}" onchange="designSet('start',this.value)"></label><label class="dz-field">Ngôn ngữ chương trình${sel("language", travelLanguages, d.language)}</label>${designRateField(d)}</div>
       <label class="dz-field">Yêu cầu đặc biệt<textarea maxlength="500" oninput="document.getElementById('dzNoteCount').textContent=this.value.length+'/500'" onchange="designSet('note',this.value)" placeholder="Ăn chay, phòng gia đình, khách lớn tuổi…">${esc(d.note)}</textarea><small class="dz-count" id="dzNoteCount">${d.note.length}/500</small></label>
     </div>`,
   );
@@ -154,7 +183,7 @@ function designServicesCard(d) {
   const cat = cats.includes(d.svcTab) ? d.svcTab : cats[0];
   const items = designItems(d, cat);
   const body = items.length
-    ? items.map((it, i) => `<div class="dz-item"><input value="${esc(it.name)}" placeholder="Tên dịch vụ / nhà cung cấp" onchange="designItem('${cat}',${i},'name',this.value)"><input type="number" min="0" step="100000" value="${it.cost}" aria-label="Chi phí (VND)" onchange="designItem('${cat}',${i},'cost',this.value)"><span class="sub">VND</span><button title="Xóa" onclick="designDelItem('${cat}',${i})">${systemIcon("trash")}</button></div>`).join("") + `<div class="dz-tools" style="margin-top:10px">${btn(systemIcon("plus") + " Thêm dịch vụ " + svcLabel(cat).toLowerCase(), `designAddItem('${cat}')`, "small")}</div>`
+    ? items.map((it, i) => `<div class="dz-item"><input value="${esc(it.name)}" placeholder="Tên dịch vụ / nhà cung cấp" onchange="designItem('${cat}',${i},'name',this.value)"><input type="number" min="0" step="${designInputStep(d, 100000)}" value="${designInputValue(d, it.cost)}" aria-label="Chi phí (${designInputCode(d)})" onchange="designItem('${cat}',${i},'cost',this.value)"><span class="sub">${designInputCode(d)}</span><button title="Xóa" onclick="designDelItem('${cat}',${i})">${systemIcon("trash")}</button></div>`).join("") + `<div class="dz-tools" style="margin-top:10px">${btn(systemIcon("plus") + " Thêm dịch vụ " + svcLabel(cat).toLowerCase(), `designAddItem('${cat}')`, "small")}</div>`
     : `<div class="dz-manual-empty"><span>Chưa chọn dịch vụ ${svcLabel(cat).toLowerCase()}.</span>${btn(systemIcon("plus") + " Nhập thủ công", `designAddItem('${cat}')`, "small")}</div>`;
   const suggestions = designServiceSuggestions(cat, d);
   return card(
@@ -204,15 +233,15 @@ function designSummary(d) {
   const min = policy().minMarginPct;
   const profit = d.amount - cost;
   const saved = d.id ? badge("Đã lưu nháp", "blue") : badge("Dự thảo", "green");
-  const toggle = d.currency ? `<span class="dz-seg"><button class="${d.cur === "VND" ? "active" : ""}" onclick="designCur('VND')">VND</button><button class="${d.cur !== "VND" ? "active" : ""}" onclick="designCur('${d.currency}')">${esc(d.currency)}</button></span>` : "";
+  const toggle = designCurToggle(d);
   const lead = findLead(d.lead);
   const row = (l, v) => `<div class="dz-kv"><span>${l}</span><b>${v}</b></div>`;
   return `${card("Tổng quan tour", row("Tên chương trình", esc(d.name || "Chưa đặt tên")) + row("Khách hàng", esc(lead?.name || "Chưa chọn")) + row("Thị trường", esc(d.country || "—")) + row("Thời lượng", d.program.length || d.days ? (d.program.length || d.days) + " ngày" : "—") + row("Số lượng khách", d.pax + " khách") + row("Ngày khởi hành", d.start ? fmt(d.start) : "Chưa chọn") + row("Loại tour", esc(d.tourType || "—")), saved)}
   ${card("Chi phí dự kiến", svcCats().map((c) => `<div class="dz-cost"><span>${systemIcon(svcIcons[c] || "circle")}${svcLabel(c)}</span><b>${designFmt(d, designCatCost(d, c))}</b></div>`).join("") + `<div class="dz-total"><span>Tổng chi phí</span><b>${designFmt(d, cost)}</b></div>`, toggle)}
   ${card(
     "Lợi nhuận dự kiến",
-    `<label class="dz-field">Giá bán (VND)<input type="number" min="0" step="500000" value="${d.amount || ""}" placeholder="Nhập giá bán trọn gói" onchange="designSet('amount',this.value)"></label>
-    ${row("Giá bán / khách", d.amount && d.pax ? money(Math.round(d.amount / d.pax)) : "—")}${row("Lợi nhuận", `<span class="${profit >= 0 ? "text-good" : "text-bad"}">${money(profit)}</span>`)}
+    `<label class="dz-field">Giá bán (${designInputCode(d)})<input type="number" min="0" step="${designInputStep(d, 500000)}" value="${d.amount ? designInputValue(d, d.amount) : ""}" placeholder="Nhập giá bán trọn gói" onchange="designSet('amount',this.value)"></label>
+    ${row("Giá bán / khách", d.amount && d.pax ? designFmt(d, Math.round(d.amount / d.pax)) : "—")}${row("Lợi nhuận", `<span class="${profit >= 0 ? "text-good" : "text-bad"}">${designFmt(d, profit)}</span>`)}
     <div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div>
     <small class="sub">${d.amount && margin < min ? `Thấp hơn ngưỡng ${min}% — báo giá sẽ cần CEO duyệt trước khi gửi khách.` : `Ngưỡng tối thiểu theo chính sách: ${min}%.`}</small>`,
     btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"),
@@ -222,7 +251,7 @@ function designSummary(d) {
 
 function designCostQuickSummary(d) {
   const cost = designCost(d), profit = d.amount - cost, margin = designMargin(d), min = policy().minMarginPct;
-  return card("Dự toán nhanh", `<div class="dz-quick-cost"><div><span>Tổng chi phí dịch vụ</span><b>${designFmt(d, cost)}</b></div><label class="dz-field">Giá bán dự kiến (VND)<input type="number" min="0" step="500000" value="${d.amount || ""}" placeholder="Nhập giá bán trọn gói" onchange="designSet('amount',this.value)"></label><div><span>Lợi nhuận dự kiến</span><b class="${profit >= 0 ? "text-good" : "text-bad"}">${money(profit)}</b></div><div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div><small>Ngưỡng lợi nhuận tối thiểu: ${min}%.</small></div>`, btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"));
+  return card("Dự toán nhanh", `<div class="dz-quick-cost"><div><span>Tổng chi phí dịch vụ</span><b>${designFmt(d, cost)}</b></div><label class="dz-field">Giá bán dự kiến (${designInputCode(d)})<input type="number" min="0" step="${designInputStep(d, 500000)}" value="${d.amount ? designInputValue(d, d.amount) : ""}" placeholder="Nhập giá bán trọn gói" onchange="designSet('amount',this.value)"></label><div><span>Lợi nhuận dự kiến</span><b class="${profit >= 0 ? "text-good" : "text-bad"}">${designFmt(d, profit)}</b></div><div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div><small>Ngưỡng lợi nhuận tối thiểu: ${min}%.</small></div>`, btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"));
 }
 
 const designParts = {
@@ -334,7 +363,8 @@ function designPickLead(id) {
 
 function designSet(field, value) {
   const d = ensureDesign();
-  if (["pax", "days", "rate", "amount"].includes(field)) value = Math.max(0, Number(value) || 0);
+  if (["pax", "days", "amount"].includes(field)) value = Math.max(0, Number(value) || 0);
+  if (field === "amount") value = fxToVnd(value, designInputCode(d));
   if (field === "budgetNative") value = value === "" ? "" : Math.max(0, Number(value) || 0);
   if (field === "days") {
     value = Math.min(60, Math.max(1, value));
@@ -435,8 +465,9 @@ function designAddResource(kind, id) {
 }
 
 function designItem(cat, i, field, value) {
-  const item = ensureDesign().services[cat][i];
-  item[field] = field === "cost" ? Math.max(0, Number(value) || 0) : value;
+  const d = ensureDesign();
+  const item = d.services[cat][i];
+  item[field] = field === "cost" ? fxToVnd(Math.max(0, Number(value) || 0), designInputCode(d)) : value;
   designRefresh(["summary", "steps"]);
   designRefresh(["itinerary"]);
 }
@@ -448,7 +479,7 @@ function designDelItem(cat, i) {
 
 function designCur(cur) {
   ensureDesign().cur = cur;
-  designRefresh(["summary"]);
+  designRefresh(["summary", "services", "steps"]);
 }
 
 function designEvaluate() {
@@ -457,9 +488,9 @@ function designEvaluate() {
   const min = policy().minMarginPct;
   if (!cost) return toast("Hãy nhập chi phí dịch vụ trước khi đánh giá.");
   const floor = Math.ceil(cost / (1 - min / 100) / 100000) * 100000;
-  if (!d.amount) return toast(`Giá bán tối thiểu để đạt biên ${min}%: ${money(floor)}.`);
+  if (!d.amount) return toast(`Giá bán tối thiểu để đạt biên ${min}%: ${designFmt(d, floor)}.`);
   const margin = designMargin(d);
-  toast(margin >= min ? `Đạt ngưỡng: biên ${margin.toFixed(1)}% (tối thiểu ${min}%).` : `Biên ${margin.toFixed(1)}% thấp hơn ${min}%. Giá bán tối thiểu: ${money(floor)}.`);
+  toast(margin >= min ? `Đạt ngưỡng: biên ${margin.toFixed(1)}% (tối thiểu ${min}%).` : `Biên ${margin.toFixed(1)}% thấp hơn ${min}%. Giá bán tối thiểu: ${designFmt(d, floor)}.`);
 }
 
 function designTemplateProgram(t) {
@@ -596,7 +627,7 @@ function designPreview() {
   if (!d.program.length) return toast("Hãy thêm lịch trình trước khi xem trước.");
   modal(
     "Xem trước chương trình · " + esc(d.name || "Chưa đặt tên"),
-    `<div class="quote-detail"><div class="quote-detail-summary">${line("Khách hàng", esc(findLead(d.lead)?.name || "—"))}${line("Khởi hành", d.start ? fmt(d.start) : "—")}${line("Số khách", d.pax)}${line("Giá bán", d.amount ? money(d.amount) : "Chưa nhập")}</div>${d.program.map((p, i) => `<div class="quote-day"><b>Ngày ${i + 1}</b><div><strong>${esc(p.title)}</strong><p>${esc(p.text).replace(/\n/g, "<br>")}</p></div></div>`).join("")}</div>`,
+    `<div class="quote-detail"><div class="quote-detail-summary">${line("Khách hàng", esc(findLead(d.lead)?.name || "—"))}${line("Khởi hành", d.start ? fmt(d.start) : "—")}${line("Số khách", d.pax)}${line("Giá bán", d.amount ? designFmt(d, d.amount) : "Chưa nhập")}</div>${d.program.map((p, i) => `<div class="quote-day"><b>Ngày ${i + 1}</b><div><strong>${esc(p.title)}</strong><p>${esc(p.text).replace(/\n/g, "<br>")}</p></div></div>`).join("")}</div>`,
   );
 }
 
@@ -633,7 +664,7 @@ function createQuote() {
     country: d.country,
     currency: d.currency,
     budgetNative: Number(d.budgetNative) || 0,
-    rate: d.rate,
+    fxDate: todayISO(),
     language: d.language,
     tourType: d.tourType,
     program: d.program.map((p) => (p.text.trim() ? `${p.title.trim()} — ${p.text.trim().replace(/\n/g, "; ")}` : p.title.trim())),

@@ -64,6 +64,7 @@ async function enterApplication(user) {
     renderCurrentUser();
     render();
     enforcePasswordChange();
+    fxAutoUpdate();
   } catch (error) {
     console.error("Database startup error:", error);
     if (hasCache) toast("Đang dùng dữ liệu gần nhất vì database tạm thời mất kết nối.");

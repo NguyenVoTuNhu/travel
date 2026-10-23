@@ -5,6 +5,9 @@ const TRAVEL_CONFIG = Object.freeze({
   apiBaseUrl: "https://kio.dvqt.vn",
   tablePrefix: "typicone_",
   chunkSize: 30000,
+  uploadEndpoint: "upload.php",
+  uploadMaxBytes: 10 * 1024 * 1024,
+  fxEndpoint: "fx-vcb.php",
 });
 
 let kioSdkPromise;

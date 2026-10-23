@@ -421,7 +421,14 @@ const businessRolePolicies = {
     label: "Kế toán",
     aliases: ["accounting", "accountant", "ke toan", "kế toán"],
     menus: ["dashboard", "accounting", "documents"],
-    capabilities: ["accounting_manage", "documents_manage", "document_sensitive", "booking_financials", "booking_receipts"],
+    capabilities: [
+      "accounting_manage",
+      "documents_manage",
+      "document_sensitive",
+      "booking_financials",
+      "booking_receipts",
+      "fx_manage",
+    ],
     features: ["Hóa đơn khách hàng, đặt cọc và thanh toán", "Công nợ phải thu / phải trả NCC", "Thuế GTGT, chi phí, dòng tiền", "Quyết toán tour và chốt lợi nhuận", "Chứng từ kế toán"],
   },
   guide: {

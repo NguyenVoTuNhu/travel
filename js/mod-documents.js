@@ -207,7 +207,7 @@ function openDocument(id) {
         "Chi tiết",
         line("Booking", d.booking) +
           line("Type", inv?.type) +
-          line("Amount", money(inv?.amount)) +
+          line("Amount", inv ? fxLedgerMoney(findBooking(inv.booking), inv.amount) : "—") +
           line("Due", fmt(inv?.due)) +
           line("Status", inv?.paid >= inv?.amount ? "Paid" : "Pending"),
       ),

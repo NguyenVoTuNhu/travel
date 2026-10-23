@@ -102,11 +102,11 @@ function analyseProfit() {
         "<tr><td><strong>" +
         b.id +
         "</strong></td><td>" +
-        money(b.revenue) +
+        fxLedgerMoney(b, b.revenue) +
         "</td><td>" +
-        money(b.cost) +
+        fxLedgerMoney(b, b.cost) +
         "</td><td><b class='moneypositive'>" +
-        money(b.revenue - b.cost) +
+        fxLedgerMoney(b, b.revenue - b.cost) +
         "</b></td><td>" +
         badge(margin + "%", isLow ? "amber" : "green") +
         "</td><td>" +

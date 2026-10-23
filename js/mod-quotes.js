@@ -168,11 +168,10 @@ function quoteInputCode(q) {
   return both ? fxDisplayCurrency : "VND";
 }
 
-/* Số nhập (tiền `code`) → VND. Không sửa số thì giữ nguyên VND đã lưu; sửa thì quy đổi theo tỷ giá hôm nay. */
-function quoteVndFromInput(input, storedVnd, code, oldEntry) {
-  const value = Number(input);
-  if (value === fxFromVnd(storedVnd, code, oldEntry)) return storedVnd;
-  return fxToVnd(value, code, fxCurrent());
+/* Số nhập (tiền `code`) → VND theo tỷ giá hôm nay. Phiên bản mới có fxDate = hôm nay nên giá USD
+   không đổi khi người dùng không sửa số (VND mới là số trôi theo tỷ giá). */
+function quoteVndFromInput(input, code) {
+  return fxToVnd(Number(input), code, fxCurrent());
 }
 
 function reviseQuote(id) {
@@ -219,9 +218,8 @@ function saveRevision(e, id) {
   });
   const wasSent = q.status === "Sent";
   const code = String(f.get("code") || "VND");
-  const oldEntry = fxEntryOf(q);
-  q.amount = quoteVndFromInput(f.get("amount"), q.amount, code, oldEntry);
-  const newCost = quoteVndFromInput(f.get("cost"), q.cost, code, oldEntry);
+  q.amount = quoteVndFromInput(f.get("amount"), code);
+  const newCost = quoteVndFromInput(f.get("cost"), code);
   if (q.costBreakdown && q.cost > 0) {
     const ratio = newCost / q.cost;
     for (const k of Object.keys(q.costBreakdown)) q.costBreakdown[k] = Math.round(q.costBreakdown[k] * ratio);

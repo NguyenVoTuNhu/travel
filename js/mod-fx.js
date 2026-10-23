@@ -1,9 +1,8 @@
 /* TỶ GIÁ VCB — bảng tỷ giá bán của Vietcombank, ngày hiệu lực và lịch sử (T1-01).
-   Dữ liệu nằm ở state.settings[0].fxRates = { source, rateType, history: [...] }.
-   Mỗi phần tử history: { date, mode, by, at, vcbTime, rates: { USD: 26050, VND: 1, ... } }.
-   Số trong rates là số VND cho 1 đơn vị ngoại tệ (giá bán). history xếp mới nhất lên đầu. */
-
-const fxHistoryLimit = 800;
+   Lịch sử nằm ở collection RIÊNG state.fxHistory (bảng KIO typicone_fx_history), không để trong settings.
+   Mỗi phần tử: { date, mode, by, at, vcbTime, rates: { USD: 26050, VND: 1, ... } }, mỗi ngày một bản.
+   Số trong rates là số VND cho 1 đơn vị ngoại tệ (giá bán). Xếp CŨ → MỚI và KHÔNG giới hạn số bản:
+   thêm bản mới ở cuối nên mỗi lần lưu chỉ ghi lại chunk cuối. settings[0].fxRates chỉ còn { source, rateType }. */
 
 /* Tiền hiển thị chung cho giá tour/báo giá (T1-02). Dữ liệu vẫn lưu bằng VND. */
 const fxDisplayCurrency = "USD";
@@ -42,13 +41,31 @@ const fxCurrencyNames = {
 let fxBusy = false;
 
 /* ---------- Đọc dữ liệu tỷ giá ---------- */
+/* Lịch sử cũ nằm trong settings[0].fxRates.history (mới → cũ), chỉ còn trước khi chuyển sang fxHistory. */
+function fxLegacyHistory() {
+  const history = state.settings?.[0]?.fxRates?.history;
+  return Array.isArray(history) ? history : [];
+}
+
+/* Lịch sử tỷ giá, xếp cũ → mới. Chưa chuyển khỏi settings thì đọc tạm bản cũ ở đó (mọi vai trò vẫn thấy tỷ giá). */
 function fxHistory() {
-  return state.settings?.[0]?.fxRates?.history || [];
+  if (state.fxHistory?.length) return state.fxHistory;
+  return fxLegacyHistory().slice().reverse();
+}
+
+/* Bản tỷ giá mới nhất (ngày lớn nhất). */
+function fxLatest() {
+  const history = fxHistory();
+  return history[history.length - 1] || null;
 }
 
 /* Bản tỷ giá có hiệu lực vào một ngày (YYYY-MM-DD): bản mới nhất có date <= ngày đó. */
 function fxEntryOn(dateISO) {
-  return fxHistory().find((entry) => entry.date <= dateISO) || null;
+  const history = fxHistory();
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    if (history[index].date <= dateISO) return history[index];
+  }
+  return null;
 }
 
 function fxCurrent() {
@@ -78,9 +95,9 @@ function fxMoney(vnd, code = fxDisplayCurrency, entry = fxCurrent()) {
   return fxFormat(value, code);
 }
 
+/* Tối đa 2 số lẻ (không thừa số 0) để sổ kế toán không làm tròn mất xu: 555,56 USD, 1.000 USD. */
 function fxFormat(value, code) {
-  const digits = Math.abs(value) < 100 ? 2 : 0;
-  const text = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: digits }).format(value);
+  const text = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value);
   return `${text} ${code}`;
 }
 
@@ -94,8 +111,7 @@ function fxDocDate(doc) {
 }
 
 function fxOldestEntry() {
-  const history = fxHistory();
-  return history[history.length - 1] || null;
+  return fxHistory()[0] || null;
 }
 
 /* Bản tỷ giá của ngày tạo chứng từ; ngày sớm hơn mọi bản đã lưu thì dùng bản cũ nhất. */
@@ -103,6 +119,99 @@ function fxEntryOf(doc) {
   const date = fxDocDate(doc);
   if (!date) return fxCurrent();
   return fxEntryOn(date) || fxOldestEntry();
+}
+
+/* ---------- Sổ kế toán ghi bằng USD (T1-04) ---------- */
+/* Số tiền vẫn lưu bằng VND. Mọi số tiền của MỘT booking (giá trị hợp đồng, hóa đơn, thu, công nợ)
+   quy đổi USD theo tỷ giá của ngày chốt báo giá (booking.fxDate), nên một khoản thu USD luôn khớp
+   đúng hóa đơn USD, không phát sinh chênh lệch tỷ giá. */
+function fxLedgerReady() {
+  return !!fxRate(fxDisplayCurrency);
+}
+
+function fxLedgerMoney(booking, vnd) {
+  return fxMoney(vnd, fxDisplayCurrency, fxEntryOf(booking));
+}
+
+/* Số tiền một giao dịch thu: USD theo sổ của booking, kèm số khách thực trả nếu không phải USD. */
+function fxTxMoney(booking, tx) {
+  const base = fxLedgerMoney(booking, tx.amount);
+  const code = tx.currency;
+  if (!code || code === fxDisplayCurrency || tx.original == null) return base;
+  if (code === "VND" && Number(tx.original) === Number(tx.amount)) return base;
+  const original = code === "VND" ? money(tx.original) : fxFormat(tx.original, code);
+  return `${base} <span class="sub">(khách trả ${original})</span>`;
+}
+
+/* ---------- Sổ kế toán: các màn còn lại (T1-04b) ---------- */
+/* Quy tắc chung: số tiền vẫn lưu VND; mọi khoản gắn với một booking quy đổi USD theo tỷ giá
+   ngày chốt báo giá của booking đó (fxEntryOf(booking)). Chưa có tỷ giá thì quay về VND.
+   Riêng VAT giữ VND (khai thuế theo quy định Việt Nam). */
+
+/* Tiền của sổ: USD khi đã có tỷ giá, không thì VND. */
+function fxLedgerCode() {
+  return fxLedgerReady() ? fxDisplayCurrency : "VND";
+}
+
+/* VND cho 1 USD theo sổ của booking; booking không có tỷ giá riêng thì dùng tỷ giá hiện hành. */
+function fxLedgerRate(booking) {
+  return fxRate(fxDisplayCurrency, fxEntryOf(booking)) || fxRate(fxDisplayCurrency);
+}
+
+/* Số VND của một booking → số trong tiền của sổ (USD, không làm tròn; VND khi chưa có tỷ giá). */
+function fxLedgerNumber(booking, vnd) {
+  const amount = Number(vnd) || 0;
+  if (!fxLedgerReady()) return amount;
+  return amount / fxLedgerRate(booking);
+}
+
+/* Cộng nhiều khoản: mỗi khoản quy đổi theo tỷ giá của booking của nó rồi mới cộng. */
+function fxLedgerTotal(items, bookingOf, amountOf) {
+  let total = 0;
+  for (const item of items) {
+    total += fxLedgerNumber(bookingOf(item), amountOf(item));
+  }
+  return total;
+}
+
+/* Hiển thị một số đã ở tiền của sổ: "1.234,5 USD" hoặc "1.234.000 ₫". */
+function fxLedgerText(value) {
+  if (!fxLedgerReady()) return money(value);
+  return fxFormat(value, fxDisplayCurrency);
+}
+
+/* Bản rút gọn cho thẻ KPI: 1,25M USD, 12,5K USD; chưa có tỷ giá thì rút gọn VND như cũ. */
+function fxLedgerShort(value) {
+  if (!fxLedgerReady()) return short(value);
+  const sign = value < 0 ? "-" : "";
+  const size = Math.abs(value);
+  if (size >= 1e6) return `${sign}${(size / 1e6).toFixed(2)}M ${fxDisplayCurrency}`;
+  if (size >= 1e3) return `${sign}${(size / 1e3).toFixed(1)}K ${fxDisplayCurrency}`;
+  return fxFormat(value, fxDisplayCurrency);
+}
+
+/* Tổng nhiều khoản (mỗi khoản theo booking của nó), hiển thị đầy đủ. */
+function fxLedgerSum(items, bookingOf, amountOf) {
+  return fxLedgerText(fxLedgerTotal(items, bookingOf, amountOf));
+}
+
+/* Số VND → số hiện trong ô nhập (tiền của sổ, 2 số lẻ) theo tỷ giá của booking. */
+function fxLedgerInput(booking, vnd) {
+  if (!fxLedgerReady()) return Number(vnd) || 0;
+  return fxFromVnd(vnd, fxDisplayCurrency, fxEntryOf(booking));
+}
+
+/* Số nhập trong ô (tiền của sổ) → VND để lưu theo tỷ giá của booking. Nếu số nhập đúng bằng số
+   đang hiện của `currentVnd` thì giữ nguyên VND cũ, để làm tròn 2 số lẻ không làm trôi số liệu. */
+function fxLedgerInputVnd(booking, input, currentVnd = null) {
+  const value = Number(input) || 0;
+  if (!fxLedgerReady()) return Math.round(value);
+  const entry = fxEntryOf(booking);
+  if (currentVnd !== null) {
+    const shown = fxFromVnd(currentVnd, fxDisplayCurrency, entry);
+    if (Math.round(value * 100) === Math.round(shown * 100)) return currentVnd;
+  }
+  return fxToVnd(value, fxDisplayCurrency, entry);
 }
 
 /* ---------- Nhập tiền theo tiền tệ đang chọn (mặc định USD), lưu bằng VND ---------- */
@@ -161,23 +270,55 @@ function fxViewCurrencies(extra = "") {
 }
 
 /* ---------- Ghi dữ liệu tỷ giá ---------- */
+/* settings[0].fxRates chỉ giữ thông tin nguồn; lịch sử nằm ở state.fxHistory. */
 function fxStore() {
   if (!state.settings.length) state.settings.push({ id: "CFG-1" });
   const settings = state.settings[0];
-  if (!settings.fxRates) {
-    settings.fxRates = { source: "VCB", rateType: "sell", history: [] };
-  }
-  if (!Array.isArray(settings.fxRates.history)) settings.fxRates.history = [];
+  if (!settings.fxRates) settings.fxRates = { source: "VCB", rateType: "sell" };
   return settings.fxRates;
 }
 
-/* Mỗi ngày hiệu lực chỉ có một bản: ghi lại cùng ngày thì thay bản cũ. */
+/* Chép lịch sử cũ trong settings sang state.fxHistory (cũ → mới), gộp theo ngày, bản ở fxHistory thắng. */
+function fxCopyLegacy() {
+  const legacy = fxLegacyHistory();
+  if (!legacy.length) return false;
+  const byDate = new Map();
+  for (const entry of legacy) byDate.set(entry.date, entry);
+  for (const entry of state.fxHistory) byDate.set(entry.date, entry);
+  state.fxHistory = [...byDate.values()].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return true;
+}
+
+/* Chuyển một lần: chép sang fxHistory, ghi lên KIO, chỉ xóa bản trong settings khi ghi thành công.
+   Bảng typicone_fx_history chưa có thì giữ nguyên lịch sử ở settings để không mất dữ liệu. */
+async function fxMigrateLegacy() {
+  if (!can("fx_manage")) return;
+  if (!fxLegacyHistory().length) return;
+  if (databaseMissingTables.has("fxHistory")) {
+    console.warn("Chưa chuyển lịch sử tỷ giá: hãy tạo bảng typicone_fx_history trên KIO (claude.md mục 3.4b).");
+    return;
+  }
+  fxCopyLegacy();
+  save();
+  try {
+    await flushDatabase();
+  } catch (error) {
+    console.warn("Chưa chuyển được lịch sử tỷ giá sang bảng riêng:", error);
+    return;
+  }
+  if (databaseMissingTables.has("fxHistory")) return;
+  delete fxStore().history;
+  save();
+}
+
+/* Mỗi ngày hiệu lực chỉ có một bản: ghi lại cùng ngày thì thay bản cũ. Không giới hạn số bản. */
 function fxSaveEntry(entry) {
-  const store = fxStore();
-  const history = store.history.filter((item) => item.date !== entry.date);
+  fxStore();
+  fxCopyLegacy();
+  const history = state.fxHistory.filter((item) => item.date !== entry.date);
   history.push(entry);
-  history.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  store.history = history.slice(0, fxHistoryLimit);
+  history.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  state.fxHistory = history;
 }
 
 /* ---------- Lấy tỷ giá từ Vietcombank (qua fx-vcb.php) ---------- */
@@ -217,8 +358,9 @@ async function fxPullFromVcb() {
 /* Tự cập nhật mỗi ngày 1 lần: chạy khi Giám đốc/Kế toán vào hệ thống và hôm nay chưa có bản. */
 async function fxAutoUpdate() {
   if (!can("fx_manage") || fxBusy) return;
+  await fxMigrateLegacy();
   if (!TRAVEL_CONFIG.fxEndpoint) return;
-  if (fxHistory()[0]?.date === todayISO()) return;
+  if (fxLatest()?.date === todayISO()) return;
   fxBusy = true;
   try {
     await fxPullFromVcb();
@@ -236,7 +378,7 @@ async function fxAutoUpdate() {
 async function fxRefreshNow() {
   if (!requireCapability("fx_manage")) return;
   if (fxBusy) return;
-  const today = fxHistory()[0];
+  const today = fxLatest();
   if (today?.date === todayISO() && today.mode === "manual") {
     if (!confirm("Tỷ giá hôm nay đang nhập tay. Ghi đè bằng tỷ giá VCB?")) return;
   }
@@ -398,11 +540,15 @@ function fxHistoryRow(entry) {
 }
 
 function fxHistoryCard() {
-  const rows = fxHistory().slice(0, 60).map((entry) => fxHistoryRow(entry));
+  const history = fxHistory();
+  const rows = history.slice(-60).reverse().map((entry) => fxHistoryRow(entry));
   if (!rows.length) return "";
+  const note = history.length > rows.length
+    ? `<p class="sub">Hiển thị ${rows.length} bản gần nhất trong tổng số ${history.length} bản.</p>`
+    : "";
   return card(
     "Lịch sử tỷ giá",
-    table(
+    note + table(
       ["NGÀY HIỆU LỰC", "NGUỒN", "NGƯỜI CẬP NHẬT", "USD", "EUR", "CAD", "VCB CÔNG BỐ"],
       rows,
     ),

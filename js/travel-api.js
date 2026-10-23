@@ -2,6 +2,7 @@
 
 const databaseCollectionNames = Object.keys(emptyState());
 const databaseRows = {};
+const databaseChunks = {};
 const databaseSnapshots = {};
 let state = emptyState();
 let databaseSaveTimer;
@@ -67,7 +68,7 @@ async function loadDatabaseCollection(collection) {
   if (!result.success && optionalCollections.includes(collection)) {
     databaseMissingTables.add(collection);
     console.warn(`Bảng ${databaseTable(collection)} chưa tồn tại trên KIO — dùng bộ nhớ phiên cho tới khi tạo bảng.`);
-    return { collection, data: [], rows: [] };
+    return { collection, data: [], rows: [], chunks: [] };
   }
   if (!result.success)
     throw new Error(result.error || `Không đọc được ${collection}`);
@@ -77,6 +78,7 @@ async function loadDatabaseCollection(collection) {
     collection,
     data: payload ? JSON.parse(payload) : [],
     rows: result.data.map((row) => Number(row.id)),
+    chunks: result.data.map((row) => row.payload_text || ""),
   };
 }
 
@@ -88,6 +90,7 @@ async function performDatabaseLoad() {
   const collections = await Promise.all(databaseCollectionNames.map(loadDatabaseCollection));
   for (const result of collections) {
     databaseRows[result.collection] = result.rows;
+    databaseChunks[result.collection] = result.chunks;
     databaseSnapshots[result.collection] = JSON.stringify(result.data);
     if (databaseLocalRevision === revision) state[result.collection] = result.data;
   }
@@ -119,10 +122,16 @@ async function syncDatabaseCollection(collection, payload) {
   const table = databaseTable(collection);
   const chunks = splitDatabasePayload(payload);
   const oldIds = databaseRows[collection] || [];
+  const oldChunks = databaseChunks[collection] || [];
   const nextIds = [];
 
   for (let index = 0; index < chunks.length; index += 1) {
     const id = oldIds[index] || null;
+    /* Chunk không đổi so với nội dung đang lưu trên KIO thì bỏ qua, chỉ ghi chunk có thay đổi. */
+    if (id && oldChunks[index] === chunks[index]) {
+      nextIds.push(id);
+      continue;
+    }
     const result = await krud(
       id ? "update" : "insert",
       table,
@@ -141,6 +150,7 @@ async function syncDatabaseCollection(collection, payload) {
   }
 
   databaseRows[collection] = nextIds;
+  databaseChunks[collection] = chunks;
   databaseSnapshots[collection] = payload;
 }
 
@@ -168,6 +178,7 @@ async function performDatabaseFlush() {
         .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))
         .slice(0, 600);
       state.auditLogs = merged;
+      databaseChunks[collection] = [];
       dirty[index][1] = JSON.stringify(merged);
       return null;
     }

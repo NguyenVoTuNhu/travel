@@ -95,7 +95,7 @@ function dashboardMonthlyRevenue(bookings) {
     const date = new Date(booking.start);
     if (Number.isNaN(date.getTime())) return;
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    months.set(key, (months.get(key) || 0) + Number(booking.revenue || 0));
+    months.set(key, (months.get(key) || 0) + fxLedgerNumber(booking, booking.revenue));
   });
   return [...months.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-6)
     .map(([key, value]) => ({ label: "T" + Number(key.slice(5)), value }));
@@ -114,14 +114,14 @@ function dashboardRevenueChart(bookings) {
   const line = points.map((point) => `${point.x},${point.y}`).join(" ");
   const grid = [0, .25, .5, .75, 1].map((ratio) => {
     const y = top + chartHeight * ratio;
-    return `<g><line x1="${left}" y1="${y}" x2="880" y2="${y}"/><text x="52" y="${y + 4}" text-anchor="end">${short(max * (1 - ratio))}</text></g>`;
+    return `<g><line x1="${left}" y1="${y}" x2="880" y2="${y}"/><text x="52" y="${y + 4}" text-anchor="end">${fxLedgerShort(max * (1 - ratio))}</text></g>`;
   }).join("");
-  return `<div class="dashboard-chart-scroll"><svg class="dashboard-line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Doanh thu booking theo tháng: ${data.map((item) => item.label + " " + money(item.value)).join(", ")}">
+  return `<div class="dashboard-chart-scroll"><svg class="dashboard-line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Doanh thu booking theo tháng: ${data.map((item) => item.label + " " + fxLedgerText(item.value)).join(", ")}">
     <defs><linearGradient id="dashboardRevenueArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".24"/><stop offset="1" stop-color="currentColor" stop-opacity=".02"/></linearGradient></defs>
     <g class="dashboard-chart-grid">${grid}</g>
     <polygon class="dashboard-chart-area" points="${left},${top + chartHeight} ${line} ${left + chartWidth},${top + chartHeight}"/>
     <polyline class="dashboard-chart-line" points="${line}"/>
-    ${points.map((point) => `<g class="dashboard-chart-point" tabindex="0" aria-label="${point.label}: ${money(point.value)}"><circle cx="${point.x}" cy="${point.y}" r="5"/><text x="${point.x}" y="286" text-anchor="middle">${point.label}</text><title>${money(point.value)}</title></g>`).join("")}
+    ${points.map((point) => `<g class="dashboard-chart-point" tabindex="0" aria-label="${point.label}: ${fxLedgerText(point.value)}"><circle cx="${point.x}" cy="${point.y}" r="5"/><text x="${point.x}" y="286" text-anchor="middle">${point.label}</text><title>${fxLedgerText(point.value)}</title></g>`).join("")}
   </svg></div>`;
 }
 
@@ -162,13 +162,16 @@ function dashboardPreparation(bookings) {
 function dashboardSalesPerformance(bookings) {
   const owners = [...new Set(bookings.map((booking) => booking.sales).filter(Boolean))];
   if (!owners.length) return '<div class="dashboard-empty">Chưa có booking được gán nhân viên kinh doanh.</div>';
-  const rows = owners.map((owner) => ({ owner, value: bookings.filter((booking) => booking.sales === owner).reduce((sum, booking) => sum + Number(booking.revenue || 0), 0) })).sort((a, b) => b.value - a.value);
+  const rows = owners.map((owner) => ({ owner, value: bookings.filter((booking) => booking.sales === owner).reduce((sum, booking) => sum + fxLedgerNumber(booking, booking.revenue), 0) })).sort((a, b) => b.value - a.value);
   const max = Math.max(...rows.map((row) => row.value), 1);
-  return `<div class="dashboard-ranking">${rows.map((row, index) => `<div class="dashboard-ranking-row"><span class="dashboard-rank">${index + 1}</span><span class="dashboard-ranking-name">${esc(row.owner)}<small>${short(row.value)}</small></span><span class="dashboard-ranking-bar"><i style="--bar-size:${row.value / max * 100}%"></i></span></div>`).join("")}</div>`;
+  return `<div class="dashboard-ranking">${rows.map((row, index) => `<div class="dashboard-ranking-row"><span class="dashboard-rank">${index + 1}</span><span class="dashboard-ranking-name">${esc(row.owner)}<small>${fxLedgerShort(row.value)}</small></span><span class="dashboard-ranking-bar"><i style="--bar-size:${row.value / max * 100}%"></i></span></div>`).join("")}</div>`;
 }
 
 const dashLive = () => (state.bookings || []).filter((b) => b.status !== "Cancelled");
-const dashProfit = (b) => (b.settlement ? b.settlement.profit : Number(b.revenue || 0) - Number(b.quoteCost || b.cost || 0));
+/* Lợi nhuận một booking theo tiền của sổ (USD khi đã có tỷ giá), tỷ giá ngày chốt báo giá của booking. */
+const dashProfit = (b) => fxLedgerNumber(b, b.settlement ? b.settlement.profit : Number(b.revenue || 0) - Number(b.quoteCost || b.cost || 0));
+const dashRevenue = (b) => fxLedgerNumber(b, b.revenue);
+const dashBalance = (b) => fxLedgerNumber(b, balance(b));
 const dashPending = (b) => bookingServices(b).filter((s) => serviceStatus(s) !== "CONFIRMED").length;
 
 function dashboardQueue() {
@@ -197,7 +200,7 @@ function dashShell(eyebrow, heading, desc, actions, kpis, body) {
 
 /* Doanh thu tháng này so với tháng trước và mục tiêu tháng (cài đặt chính sách). */
 function dashboardTarget(bs, allBookings) {
-  const a = bs.reduce((n, booking) => n + Number(booking.revenue || 0), 0);
+  const a = bs.reduce((n, booking) => n + dashRevenue(booking), 0);
   const from = new Date(dashboardDateFrom + "T00:00:00"), to = new Date(dashboardDateTo + "T00:00:00");
   const days = Math.round((to - from) / 864e5) + 1;
   const previousTo = new Date(from); previousTo.setDate(previousTo.getDate() - 1);
@@ -205,24 +208,25 @@ function dashboardTarget(bs, allBookings) {
   const b = allBookings.filter((booking) => {
     const value = String(booking.start || "").slice(0, 10);
     return value >= dashboardDateISO(previousFrom) && value <= dashboardDateISO(previousTo);
-  }).reduce((n, booking) => n + Number(booking.revenue || 0), 0);
-  const target = dashboardDateLabel === "Tháng này" ? Number(policy().monthlyTarget || 0) : 0;
+  }).reduce((n, booking) => n + dashRevenue(booking), 0);
+  /* Mục tiêu tháng nhập bằng VND trong Cài đặt; quy đổi theo tỷ giá hiện hành để so với doanh thu USD. */
+  const target = dashboardDateLabel === "Tháng này" ? fxLedgerNumber(null, Number(policy().monthlyTarget || 0)) : 0;
   const mom = b ? ((a - b) / b) * 100 : null, pct = target ? Math.min(100, Math.round((a / target) * 100)) : 0;
-  const momHtml = mom === null ? '<span class="sub">Kỳ trước chưa có doanh thu</span>' : `<span class="dashboard-kpi-trend dashboard-kpi-trend--${mom >= 0 ? "up" : "down"}">${mom >= 0 ? "↑" : "↓"} ${Math.abs(mom).toFixed(1)}%</span><span class="sub"> so với kỳ trước (${short(b)})</span>`;
-  const targetHtml = target ? `<div class="target-bar"><span style="width:${pct}%"></span></div><div class="target-meta"><b>${pct}%</b> mục tiêu ${short(target)} · còn thiếu ${short(Math.max(0, target - a))}</div>` : `<p class="sub">Chưa đặt mục tiêu doanh thu tháng. ${can("all") ? btn("Đặt mục tiêu", "go('settings')", "small") : ""}</p>`;
-  return `<section class="dashboard-panel target-panel"><header><div><h2>Doanh thu ${dashboardDateLabel.toLowerCase()}</h2><p>${fmt(dashboardDateFrom)} – ${fmt(dashboardDateTo)}</p></div><span class="dashboard-panel-chip">${bs.length} booking</span></header><div class="target-body"><div class="target-value"><strong>${short(a)}</strong>${momHtml}</div><div class="target-progress">${target ? targetHtml : '<p class="sub">Giá trị booking theo ngày khởi hành.</p>'}</div></div></section>`;
+  const momHtml = mom === null ? '<span class="sub">Kỳ trước chưa có doanh thu</span>' : `<span class="dashboard-kpi-trend dashboard-kpi-trend--${mom >= 0 ? "up" : "down"}">${mom >= 0 ? "↑" : "↓"} ${Math.abs(mom).toFixed(1)}%</span><span class="sub"> so với kỳ trước (${fxLedgerShort(b)})</span>`;
+  const targetHtml = target ? `<div class="target-bar"><span style="width:${pct}%"></span></div><div class="target-meta"><b>${pct}%</b> mục tiêu ${fxLedgerShort(target)} · còn thiếu ${fxLedgerShort(Math.max(0, target - a))}</div>` : `<p class="sub">Chưa đặt mục tiêu doanh thu tháng. ${can("all") ? btn("Đặt mục tiêu", "go('settings')", "small") : ""}</p>`;
+  return `<section class="dashboard-panel target-panel"><header><div><h2>Doanh thu ${dashboardDateLabel.toLowerCase()}</h2><p>${fmt(dashboardDateFrom)} – ${fmt(dashboardDateTo)}</p></div><span class="dashboard-panel-chip">${bs.length} booking</span></header><div class="target-body"><div class="target-value"><strong>${fxLedgerShort(a)}</strong>${momHtml}</div><div class="target-progress">${target ? targetHtml : '<p class="sub">Giá trị booking theo ngày khởi hành.</p>'}</div></div></section>`;
 }
 
 function dashboardCeo() {
   const allBs = dashLive();
   const bs = dashboardFilterDate(allBs);
-  const revenue = bs.reduce((n, b) => n + Number(b.revenue || 0), 0);
+  const revenue = bs.reduce((n, b) => n + dashRevenue(b), 0);
   const profit = bs.reduce((n, b) => n + dashProfit(b), 0);
   const running = bs.filter((b) => b.status === "Running");
   const preparing = bs.filter((b) => b.status === "Preparing");
-  const receivable = bs.reduce((n, b) => n + balance(b), 0);
+  const receivable = bs.reduce((n, b) => n + dashBalance(b), 0);
   const unpaid = (state.payables || []).filter((p) => p.status !== "Paid");
-  const payable = unpaid.reduce((n, p) => n + Number(p.amount || 0), 0);
+  const payable = fxLedgerTotal(unpaid, (p) => findBooking(p.booking), (p) => Number(p.amount || 0));
   const pendingApprovals = (state.approvals || []).filter((a) => a.status === "PENDING").length;
   const feedback = bs.filter((b) => b.feedback);
   const csat = feedback.length ? (feedback.reduce((n, b) => n + Number(b.feedback.score || 0), 0) / feedback.length).toFixed(1) : "—";
@@ -231,12 +235,12 @@ function dashboardCeo() {
     "Trung tâm điều hành doanh nghiệp",
     "Kinh doanh, tour, dòng tiền và các việc chờ Giám đốc quyết định.",
     `${dashboardDateControl()}<button class="btn" onclick="exportData('bookings')">Xuất dữ liệu</button><button class="btn primary" onclick="go('approvals')">Phê duyệt${pendingApprovals ? " (" + pendingApprovals + ")" : ""}</button>`,
-    dashboardKpi("blue", "revenue", "Giá trị booking", short(revenue), bs.length + " booking", "bookings", dashboardMonthlyRevenue(bs).map((i) => i.value)) +
-      dashboardKpi("violet", "profit", "Lợi nhuận", short(profit), revenue ? (profit / revenue * 100).toFixed(1) + "% biên gộp" : "Chưa có doanh thu", "accounting", bs.map(dashProfit)) +
+    dashboardKpi("blue", "revenue", "Giá trị booking", fxLedgerShort(revenue), bs.length + " booking", "bookings", dashboardMonthlyRevenue(bs).map((i) => i.value)) +
+      dashboardKpi("violet", "profit", "Lợi nhuận", fxLedgerShort(profit), revenue ? (profit / revenue * 100).toFixed(1) + "% biên gộp" : "Chưa có doanh thu", "accounting", bs.map(dashProfit)) +
       dashboardKpi("orange", "tour", "Tour đang vận hành", running.length, preparing.length + " tour chuẩn bị", "operations") +
       dashboardKpi("cyan", "guests", "Khách đang đi tour", running.reduce((n, b) => n + Number(b.pax || 0), 0), "Trên tour đang chạy", "operations") +
-      dashboardKpi("red", "receivable", "Phải thu", short(receivable), "Còn phải thu từ khách", "accounting", bs.map(balance)) +
-      dashboardKpi("amber", "payable", "Phải trả", short(payable), unpaid.filter((p) => p.due < todayISO()).length + " khoản quá hạn", "accounting"),
+      dashboardKpi("red", "receivable", "Phải thu", fxLedgerShort(receivable), "Còn phải thu từ khách", "accounting", bs.map(dashBalance)) +
+      dashboardKpi("amber", "payable", "Phải trả", fxLedgerShort(payable), unpaid.filter((p) => p.due < todayISO()).length + " khoản quá hạn", "accounting"),
     dashboardTarget(bs, allBs) + `<section class="dashboard-grid dashboard-grid--charts"><article class="dashboard-panel dashboard-panel--wide"><header><div><h2>Doanh thu theo thời gian</h2><p>Booking trong khoảng ngày đã chọn</p></div></header>${dashboardRevenueChart(bs)}</article>${dashPanel("Trạng thái booking", "Cơ cấu trong khoảng đã chọn", dashboardStatusChart(bs))}</section>
     <section class="dashboard-grid dashboard-grid--operations">${dashPanel("Việc cần làm", "Xếp theo mức ưu tiên", dashboardQueue(), `<span class="dashboard-count-badge">${workQueue().length}</span>`)}${dashPanel("Hiệu suất kinh doanh", "Doanh thu theo Sales", dashboardSalesPerformance(bs))}${dashPanel("Hoạt động gần đây", "Nhật ký hệ thống", dashboardActivities())}</section>
     <section class="dashboard-health"><div><span>Lead / Báo giá</span><b>${state.leads.length} / ${state.quotes.length}</b><small>Kinh doanh</small></div><div><span>Dịch vụ chờ xác nhận</span><b>${bs.filter((b) => b.status === "Preparing").reduce((n, b) => n + dashPending(b), 0)}</b><small>Điều hành</small></div><div><span>Sự cố đang mở</span><b>${state.issues.filter((i) => i.status !== "Resolved").length}</b><small>Nhà cung cấp & HDV</small></div><div><span>CSAT</span><b>${csat}${csat === "—" ? "" : " / 5"}</b><small>${feedback.length} phản hồi</small></div><div><span>Chiến dịch</span><b>${state.campaigns.length}</b><small>Marketing</small></div></section>`,
@@ -268,7 +272,7 @@ function dashboardSales() {
   const mine = scopedBookings();
   const quotes = scopedQuotes();
   const open = leads.filter((l) => !["WON", "LOST", "UNQUALIFIED"].includes(l.status));
-  const revenue = mine.filter((b) => b.status !== "Cancelled").reduce((n, b) => n + Number(b.revenue || 0), 0);
+  const revenue = mine.filter((b) => b.status !== "Cancelled").reduce((n, b) => n + dashRevenue(b), 0);
   return dashShell(
     "KINH DOANH",
     "Bàn làm việc Sales",
@@ -277,7 +281,7 @@ function dashboardSales() {
     dashboardKpi("blue", "guests", "Lead đang mở", open.length, leads.length + " lead phụ trách", "crm") +
       dashboardKpi("violet", "revenue", "Báo giá đang chờ", quotes.filter((q) => ["Sent", "PendingApproval"].includes(q.status)).length, "Cần theo dõi", "quotes") +
       dashboardKpi("orange", "tour", "Booking chờ cọc", mine.filter((b) => ["PendingDeposit", "PendingApproval"].includes(b.status)).length, "Chờ kế toán xác nhận", "bookings") +
-      dashboardKpi("cyan", "profit", "Doanh thu booking", short(revenue), mine.length + " booking", "bookings"),
+      dashboardKpi("cyan", "profit", "Doanh thu booking", fxLedgerShort(revenue), mine.length + " booking", "bookings"),
     `<section class="dashboard-grid dashboard-grid--operations">${dashPanel("Phễu bán hàng", "Lead của bạn", dashboardFunnel(leads))}${dashPanel("Việc cần làm", "Chăm sóc & báo giá", dashboardQueue(), `<span class="dashboard-count-badge">${workQueue().length}</span>`)}${dashPanel("Booking của tôi", "Mới nhất", mine.slice(-5).reverse().map((b) => `<div class="metricline"><span>${entityLink("booking", b.id)} ${bookingBadge(b)}</span><b>${esc(b.client)}</b></div>`).join("") || '<div class="dashboard-empty">Chưa có booking.</div>')}</section>`,
   );
 }
@@ -314,12 +318,12 @@ function dashboardAccounting() {
     "Bảng tài chính",
     "Thu cọc, công nợ, chi nhà cung cấp và quyết toán.",
     `<button class="btn primary" onclick="go('accounting')">Mở Kế toán</button>`,
-    dashboardKpi("blue", "revenue", "Đã thu", short(t.received), "Tiền khách đã trả", "accounting") +
-      dashboardKpi("red", "receivable", "Phải thu", short(t.receivable), overdue.length + " hóa đơn quá hạn", "accounting", bs.map(balance)) +
-      dashboardKpi("amber", "payable", "Phải trả", short(t.payable), "NCC & hoàn tiền", "accounting") +
+    dashboardKpi("blue", "revenue", "Đã thu", fxLedgerShort(t.received), "Tiền khách đã trả", "accounting") +
+      dashboardKpi("red", "receivable", "Phải thu", fxLedgerShort(t.receivable), overdue.length + " hóa đơn quá hạn", "accounting", bs.map(dashBalance)) +
+      dashboardKpi("amber", "payable", "Phải trả", fxLedgerShort(t.payable), "NCC & hoàn tiền", "accounting") +
       dashboardKpi("orange", "alert", "Booking chờ cọc", need.length, "Cần phát hành / xác nhận", "accounting") +
       dashboardKpi("violet", "profit", "Chờ quyết toán", toSettle.length, "Tour đã kết thúc", "accounting"),
-    `<section class="dashboard-grid dashboard-grid--operations">${dashPanel("Việc cần làm", "Ưu tiên", dashboardQueue(), `<span class="dashboard-count-badge">${workQueue().length}</span>`)}${dashPanel("Dòng tiền gần đây", "Giao dịch mới nhất", state.transactions.slice(0, 6).map((x) => `<div class="metricline"><span>${x.type === "IN" ? badge("Thu", "green") : badge("Chi", "amber")} ${esc(x.ref)}</span><b>${money(x.amount)}</b></div>`).join("") || '<div class="dashboard-empty">Chưa có giao dịch.</div>')}</section>`,
+    `<section class="dashboard-grid dashboard-grid--operations">${dashPanel("Việc cần làm", "Ưu tiên", dashboardQueue(), `<span class="dashboard-count-badge">${workQueue().length}</span>`)}${dashPanel("Dòng tiền gần đây", "Giao dịch mới nhất", state.transactions.slice(0, 6).map((x) => `<div class="metricline"><span>${x.type === "IN" ? badge("Thu", "green") : badge("Chi", "amber")} ${esc(x.ref)}</span><b>${fxLedgerMoney(findBooking(x.ref), x.amount)}</b></div>`).join("") || '<div class="dashboard-empty">Chưa có giao dịch.</div>')}</section>`,
   );
 }
 

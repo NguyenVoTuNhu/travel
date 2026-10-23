@@ -36,14 +36,15 @@ function emptyState() {
     issues: [],
     customerServiceCases: [],
     settings: [],
+    fxHistory: [],
     tourTemplates: [],
     approvals: [],
     auditLogs: [],
   };
 }
 
-/* Collection mới (phê duyệt, nhật ký) có thể chưa có bảng trên KIO: nếu đọc lỗi thì coi như rỗng. */
-const optionalCollections = ["approvals", "auditLogs"];
+/* Collection mới (phê duyệt, nhật ký, lịch sử tỷ giá) có thể chưa có bảng trên KIO: nếu đọc lỗi thì coi như rỗng. */
+const optionalCollections = ["approvals", "auditLogs", "fxHistory"];
 
 function initializeDemoCollections() {
   for (const collection of Object.keys(emptyState()))

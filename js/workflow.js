@@ -569,7 +569,7 @@ function workQueue() {
 
   if (can("approvals_manage")) {
     (state.approvals || []).filter((a) => a.status === "PENDING").forEach((a) =>
-      add({ icon: "check-double", priority: 0, title: `Chờ duyệt: ${approvalTypes[a.type]}`, meta: `${a.ref} · ${a.requestedBy}${a.amount ? " · " + money(a.amount) : ""}`, page: "approvals" }));
+      add({ icon: "check-double", priority: 0, title: `Chờ duyệt: ${approvalTypes[a.type]}`, meta: `${a.ref} · ${a.requestedBy}${a.amount ? " · " + approvalMoney(a, a.amount) : ""}`, page: "approvals" }));
   }
   if (can("crm_manage")) {
     scopedLeads().forEach((lead) => {
@@ -584,7 +584,7 @@ function workQueue() {
     scopedQuotes().filter((q) => q.status === "Sent" && q.sentAt && (Date.now() - new Date(q.sentAt)) / 864e5 > 3)
       .forEach((q) => add({ icon: "clock", title: `${q.id} chưa có phản hồi`, meta: `${q.client} · đã gửi ${fmt(q.sentAt.slice(0, 10))}`, page: "quotes", action: `quoteDetail('${q.id}')` }));
     scopedBookings().filter((b) => b.status === "PendingDeposit")
-      .forEach((b) => add({ icon: "hourglass-half", title: `${b.id} chờ đặt cọc`, meta: `${b.client} · cần cọc ${money(depositRequired(b))}`, page: "bookings", action: `openBooking('${b.id}')` }));
+      .forEach((b) => add({ icon: "hourglass-half", title: `${b.id} chờ đặt cọc`, meta: `${b.client} · cần cọc ${fxLedgerMoney(b, depositRequired(b))}`, page: "bookings", action: `openBooking('${b.id}')` }));
   }
   if (can("operations_manage")) {
     bookings.filter((b) => b.status === "Confirmed").forEach((b) =>
@@ -616,13 +616,13 @@ function workQueue() {
   }
   if (can("accounting_manage")) {
     bookings.filter((b) => b.status === "PendingDeposit" && !bookingInvoices(b).length).forEach((b) =>
-      add({ icon: "file-invoice-dollar", priority: 1, title: `${b.id} cần phát hành yêu cầu đặt cọc`, meta: `${b.client} · ${money(depositRequired(b))}`, page: "accounting", action: `depositInvoiceForm('${b.id}')` }));
+      add({ icon: "file-invoice-dollar", priority: 1, title: `${b.id} cần phát hành yêu cầu đặt cọc`, meta: `${b.client} · ${fxLedgerMoney(b, depositRequired(b))}`, page: "accounting", action: `depositInvoiceForm('${b.id}')` }));
     (state.invoices || []).filter((i) => i.paid < i.amount && i.due && i.due < today).forEach((i) =>
-      add({ icon: "bell", priority: 1, title: `Hóa đơn ${i.id} quá hạn`, meta: `${i.booking} · còn ${money(i.amount - i.paid)}`, page: "accounting", action: `openInvoice('${i.id}')` }));
+      add({ icon: "bell", priority: 1, title: `Hóa đơn ${i.id} quá hạn`, meta: `${i.booking} · còn ${fxLedgerMoney(findBooking(i.booking), i.amount - i.paid)}`, page: "accounting", action: `openInvoice('${i.id}')` }));
     (state.payables || []).filter((p) => p.status === "Pending").forEach((p) =>
-      add({ icon: "stamp", title: `${p.id} chờ duyệt chi`, meta: `${p.booking} · ${money(p.amount)}`, page: "accounting", action: `navigate('accounting',{accountingTab:'payable'})` }));
+      add({ icon: "stamp", title: `${p.id} chờ duyệt chi`, meta: `${p.booking} · ${fxLedgerMoney(findBooking(p.booking), p.amount)}`, page: "accounting", action: `navigate('accounting',{accountingTab:'payable'})` }));
     (state.payables || []).filter((p) => p.status === "Approved").forEach((p) =>
-      add({ icon: "money-bill-transfer", title: `${p.id} đã duyệt, chờ chi tiền`, meta: `${money(p.amount)} · hạn ${fmt(p.due)}`, page: "accounting", action: `navigate('accounting',{accountingTab:'payable'})` }));
+      add({ icon: "money-bill-transfer", title: `${p.id} đã duyệt, chờ chi tiền`, meta: `${fxLedgerMoney(findBooking(p.booking), p.amount)} · hạn ${fmt(p.due)}`, page: "accounting", action: `navigate('accounting',{accountingTab:'payable'})` }));
     bookings.filter((b) => b.status === "Completed" && !b.settlement).forEach((b) =>
       add({ icon: "scale-balanced", title: `${b.id} chờ quyết toán`, meta: `${b.client} · tour kết thúc ${fmt(b.end)}`, page: "accounting", action: `navigate('accounting',{accountingTab:'settlement'})` }));
   }
@@ -656,6 +656,7 @@ function migrateWorkflowData() {
       }
     });
   }
+  touch(() => migrateLeadSources());
   for (const b of state.bookings) {
     touch(() => {
       let c = false;

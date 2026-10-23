@@ -115,9 +115,11 @@ function deleteSupplierPrice(id, i) {
 }
 function supplierDebtCard(sp) {
   const list = (state.payables || []).filter((p) => p.supplier === sp.id);
-  const open = list.filter((p) => p.status !== "Paid").reduce((n, p) => n + Number(p.amount || 0), 0);
-  const paid = list.filter((p) => p.status === "Paid").reduce((n, p) => n + Number(p.amount || 0), 0);
-  return card("Công nợ nhà cung cấp", line("Còn phải trả", `<b>${money(open)}</b>`) + line("Đã thanh toán", money(paid)) + (list.length ? table(["MÃ", "BOOKING", "SỐ TIỀN", "HẠN", "TRẠNG THÁI"], list.map((p) => `<tr><td>${p.id}</td><td>${entityLink("booking", p.booking)}</td><td>${money(p.amount)}</td><td>${fmt(p.due)}</td><td>${badge(p.status === "Paid" ? "Đã chi" : p.status === "Approved" ? "Đã duyệt" : "Chờ duyệt", p.status === "Paid" ? "green" : "amber")}</td></tr>`)) : '<p class="sub">Chưa phát sinh công nợ.</p>'));
+  const bookingOf = (p) => findBooking(p.booking);
+  const amountOf = (p) => Number(p.amount || 0);
+  const open = fxLedgerSum(list.filter((p) => p.status !== "Paid"), bookingOf, amountOf);
+  const paid = fxLedgerSum(list.filter((p) => p.status === "Paid"), bookingOf, amountOf);
+  return card("Công nợ nhà cung cấp", line("Còn phải trả", `<b>${open}</b>`) + line("Đã thanh toán", paid) + (list.length ? table(["MÃ", "BOOKING", "SỐ TIỀN", "HẠN", "TRẠNG THÁI"], list.map((p) => `<tr><td>${p.id}</td><td>${entityLink("booking", p.booking)}</td><td>${fxLedgerMoney(findBooking(p.booking), p.amount)}</td><td>${fmt(p.due)}</td><td>${badge(p.status === "Paid" ? "Đã chi" : p.status === "Approved" ? "Đã duyệt" : "Chờ duyệt", p.status === "Paid" ? "green" : "amber")}</td></tr>`)) : '<p class="sub">Chưa phát sinh công nợ.</p>'));
 }
 
 function refreshSuppliers() {

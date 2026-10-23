@@ -82,7 +82,7 @@ function opsServicesTab(svcs) {
       if (st === "WAITING") actions += btn("NCC xác nhận", `supplierConfirmForm('${b.id}','${s.type}')`, "small primary") + btn("NCC từ chối", `supplierRejectForm('${b.id}','${s.type}')`, "small");
       if (st === "REJECTED" || st === "NOT_BOOKED") actions += btn("Chọn NCC", `serviceForm('${b.id}','${s.type}')`, "small");
     }
-    return `<tr><td>${entityLink("booking", b.id)}<span class="sub">${esc(b.client)}</span></td><td><b>${typesVI[s.type] || s.type}</b></td><td>${sup ? entityLink("supplier", sup.id, sup.name) : '<span class="sub">Chưa chọn</span>'}</td><td>${money(s.cost)}</td><td>${serviceBadge(s)}</td><td class="${d <= 7 ? "task-overdue" : ""}">${fmt(b.start)}<span class="sub">còn ${d} ngày</span></td><td><div class="actions">${actions}</div></td></tr>`;
+    return `<tr><td>${entityLink("booking", b.id)}<span class="sub">${esc(b.client)}</span></td><td><b>${typesVI[s.type] || s.type}</b></td><td>${sup ? entityLink("supplier", sup.id, sup.name) : '<span class="sub">Chưa chọn</span>'}</td><td>${fxLedgerMoney(b, s.cost)}</td><td>${serviceBadge(s)}</td><td class="${d <= 7 ? "task-overdue" : ""}">${fmt(b.start)}<span class="sub">còn ${d} ngày</span></td><td><div class="actions">${actions}</div></td></tr>`;
   });
   return card(
     "Phiếu xác nhận dịch vụ nhà cung cấp",
@@ -151,9 +151,10 @@ function serviceForm(id, type) {
   const b = findBooking(id),
     s = b.services.find((s) => s.type === type),
     ncc = state.suppliers.filter((n) => n.type === type);
+  const code = fxLedgerCode();
   modal(
     `Dịch vụ ${typesVI[type]} · ${id}`,
-    `<form onsubmit="saveService(event,'${id}','${type}')"><label>Nhà cung cấp<select name="supplier">${ncc.map((n) => `<option value="${n.id}" ${s.supplier === n.id ? "selected" : ""}>${esc(n.name)} · ${score(n)}/100</option>`).join("")}</select></label><label>Chi phí dự kiến (VND)<input type="number" name="cost" min="0" step="1000" value="${s.cost}" required></label><p class="notice">Đổi nhà cung cấp sẽ đưa dịch vụ về "Chưa đặt" và voucher cũ mất hiệu lực. Nếu tổng chi phí vượt dự toán quá ${policy().costOverrunPct}%, cần CEO phê duyệt trước khi khởi hành.</p><div class="formfooter"><button class="btn primary" type="submit">Lưu dịch vụ</button></div></form>`,
+    `<form onsubmit="saveService(event,'${id}','${type}')"><label>Nhà cung cấp<select name="supplier">${ncc.map((n) => `<option value="${n.id}" ${s.supplier === n.id ? "selected" : ""}>${esc(n.name)} · ${score(n)}/100</option>`).join("")}</select></label><label>Chi phí dự kiến (${code})<input type="number" name="cost" min="0" step="any" value="${fxLedgerInput(b, s.cost)}" required></label><p class="notice">Đổi nhà cung cấp sẽ đưa dịch vụ về "Chưa đặt" và voucher cũ mất hiệu lực. Nếu tổng chi phí vượt dự toán quá ${policy().costOverrunPct}%, cần CEO phê duyệt trước khi khởi hành.</p><div class="formfooter"><button class="btn primary" type="submit">Lưu dịch vụ</button></div></form>`,
     true,
   );
 }
@@ -164,7 +165,7 @@ function checkCostOverrun(b) {
   b.quoteCost = baseline;
   const limit = baseline * (1 + policy().costOverrunPct / 100);
   if (b.cost > limit && b.cost > (b.costApprovedTotal || 0)) {
-    requestApproval({ type: "COST_OVERRUN", ref: b.id, amount: b.cost - baseline, reason: `Chi phí ${money(b.cost)} vượt dự toán ${money(baseline)} (${(((b.cost - baseline) / baseline) * 100).toFixed(1)}%)`, data: { total: b.cost } });
+    requestApproval({ type: "COST_OVERRUN", ref: b.id, amount: b.cost - baseline, reason: `Chi phí ${fxLedgerMoney(b, b.cost)} vượt dự toán ${fxLedgerMoney(b, baseline)} (${(((b.cost - baseline) / baseline) * 100).toFixed(1)}%)`, data: { total: b.cost } });
     return true;
   }
   return false;
@@ -179,10 +180,10 @@ function saveService(e, id, type) {
     f = new FormData(e.target);
   const changedSupplier = s.supplier !== f.get("supplier");
   s.supplier = f.get("supplier");
-  s.cost = +f.get("cost");
+  s.cost = fxLedgerInputVnd(b, +f.get("cost"), s.cost);
   if (changedSupplier) setServiceStatus(b, s, "NOT_BOOKED", "Đổi nhà cung cấp");
   const overrun = checkCostOverrun(b);
-  audit("booking", id, "SERVICE", `${id} cập nhật ${typesVI[type]} (${money(s.cost)})`);
+  audit("booking", id, "SERVICE", `${id} cập nhật ${typesVI[type]} (${fxLedgerMoney(b, s.cost)})`);
   render();
   openBooking(id, "services");
   toast(overrun ? "Đã lưu. Chi phí vượt dự toán — đã gửi CEO phê duyệt." : "Đã cập nhật dịch vụ.");

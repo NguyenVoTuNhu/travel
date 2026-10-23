@@ -25,6 +25,85 @@ function campaignStats(c) {
   };
 }
 
+
+/* Báo cáo hiệu quả theo nguồn lead.
+   Chi phí chiến dịch được phân bổ theo tỷ trọng lead từng nguồn trong chiến dịch. */
+function leadSourceReport() {
+  const sources = leadSourceCatalog.map((source) => source.name);
+  const report = {};
+  sources.forEach((source) => {
+    report[source] = {
+      source,
+      leads: 0,
+      won: 0,
+      revenue: 0,
+      spend: 0,
+    };
+  });
+
+  state.leads.forEach((lead) => {
+    const source = leadSourceInfo(lead.source) ? lead.source : "Khác";
+    if (!report[source]) {
+      report[source] = {
+        source,
+        leads: 0,
+        won: 0,
+        revenue: 0,
+        spend: 0,
+      };
+    }
+    report[source].leads += 1;
+    if (lead.status === "WON") {
+      report[source].won += 1;
+    }
+    state.bookings
+      .filter((booking) => booking.lead === lead.id && booking.status !== "Cancelled")
+      .forEach((booking) => {
+        report[source].revenue += Number(booking.revenue) || 0;
+      });
+  });
+
+  state.campaigns.forEach((campaign) => {
+    const campaignLeads = state.leads.filter((lead) => lead.campaign === campaign.id);
+    if (!campaignLeads.length) return;
+    const sourceCounts = {};
+    campaignLeads.forEach((lead) => {
+      const source = leadSourceInfo(lead.source) ? lead.source : "Khác";
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    });
+    Object.entries(sourceCounts).forEach(([source, count]) => {
+      if (!report[source]) return;
+      report[source].spend += (Number(campaign.spend) || 0) * count / campaignLeads.length;
+    });
+  });
+
+  return Object.values(report).map((row) => ({
+    ...row,
+    conversion: row.leads ? row.won / row.leads * 100 : 0,
+    cpl: row.leads && row.spend ? row.spend / row.leads : null,
+  }));
+}
+
+function marketingSourceReportTab() {
+  const rows = leadSourceReport();
+  const totalLeads = rows.reduce((sum, row) => sum + row.leads, 0);
+  const totalWon = rows.reduce((sum, row) => sum + row.won, 0);
+  const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
+  const totalSpend = rows.reduce((sum, row) => sum + row.spend, 0);
+  const visibleRows = rows.filter((row) => row.leads || row.spend);
+  return card(
+    "Báo cáo hiệu quả theo nguồn",
+    `<div class="stats">${stat("TỔNG LEAD", totalLeads)}${stat("TỶ LỆ CHỐT", totalLeads ? (totalWon / totalLeads * 100).toFixed(1) + "%" : "—")}${stat("DOANH THU", money(totalRevenue))}${stat("CHI PHÍ ĐƯỢC PHÂN BỔ", money(totalSpend))}</div>` +
+    (visibleRows.length
+      ? table(
+          ["NGUỒN LEAD", "SỐ LEAD", "CHỐT ĐƠN", "TỶ LỆ CHỐT", "DOANH THU", "CHI PHÍ PHÂN BỔ", "CPL"],
+          visibleRows.map((row) => `<tr><td><b>${esc(row.source)}</b></td><td>${row.leads}</td><td>${row.won}</td><td>${row.leads ? row.conversion.toFixed(1) + "%" : "—"}</td><td class="moneypositive">${money(row.revenue)}</td><td>${row.spend ? money(Math.round(row.spend)) : "—"}</td><td>${row.cpl !== null ? money(Math.round(row.cpl)) : "—"}</td></tr>`),
+        )
+      : '<div class="empty">Chưa có dữ liệu lead hoặc chi phí để lập báo cáo.</div>') +
+    '<p class="sub">CPL = chi phí chiến dịch được phân bổ / số lead của nguồn. Chi phí chiến dịch được phân bổ theo tỷ trọng lead từng nguồn trong chiến dịch; chiến dịch chưa gắn lead chưa thể phân bổ chi phí.</p>',
+  );
+}
+
 function marketingKpiTab() {
   const campaigns = state.campaigns;
   const rows = campaigns.map((c) => ({ c, s: campaignStats(c) }));
@@ -46,7 +125,8 @@ function marketingKpiTab() {
           )
         : '<div class="empty">Chưa có chiến dịch.</div>',
     ) +
-    card("Lead theo nguồn", Object.entries(bySource).sort((a, b) => b[1] - a[1]).map(([k, v]) => line(esc(k), v)).join("") || '<p class="sub">Chưa có lead.</p>', btn("Mở Leads", "navigate('crm',{crmTab:'leads'})", "small"))
+    card("Lead theo nguồn", Object.entries(bySource).sort((a, b) => b[1] - a[1]).map(([k, v]) => line(esc(k), v)).join("") || '<p class="sub">Chưa có lead.</p>', btn("Mở Leads", "navigate('crm',{crmTab:'leads'})", "small")) +
+    marketingSourceReportTab()
   );
 }
 

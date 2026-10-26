@@ -38,13 +38,14 @@ function emptyState() {
     settings: [],
     fxHistory: [],
     tourTemplates: [],
+    tourDays: [],
     approvals: [],
     auditLogs: [],
   };
 }
 
-/* Collection mới (phê duyệt, nhật ký, lịch sử tỷ giá) có thể chưa có bảng trên KIO: nếu đọc lỗi thì coi như rỗng. */
-const optionalCollections = ["approvals", "auditLogs", "fxHistory"];
+/* Collection mới (phê duyệt, nhật ký, lịch sử tỷ giá, ngân hàng ngày tour) có thể chưa có bảng trên KIO: nếu đọc lỗi thì coi như rỗng. */
+const optionalCollections = ["approvals", "auditLogs", "fxHistory", "tourDays"];
 
 function initializeDemoCollections() {
   for (const collection of Object.keys(emptyState()))
@@ -72,7 +73,7 @@ const businessIdSchemas = {
 };
 
 /* Mã nghiệp vụ cho collection không đánh lại số (tham chiếu chéo nhiều nơi). */
-const stableIdSchemas = { approvals: "PD", auditLogs: "NK" };
+const stableIdSchemas = { approvals: "PD", auditLogs: "NK", tourDays: "NG" };
 
 function nextStableId(collection, date = new Date()) {
   const prefix = stableIdSchemas[collection];

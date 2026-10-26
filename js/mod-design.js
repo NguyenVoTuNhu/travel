@@ -23,8 +23,17 @@ function designableLeads() {
   return scopedLeads().filter((lead) => leadIsOpen(lead));
 }
 
+function designSelectedCustomer(d = ensureDesign()) {
+  if (d.customerType === "customer" && d.customerId) return (state.customers || []).find((c) => c.id === d.customerId) || null;
+  return findLead(d.lead) || null;
+}
+function designCustomerName(d = ensureDesign()) { return designSelectedCustomer(d)?.name || "Chưa chọn"; }
+function designCustomerSelection(d = ensureDesign()) {
+  return d.customerType === "customer" && d.customerId ? `customer|${d.customerId}` : d.lead ? `lead|${d.lead}` : "";
+}
+
 function blankDesign() {
-  return { id: "", lead: "", name: "", country: "", pax: 2, days: 5, budgetNative: "", currency: travelCurrencies[0] || "", tourType: "", start: "", language: travelLanguages[0] || "Tiếng Việt", note: "", itNote: "", template: "", program: [], services: {}, amount: 0, tab: "detail", svcTab: "", cur: fxDisplayCurrency, sort: false, viewStep: "info" };
+  return { id: "", lead: "", customerId: "", customerType: "lead", name: "", country: "", pax: 2, days: 5, pricingMode: "total", pricingSource: "manual", unitPrice: 0, manualUnitPrice: 0, pricingProfileId: "", pricingTierPax: 1, paxPrices: {}, budgetNative: "", currency: travelCurrencies[0] || "", tourType: "", start: "", language: travelLanguages[0] || "Tiếng Việt", note: "", itNote: "", template: "", program: [], services: {}, amount: 0, tab: "detail", svcTab: "", cur: fxDisplayCurrency, sort: false, viewStep: "info" };
 }
 
 const ensureDesign = () => (design ||= blankDesign());
@@ -70,7 +79,7 @@ function designCurToggle(d) {
 /* ---------- Trạng thái các bước ---------- */
 function designStepState(d) {
   const done = {
-    info: !!(d.lead && d.name.trim() && d.pax > 0 && d.days > 0 && d.start),
+    info: !!((d.lead || (d.customerType === "customer" && d.customerId)) && d.name.trim() && d.pax > 0 && d.days > 0 && d.start),
     template: !!(d.template || d.program.some((p) => p.title.trim())),
     itinerary: d.program.length > 0 && d.program.every((p) => p.title.trim()),
     cost: designCost(d) > 0 && d.amount > 0,
@@ -91,12 +100,14 @@ function designStepsHtml(d) {
 /* ---------- Khối giao diện ---------- */
 function designInfoCard(d) {
   const leads = designableLeads();
-  const leadOptions = leads.map((l) => `<option value="${l.id}" ${d.lead === l.id ? "selected" : ""}>${esc(l.name)} · ${l.id} (${leadLabels[l.status]})</option>`).join("");
+  const leadOptions = leads.map((l) => `<option value="lead|${l.id}" ${d.customerType !== "customer" && d.lead === l.id ? "selected" : ""}>${esc(l.name)} · ${l.id} (${leadLabels[l.status]})</option>`).join("");
+  const customers = (state.customers || []).filter((c) => !isScoped() || !crmOwners.includes(myName()) || !c.owner || c.owner === myName());
+  const customerOptions = customers.map((c) => `<option value="customer|${c.id}" ${d.customerType === "customer" && d.customerId === c.id ? "selected" : ""}>${esc(c.name)} · ${c.id} (Khách hàng thường)</option>`).join("");
   const sel = (name, values, current, placeholder) => `<select onchange="designSet('${name}',this.value)">${placeholder ? `<option value="">${placeholder}</option>` : ""}${values.map((v) => `<option ${v === current ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>`;
   return card(
     `<span class="dz-num">1</span> Thông tin khách hàng & yêu cầu`,
     `<div class="dz-form">
-      <div class="dz-row dz-row--head"><label class="dz-field"><span>Chọn khách hàng <i class="req">*</i></span><select onchange="designPickLead(this.value)"><option value="">-- Chọn lead từ CRM --</option>${leadOptions}</select></label>${can("crm_manage") ? btn(systemIcon("plus") + " Khách hàng mới", "leadForm()", "small") : ""}</div>
+      <div class="dz-row dz-row--head"><label class="dz-field"><span>Chọn khách hàng <i class="req">*</i></span><select onchange="designPickLead(this.value)"><option value="">-- Chọn khách hàng --</option><optgroup label="Khách hàng tiềm năng">${leadOptions}</optgroup><optgroup label="Khách hàng thường">${customerOptions}</optgroup></select></label>${can("crm_manage") ? btn(systemIcon("plus") + " Khách hàng mới", "leadForm()", "small") : ""}</div>
       <label class="dz-field"><span>Tên chương trình <i class="req">*</i></span><input value="${esc(d.name)}" placeholder="Ví dụ: Việt Nam Heritage 10 ngày" onchange="designSet('name',this.value)"></label>
       <div class="dz-row dz-row--3"><label class="dz-field">Thị trường${sel("country", crmCountries, d.country, "-- Chọn --")}</label><label class="dz-field">Số khách<input type="number" min="1" max="100" value="${d.pax}" onchange="designSet('pax',this.value)"></label><label class="dz-field">Thời lượng (ngày)<input type="number" min="1" max="60" value="${d.days}" onchange="designSet('days',this.value)"></label></div>
       <div class="dz-row dz-row--2"><label class="dz-field">Ngân sách dự kiến<span class="dz-inline"><input type="number" min="0" value="${esc(d.budgetNative)}" placeholder="3500" onchange="designSet('budgetNative',this.value)"><select onchange="designSet('currency',this.value)">${travelCurrencies.map((c) => `<option ${c === d.currency ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></span></label><label class="dz-field">Loại tour${sel("tourType", tourTypes, d.tourType, "-- Chọn --")}</label></div>
@@ -136,16 +147,18 @@ function designTemplatesCard() {
     body = mine.length
       ? mine.map((r) => `<div class="dz-tpl"><div><b>${esc(r.design.name || "Chương trình chưa đặt tên")}</b><small>${r.design.program.length} ngày · lưu ${dateTimeVN(r.savedAt)}</small></div><div class="actions">${btn("Mở", `designOpenDraft('${r.id}')`, "small primary")}${btn("Xóa", `designDeleteDraft('${r.id}')`, "small")}</div></div>`).join("")
       : designEmpty("folder-open", "Chưa có chương trình nào đã lưu", "Nhấn “Lưu nháp” để lưu chương trình đang thiết kế và dùng lại sau.");
+  } else if (f.tab === "bank") {
+    body = tourDayManagePanel();
   } else {
     const list = designTemplatesFiltered();
     body = list.length
-      ? list.map((t) => `<div class="dz-tpl"><div><b>${esc(t.name)}</b><small>${t.itinerary.length} ngày · ${esc(t.itinerary.slice(0, 3).join(" → "))}${t.itinerary.length > 3 ? "…" : ""}</small></div>${btn("Dùng mẫu", `designApplyTemplate('${t.id}')`, "small primary")}</div>`).join("")
+      ? list.map(tplRow).join("")
       : designEmpty("file-circle-question", "Chưa có chương trình tour mẫu nào", "Bạn có thể tạo chương trình mới rồi lưu thành mẫu để dùng lại.", btn(systemIcon("plus") + " Tạo chương trình mới", "designNew()", "small"));
   }
   return card(
     `<span class="dz-num">2</span> Chọn chương trình mẫu`,
-    `<nav class="dz-tabs"><button class="${f.tab === "templates" ? "active" : ""}" onclick="designTpl.tab='templates';designRefresh(['templates'])">Mẫu tour có sẵn</button><button class="${f.tab === "mine" ? "active" : ""}" onclick="designTpl.tab='mine';designRefresh(['templates'])">Tour của tôi (${mine.length})</button></nav>
-    ${f.tab === "templates" ? `<div class="dz-filters">${filt("region", "Khu vực", regions)}${filt("country", "Quốc gia", crmCountries)}${filt("type", "Loại tour", tourTypes)}</div><input class="dz-search" placeholder="Tìm chương trình mẫu…" value="${esc(f.q)}" onchange="designTpl.q=this.value;designRefresh(['templates'])">` : ""}
+    `<nav class="dz-tabs"><button class="${f.tab === "templates" ? "active" : ""}" onclick="designTpl.tab='templates';designRefresh(['templates'])">Mẫu tour có sẵn</button><button class="${f.tab === "mine" ? "active" : ""}" onclick="designTpl.tab='mine';designRefresh(['templates'])">Tour của tôi (${mine.length})</button><button class="${f.tab === "bank" ? "active" : ""}" onclick="designTpl.tab='bank';designRefresh(['templates'])">Ngân hàng ngày (${(state.tourDays || []).length})</button></nav>
+    ${f.tab === "templates" ? `${tplToolbar()}<div class="dz-filters">${filt("region", "Khu vực", regions)}${filt("country", "Quốc gia", crmCountries)}${filt("type", "Loại tour", tourTypes)}</div><input class="dz-search" placeholder="Tìm chương trình mẫu…" value="${esc(f.q)}" onchange="designTpl.q=this.value;designRefresh(['templates'])">` : ""}
     <div class="dz-tpl-list">${body}</div>`,
   );
 }
@@ -167,13 +180,13 @@ function designItineraryCard(d) {
   } else {
     body = d.program
       .map(
-        (p, i) => `<div class="dz-day"><div class="dz-day-head"><span class="dz-day-no">Ngày ${i + 1}</span><input value="${esc(p.title)}" placeholder="Tiêu đề / điểm đến trong ngày" onchange="designDay(${i},'title',this.value)"><div class="dz-day-tools">${d.sort ? `<button title="Lên" onclick="designMoveDay(${i},-1)" ${i === 0 ? "disabled" : ""}>${systemIcon("arrow-up")}</button><button title="Xuống" onclick="designMoveDay(${i},1)" ${i === d.program.length - 1 ? "disabled" : ""}>${systemIcon("arrow-down")}</button>` : ""}<button title="Xóa ngày" onclick="designDelDay(${i})">${systemIcon("trash")}</button></div></div><textarea placeholder="Hoạt động, bữa ăn, nơi nghỉ…" onchange="designDay(${i},'text',this.value)">${esc(p.text)}</textarea></div>`,
+        (p, i) => designDayCard(p, i, d),
       )
       .join("");
   }
   return card(
     `<span class="dz-num">3</span> Thiết kế lịch trình tour`,
-    `<div class="dz-tools">${btn(systemIcon("plus") + " Thêm ngày", "designAddDay()", "small")}${btn(systemIcon("arrow-down-up-across-line") + " " + (d.sort ? "Xong" : "Sắp xếp"), "designToggleSort()", "small")}${btn(systemIcon("file-import") + " Nhập từ mẫu", "designImportForm()", "small")}</div>
+    `<div class="dz-tools">${btn(systemIcon("plus") + " Thêm ngày", "designAddDay()", "small")}${btn(systemIcon("arrow-down-up-across-line") + " " + (d.sort ? "Xong" : "Sắp xếp"), "designToggleSort()", "small")}${btn(systemIcon("layer-group") + " Ngân hàng ngày", "tourDayPicker()", "small")}${btn(systemIcon("file-import") + " Nhập từ mẫu", "designImportForm()", "small")}</div>
     <nav class="dz-tabs">${tabs.map(([k, l]) => `<button class="${d.tab === k ? "active" : ""}" onclick="designSetTab('${k}')">${l}</button>`).join("")}</nav><div class="dz-itinerary">${body}</div>`,
   );
 }
@@ -210,48 +223,83 @@ function designServiceSuggestions(cat, d) {
       const free = designResourceAvailable("vehicle", v.id, d), sup = findSupplier(v.supplier);
       const price = supplierLibrary("Vehicle", d.start).find((x) => x.sup.id === v.supplier);
       const total = price ? price.item.price * priceQuantity(price.item, { pax: d.pax, days: d.days }) : 0;
-      return `<article class="dz-suggestion ${free ? "" : "is-busy"}"><span class="dz-suggestion-icon">${systemIcon("van-shuttle")}</span><div><b>${esc(v.name)}</b><small>${esc(v.plate)} · ${v.capacity} chỗ${sup ? ` · ${esc(sup.name)}` : ""}</small><strong>${total ? money(total) : "Chưa có bảng giá"}</strong></div><button class="btn small" ${free ? `onclick="designAddResource('vehicle','${v.id}')"` : "disabled"}>${free ? "+ Chọn" : "Bận lịch"}</button></article>`;
+      return `<article class="dz-suggestion ${free ? "" : "is-busy"}"><span class="dz-suggestion-icon">${systemIcon("van-shuttle")}</span><div><b>${esc(v.name)}</b><small>${esc(v.plate)} · ${v.capacity} chỗ${sup ? ` · ${esc(sup.name)}` : ""}</small><strong>${total ? designFmt(d, total) : "Chưa có bảng giá"}</strong></div><button class="btn small" ${free ? `onclick="designAddResource('vehicle','${v.id}')"` : "disabled"}>${free ? "+ Chọn" : "Bận lịch"}</button></article>`;
     });
   } else if (cat === "Guide") {
     cards = (state.guides || []).map((g) => {
       const free = designResourceAvailable("guide", g.id, d), total = Number(g.rate || 0) * Math.max(1, d.days || 1);
-      return `<article class="dz-suggestion ${free ? "" : "is-busy"}"><span class="dz-suggestion-icon">${systemIcon("user-tie")}</span><div><b>${esc(g.name)}</b><small>${esc(g.area || "Toàn quốc")} · ${esc(g.lang || "Chưa cập nhật ngôn ngữ")} · ${Number(g.rating || 0).toFixed(1)}/5</small><strong>${total ? money(total) : "Chưa có đơn giá"}</strong></div><button class="btn small" ${free ? `onclick="designAddResource('guide','${g.id}')"` : "disabled"}>${free ? "+ Chọn" : "Bận lịch"}</button></article>`;
+      return `<article class="dz-suggestion ${free ? "" : "is-busy"}"><span class="dz-suggestion-icon">${systemIcon("user-tie")}</span><div><b>${esc(g.name)}</b><small>${esc(g.area || "Toàn quốc")} · ${esc(g.lang || "Chưa cập nhật ngôn ngữ")} · ${Number(g.rating || 0).toFixed(1)}/5</small><strong>${total ? designFmt(d, total) : "Chưa có đơn giá"}</strong></div><button class="btn small" ${free ? `onclick="designAddResource('guide','${g.id}')"` : "disabled"}>${free ? "+ Chọn" : "Bận lịch"}</button></article>`;
     });
   } else {
     cards = supplierLibrary(cat, d.start).map((x) => {
       const qty = priceQuantity(x.item, { pax: d.pax, days: d.days }), total = x.item.price * qty;
-      return `<article class="dz-suggestion"><span class="dz-suggestion-icon">${systemIcon(svcIcons[cat] || "building")}</span><div><b>${esc(x.sup.name)}</b><small>${esc(x.item.name)} · ${qty}${esc(x.item.unit)}${x.item.season && x.item.season !== "Quanh năm" ? ` · ${esc(x.item.season)}` : ""}</small><strong>${money(total)}</strong></div><button class="btn small" onclick="designAddFromLibrary('${cat}','${x.key}')">+ Chọn</button></article>`;
+      return `<article class="dz-suggestion"><span class="dz-suggestion-icon">${systemIcon(svcIcons[cat] || "building")}</span><div><b>${esc(x.sup.name)}</b><small>${esc(x.item.name)} · ${qty}${esc(x.item.unit)}${x.item.season && x.item.season !== "Quanh năm" ? ` · ${esc(x.item.season)}` : ""}</small><strong>${designFmt(d, total)}</strong></div><button class="btn small" onclick="designAddFromLibrary('${cat}','${x.key}')">+ Chọn</button></article>`;
     });
   }
   if (!cards.length) return `<div class="dz-suggestion-empty">Chưa có ${svcLabel(cat).toLowerCase()} hoặc bảng giá phù hợp trong hệ thống.</div>`;
   return `<section class="dz-suggestions"><div class="dz-suggestions-head"><b>Đề xuất từ hệ thống</b><span>${cards.length} lựa chọn${d.start ? ` cho ngày ${fmt(d.start)}` : " · chọn ngày khởi hành để kiểm tra lịch trống"}</span></div><div class="dz-suggestion-list">${cards.slice(0, 8).join("")}</div></section>`;
 }
 
+function designPricingTier(d) {
+  const profiles = typeof pricingSettings === "function" ? pricingSettings() : [];
+  const profile = profiles.find((p) => p.id === d.pricingProfileId);
+  if (!profile || !Array.isArray(profile.tiers) || !profile.tiers.length) return { profile: null, tier: null };
+  const pax = Math.max(1, Number(d.pax) || 1);
+  const lower = profile.tiers.filter((t) => Number(t.pax) <= pax).sort((a,b) => Number(b.pax)-Number(a.pax));
+  const tier = lower[0] || profile.tiers.find((t) => Number(t.pax) === 1) || [...profile.tiers].sort((a,b) => Number(a.pax)-Number(b.pax))[0];
+  return { profile, tier };
+}
+function designApplyPricing(d = ensureDesign()) {
+  const pax = Math.max(1, Number(d.pax) || 1);
+  const days = Math.max(1, Number(d.program.length || d.days) || 1);
+  // Migrate drafts from the previous UI where "pax" combined basis and source.
+  if (d.pricingMode === "pax") { d.pricingMode = "total"; d.pricingSource = "table"; }
+  d.pricingMode = d.pricingMode === "daily" ? "daily" : "total";
+  d.pricingSource = d.pricingSource === "table" || d.pricingSource === "profile" ? "table" : "manual";
+  if (d.pricingSource === "table") {
+    const { tier } = designPricingTier(d);
+    d.pricingTierPax = Number(tier?.pax || 1);
+    d.unitPrice = Number(tier?.priceVnd || 0);
+  } else {
+    if (d.manualUnitPrice === undefined || d.manualUnitPrice === null) d.manualUnitPrice = Number(d.unitPrice) || 0;
+    d.unitPrice = Number(d.manualUnitPrice) || 0;
+  }
+  d.amount = Math.round(Math.max(0, Number(d.unitPrice) || 0) * pax * (d.pricingMode === "daily" ? days : 1));
+  return d.amount;
+}
+function designPricingControls(d) {
+  const mode = d.pricingMode === "daily" ? "daily" : "total";
+  const source = d.pricingSource === "table" || d.pricingMode === "pax" ? "table" : "manual";
+  const profiles = typeof pricingSettings === "function" ? pricingSettings() : [];
+  const modeSelect = `<label class="dz-field">Cách tính giá<select onchange="designSetPricingMode(this.value)"><option value="daily" ${mode === "daily" ? "selected" : ""}>Giá theo ngày</option><option value="total" ${mode === "total" ? "selected" : ""}>Giá cả tour</option></select></label>`;
+  const sourceSelect = `<label class="dz-field">Cách nhập giá<select onchange="designSetPricingSource(this.value)"><option value="manual" ${source === "manual" ? "selected" : ""}>Nhập giá mỗi khách</option><option value="table" ${source === "table" ? "selected" : ""}>Sử dụng bảng giá</option></select></label>`;
+  if (source === "table") {
+    const options = profiles.map((p) => `<option value="${esc(p.id)}" ${p.id === d.pricingProfileId ? "selected" : ""}>${esc(p.name)}</option>`).join("");
+    const { profile, tier } = designPricingTier(d);
+    const unit = tier ? designFmt(d, tier.priceVnd) : "—";
+    const unitLabel = mode === "daily" ? "mỗi khách / ngày" : "mỗi khách / cả tour";
+    const help = profile && tier ? `Tour ${d.pax} khách → áp dụng mức ${tier.pax} khách (${unit}/${unitLabel}). Tổng giá bán: ${designFmt(d, d.amount)}.` : "Chưa có bảng giá phù hợp. Hãy tạo bảng giá trước khi tiếp tục.";
+    return `${modeSelect}${sourceSelect}<label class="dz-field">Bảng giá<select onchange="designSetPricingProfile(this.value)"><option value="">-- Chọn bảng giá --</option>${options}</select></label><div class="pricing-application"><b>Kết quả áp dụng</b><p>${esc(help)}</p>${!profiles.length ? `<button type="button" class="btn small" onclick="closeModal();go('pricing')">Tạo bảng giá</button>` : ""}</div>`;
+  }
+  const label = mode === "daily" ? `Giá mỗi khách / ngày (${designInputCode(d)})` : `Giá mỗi khách / cả tour (${designInputCode(d)})`;
+  const amountLabel = `${designInputValue(d, d.unitPrice || 0) || ""}`;
+  return `${modeSelect}${sourceSelect}<label class="dz-field">${label}<input type="number" min="0" step="${designInputStep(d, 500000)}" value="${d.unitPrice ? amountLabel : ""}" placeholder="Nhập đơn giá mỗi khách" onchange="designSetUnitPrice(this.value)"></label><div class="pricing-application"><b>Tổng giá bán dự kiến</b><p>${designFmt(d, d.amount)} · ${d.pax} khách${mode === "daily" ? ` · ${d.program.length || d.days} ngày` : ""}</p></div>`;
+}
+
 function designSummary(d) {
-  const cost = designCost(d);
-  const margin = designMargin(d);
-  const min = policy().minMarginPct;
-  const profit = d.amount - cost;
+  const cost = designCost(d), margin = designMargin(d), min = policy().minMarginPct, profit = d.amount - cost;
   const saved = d.id ? badge("Đã lưu nháp", "blue") : badge("Dự thảo", "green");
   const toggle = designCurToggle(d);
-  const lead = findLead(d.lead);
   const row = (l, v) => `<div class="dz-kv"><span>${l}</span><b>${v}</b></div>`;
-  return `${card("Tổng quan tour", row("Tên chương trình", esc(d.name || "Chưa đặt tên")) + row("Khách hàng", esc(lead?.name || "Chưa chọn")) + row("Thị trường", esc(d.country || "—")) + row("Thời lượng", d.program.length || d.days ? (d.program.length || d.days) + " ngày" : "—") + row("Số lượng khách", d.pax + " khách") + row("Ngày khởi hành", d.start ? fmt(d.start) : "Chưa chọn") + row("Loại tour", esc(d.tourType || "—")), saved)}
+  return `${card("Tổng quan tour", row("Tên chương trình", esc(d.name || "Chưa đặt tên")) + row("Khách hàng", esc(designCustomerName(d))) + row("Thị trường", esc(d.country || "—")) + row("Thời lượng", d.program.length || d.days ? (d.program.length || d.days) + " ngày" : "—") + row("Số lượng khách", d.pax + " khách") + row("Ngày khởi hành", d.start ? fmt(d.start) : "Chưa chọn") + row("Loại tour", esc(d.tourType || "—")), saved)}
   ${card("Chi phí dự kiến", svcCats().map((c) => `<div class="dz-cost"><span>${systemIcon(svcIcons[c] || "circle")}${svcLabel(c)}</span><b>${designFmt(d, designCatCost(d, c))}</b></div>`).join("") + `<div class="dz-total"><span>Tổng chi phí</span><b>${designFmt(d, cost)}</b></div>`, toggle)}
-  ${card(
-    "Lợi nhuận dự kiến",
-    `<label class="dz-field">Giá bán (${designInputCode(d)})<input type="number" min="0" step="${designInputStep(d, 500000)}" value="${d.amount ? designInputValue(d, d.amount) : ""}" placeholder="Nhập giá bán trọn gói" onchange="designSet('amount',this.value)"></label>
-    ${row("Giá bán / khách", d.amount && d.pax ? designFmt(d, Math.round(d.amount / d.pax)) : "—")}${row("Lợi nhuận", `<span class="${profit >= 0 ? "text-good" : "text-bad"}">${designFmt(d, profit)}</span>`)}
-    <div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div>
-    <small class="sub">${d.amount && margin < min ? `Thấp hơn ngưỡng ${min}% — báo giá sẽ cần CEO duyệt trước khi gửi khách.` : `Ngưỡng tối thiểu theo chính sách: ${min}%.`}</small>`,
-    btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"),
-  )}
+  ${card("Lợi nhuận dự kiến", `${designPricingControls(d)}${row("Giá bán tổng tour", d.amount ? designFmt(d, d.amount) : "Chưa tính giá")}${row("Giá bán / khách", d.amount && d.pax ? designFmt(d, Math.round(d.amount / d.pax)) : "—")}${row("Lợi nhuận", `<span class="${profit >= 0 ? "text-good" : "text-bad"}">${designFmt(d, profit)}</span>`)}<div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div><small class="sub">${d.amount && margin < min ? `Thấp hơn ngưỡng ${min}% — báo giá sẽ cần CEO duyệt trước khi gửi khách.` : `Ngưỡng tối thiểu theo chính sách: ${min}%.`}</small>`, btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"))}
   <section class="card dz-actions" id="dz-card-preview"><h3>Hành động</h3>${btn(systemIcon("floppy-disk") + " Lưu chương trình", "designSave()", "primary")}<div class="dz-actions-row">${btn(systemIcon("file-invoice") + " Tạo báo giá", "createQuote()")}${btn(systemIcon("share-nodes") + " Chia sẻ cho team", "designShare()")}</div>${can("tour_design_manage") ? `<button class="dz-link" onclick="designSaveTemplate()">Lưu thành mẫu tour</button>` : ""}</section>`;
 }
 
 function designCostQuickSummary(d) {
   const cost = designCost(d), profit = d.amount - cost, margin = designMargin(d), min = policy().minMarginPct;
-  return card("Dự toán nhanh", `<div class="dz-quick-cost"><div><span>Tổng chi phí dịch vụ</span><b>${designFmt(d, cost)}</b></div><label class="dz-field">Giá bán dự kiến (${designInputCode(d)})<input type="number" min="0" step="${designInputStep(d, 500000)}" value="${d.amount ? designInputValue(d, d.amount) : ""}" placeholder="Nhập giá bán trọn gói" onchange="designSet('amount',this.value)"></label><div><span>Lợi nhuận dự kiến</span><b class="${profit >= 0 ? "text-good" : "text-bad"}">${designFmt(d, profit)}</b></div><div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div><small>Ngưỡng lợi nhuận tối thiểu: ${min}%.</small></div>`, btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"));
+  return card("Dự toán nhanh", `<div class="dz-quick-cost"><div><span>Tổng chi phí dịch vụ</span><b>${designFmt(d, cost)}</b></div><div><span>Tổng giá bán dự kiến</span><b>${designFmt(d, d.amount)}</b></div><div><span>Lợi nhuận</span><b class="${profit >= 0 ? "text-good" : "text-bad"}">${designFmt(d, profit)}</b></div><div class="dz-margin ${!d.amount ? "" : margin < min ? "is-low" : "is-ok"}"><span>Tỷ suất lợi nhuận</span><b>${d.amount ? margin.toFixed(1) + "%" : "—"}</b></div><small>Thiết lập cách tính giá ở bước “Xem trước & Xuất báo giá”. Ngưỡng lợi nhuận tối thiểu: ${min}%.</small></div>`, btn(systemIcon("flag") + " Đánh giá", "designEvaluate()", "small"));
 }
 
 const designParts = {
@@ -289,7 +337,7 @@ function designVisibleDrafts() {
   const drafts = (state.drafts || []).filter((item) => item.design);
   const visible = can("all") ? drafts : drafts.filter((item) => item.owner === actor().name);
   const query = designLibraryQuery.trim().toLowerCase();
-  return query ? visible.filter((item) => `${item.id} ${item.design.name} ${item.owner} ${findLead(item.lead)?.name || ""}`.toLowerCase().includes(query)) : visible;
+  return query ? visible.filter((item) => `${item.id} ${item.design.name} ${item.owner} ${(item.design?.customerType === "customer" ? (state.customers || []).find((c) => c.id === item.design.customerId)?.name : findLead(item.lead)?.name) || ""}`.toLowerCase().includes(query)) : visible;
 }
 
 function designLibraryCard(item) {
@@ -302,7 +350,7 @@ function designLibraryCard(item) {
     <div class="tour-card-body"><div class="tour-card-title"><div><small>${esc(item.id)}</small><h3>${esc(d.name || "Chương trình chưa đặt tên")}</h3></div><span>${systemIcon("arrow-right")}</span></div>
     <p>${esc(lead?.name || "Chưa gắn khách hàng")} · ${esc(d.country || "Chưa chọn thị trường")}</p>
     <div class="tour-card-meta"><span>${systemIcon("calendar-days")} ${d.program.length || d.days || 0} ngày</span><span>${systemIcon("users")} ${d.pax || 0} khách</span><span>${systemIcon("wallet")} ${designFmt(d, d.amount || cost)}</span></div></div>
-    <footer><span><b>${esc(item.owner || "Chưa phân công")}</b><small>${esc(item.ownerRole || "Người thiết kế")}</small></span><time>${dateTimeVN(item.savedAt)}</time></footer>
+    ${designCardFooter(item)}
   </article>`;
 }
 
@@ -345,38 +393,68 @@ function selectLead(id) {
   if (current === "design") designOpenBuilder();
 }
 
-function designPickLead(id) {
+function designPickLead(selection) {
   const d = ensureDesign();
-  d.lead = id;
-  const lead = findLead(id);
+  const [kind, id] = String(selection || "").includes("|") ? String(selection).split("|", 2) : ["lead", selection];
+  d.customerType = kind === "customer" ? "customer" : "lead";
+  d.customerId = kind === "customer" ? id : "";
+  d.lead = kind === "lead" ? id : "";
+  const lead = kind === "lead" ? findLead(id) : (state.customers || []).find((c) => c.id === id);
   if (lead) {
     d.pax = lead.pax || d.pax;
     d.country = lead.country || d.country;
-    if (!d.amount && lead.budget) d.amount = lead.budget;
+    if (!d.amount && lead.budget) { d.amount = lead.budget; d.unitPrice = Math.round(lead.budget / Math.max(1, d.pax) / (d.pricingMode === "daily" ? Math.max(1, d.days) : 1)); }
     if (!d.note && lead.note) d.note = lead.note;
     if (!d.name && lead.tour) d.name = lead.tour;
     if (lead.start && !d.start) d.start = lead.start;
   }
+  if (d.pricingMode === "pax") { d.pricingMode = "total"; d.pricingSource = "table"; }
+  if (d.pricingSource === "table" || d.unitPrice) designApplyPricing(d);
   if (document.querySelector(".tour-builder-modal")) designRefresh(["steps", "stage"]);
   else render();
+}
+
+function designSetPricingMode(mode) {
+  const d = ensureDesign();
+  d.pricingMode = mode === "daily" ? "daily" : "total";
+  designApplyPricing(d); designRefresh(["summary", "steps"]);
+}
+function designSetPricingSource(source) {
+  const d = ensureDesign();
+  if (source !== "table" && d.pricingSource === "table" && d.manualUnitPrice === undefined) d.manualUnitPrice = Number(d.unitPrice) || 0;
+  d.pricingSource = source === "table" ? "table" : "manual";
+  if (d.pricingSource === "table") {
+    const profiles = typeof pricingSettings === "function" ? pricingSettings() : [];
+    if (!profiles.some((p) => p.id === d.pricingProfileId)) d.pricingProfileId = profiles[0]?.id || "";
+  }
+  designApplyPricing(d); designRefresh(["summary", "steps"]);
+}
+function designSetUnitPrice(value) {
+  const d = ensureDesign(); d.manualUnitPrice = fxToVnd(Math.max(0, Number(value) || 0), designInputCode(d)); d.unitPrice = d.manualUnitPrice;
+  designApplyPricing(d); designRefresh(["summary", "steps"]);
+}
+function designSetPricingProfile(id) {
+  const d = ensureDesign(); d.pricingProfileId = id || ""; designApplyPricing(d); designRefresh(["summary", "steps"]);
 }
 
 function designSet(field, value) {
   const d = ensureDesign();
   if (["pax", "days", "amount"].includes(field)) value = Math.max(0, Number(value) || 0);
-  if (field === "amount") value = fxToVnd(value, designInputCode(d));
+  if (field === "amount") { value = fxToVnd(value, designInputCode(d)); d.unitPrice = Math.round(value / Math.max(1, Number(d.pax) || 1) / (d.pricingMode === "daily" ? Math.max(1, d.program.length || d.days || 1) : 1)); }
   if (field === "budgetNative") value = value === "" ? "" : Math.max(0, Number(value) || 0);
   if (field === "days") {
     value = Math.min(60, Math.max(1, value));
     while (d.program.length < value) d.program.push({ title: "", text: "" });
     while (d.program.length > value && !d.program[d.program.length - 1].title.trim() && !d.program[d.program.length - 1].text.trim()) d.program.pop();
     d.days = d.program.length;
+    designApplyPricing(d);
     designRefresh(["itinerary", "steps", "summary"]);
     const input = document.querySelector('.dz-form input[onchange*="\'days\'"]');
     if (input) input.value = d.days;
     return;
   }
   d[field] = value;
+  if (field === "pax" || field === "amount") designApplyPricing(d);
   designRefresh(["steps", "summary"]);
 }
 
@@ -391,6 +469,7 @@ function designAddDay() {
   d.program.push({ title: "", text: "" });
   d.days = d.program.length;
   d.tab = "detail";
+  designApplyPricing(d);
   designRefresh(["itinerary", "steps", "summary"]);
   const info = document.querySelector('.dz-form input[onchange*="\'days\'"]');
   if (info) info.value = d.days;
@@ -400,6 +479,7 @@ function designDelDay(i) {
   const d = ensureDesign();
   d.program.splice(i, 1);
   d.days = d.program.length || 1;
+  designApplyPricing(d);
   designRefresh(["itinerary", "steps", "summary"]);
   const info = document.querySelector('.dz-form input[onchange*="\'days\'"]');
   if (info) info.value = d.days;
@@ -410,6 +490,135 @@ function designMoveDay(i, dir) {
   const j = i + dir;
   if (j < 0 || j >= d.program.length) return;
   [d.program[i], d.program[j]] = [d.program[j], d.program[i]];
+  designApplyPricing(d);
+  designRefresh(["itinerary", "summary"]);
+}
+
+/* Thẻ một ngày trong lịch trình. Bật "Sắp xếp": thẻ chỉ đọc, kéo được ở bất kỳ đâu trên thẻ. */
+function designDayButton(title, action, icon, disabled = false) {
+  const off = disabled ? " disabled" : "";
+  return `<button title="${title}" onclick="${action}"${off}>${systemIcon(icon)}</button>`;
+}
+
+function designDayTools(i, d) {
+  if (!d.sort) {
+    const save = designDayButton("Lưu vào ngân hàng ngày", `tourDaySaveFrom(${i})`, "bookmark");
+    return save + designDayButton("Xóa ngày", `designDelDay(${i})`, "trash");
+  }
+  const last = d.program.length - 1;
+  const up = designDayButton("Lên", `designMoveDay(${i},-1)`, "arrow-up", i === 0);
+  const down = designDayButton("Xuống", `designMoveDay(${i},1)`, "arrow-down", i === last);
+  return up + down;
+}
+
+/* Chế độ sắp xếp: hiện chữ, không cho sửa; không có ô nhập nên kéo được ở mọi điểm trên thẻ. */
+function designDayBodySorting(p, i, d) {
+  const title = esc(p.title || "(chưa đặt tên)");
+  const text = p.text ? `<div class="dz-day-text">${esc(p.text)}</div>` : "";
+  return [
+    `<div class="dz-day-head">`,
+    `<span class="dz-day-no">Ngày ${i + 1}</span>`,
+    `<b class="dz-day-title">${title}</b>`,
+    `<div class="dz-day-tools">${designDayTools(i, d)}</div>`,
+    `</div>`,
+    text,
+  ].join("");
+}
+
+function designDayBodyEditing(p, i, d) {
+  return [
+    `<div class="dz-day-head">`,
+    `<span class="dz-day-no">Ngày ${i + 1}</span>`,
+    `<input value="${esc(p.title)}" placeholder="Tiêu đề / điểm đến trong ngày"`,
+    ` onchange="designDay(${i},'title',this.value)">`,
+    `<div class="dz-day-tools">${designDayTools(i, d)}</div>`,
+    `</div>`,
+    `<textarea placeholder="Hoạt động, bữa ăn, nơi nghỉ…"`,
+    ` onchange="designDay(${i},'text',this.value)">${esc(p.text)}</textarea>`,
+  ].join("");
+}
+
+function designDayCard(p, i, d) {
+  if (!d.sort) return `<div class="dz-day">${designDayBodyEditing(p, i, d)}</div>`;
+  return [
+    `<div class="dz-day is-sorting" draggable="true"`,
+    ` ondragstart="designDragStart(event,${i})" ondragend="designDragEnd()"`,
+    ` ondragover="designDragOver(event)" ondragleave="designDragLeave(event)"`,
+    ` ondrop="designDrop(event,${i})" title="Kéo để đổi thứ tự ngày">`,
+    designDayBodySorting(p, i, d),
+    `</div>`,
+  ].join("");
+}
+
+/* Kéo–thả đổi thứ tự ngày. HTML5 drag-and-drop không chạy trên màn hình cảm ứng: dùng nút lên/xuống. */
+let designDragFrom = -1;
+
+function designMoveDayTo(from, to) {
+  const d = ensureDesign();
+  const n = d.program.length;
+  if (from < 0 || from >= n || to < 0 || to >= n || from === to) return false;
+  const moved = d.program.splice(from, 1)[0];
+  d.program.splice(to, 0, moved);
+  designApplyPricing(d);
+  return true;
+}
+
+/* Vị trí đích sau khi rút ngày `from` ra: thả phía trên hoặc phía dưới ngày `over`. */
+function designDropIndex(from, over, after) {
+  let to = over + (after ? 1 : 0);
+  if (from < to) to -= 1;
+  return to;
+}
+
+function designDropAfter(e) {
+  const box = e.currentTarget.getBoundingClientRect();
+  return e.clientY > box.top + box.height / 2;
+}
+
+function designClearDrop() {
+  document.querySelectorAll(".dz-day.drop-before, .dz-day.drop-after, .dz-day.is-dragging").forEach((el) => {
+    el.classList.remove("drop-before", "drop-after", "is-dragging");
+  });
+}
+
+function designDragStart(e, i) {
+  designDragFrom = i;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", String(i));
+  const card = e.currentTarget.closest(".dz-day");
+  if (!card) return;
+  const box = card.getBoundingClientRect();
+  if (e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(card, e.clientX - box.left, e.clientY - box.top);
+  setTimeout(() => card.classList.add("is-dragging"), 0);
+}
+
+function designDragOver(e) {
+  if (designDragFrom < 0) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  designClearDrop();
+  const card = e.currentTarget;
+  card.classList.add(designDropAfter(e) ? "drop-after" : "drop-before");
+}
+
+function designDragLeave(e) {
+  if (e.currentTarget.contains(e.relatedTarget)) return;
+  e.currentTarget.classList.remove("drop-before", "drop-after");
+}
+
+function designDragEnd() {
+  designDragFrom = -1;
+  designClearDrop();
+}
+
+function designDrop(e, over) {
+  e.preventDefault();
+  const from = designDragFrom;
+  const after = designDropAfter(e);
+  designDragEnd();
+  if (from < 0) return;
+  const to = designDropIndex(from, over, after);
+  if (!designMoveDayTo(from, to)) return;
   designRefresh(["itinerary"]);
 }
 
@@ -442,7 +651,7 @@ function designAddFromLibrary(cat, key) {
   const d = ensureDesign(), [sid, idx] = key.split("|"), sup = findSupplier(sid), p = sup?.prices?.[+idx];
   if (!p) return;
   const qty = priceQuantity(p, { pax: d.pax, days: d.days || d.program.length });
-  (d.services[cat] ||= []).push({ name: `${sup.name} – ${p.name} (${qty} × ${money(p.price)})`, cost: p.price * qty, supplier: sid });
+  (d.services[cat] ||= []).push({ name: `${sup.name} – ${p.name} (${qty}${p.unit || ""})`, cost: p.price * qty, supplier: sid });
   designRefresh(["services", "summary", "steps"]);
   toast("Đã thêm từ bảng giá NCC.");
 }
@@ -494,6 +703,7 @@ function designEvaluate() {
 }
 
 function designTemplateProgram(t) {
+  if (t.program?.length) return t.program.map((p) => ({ title: p.title || "", text: p.text || "" }));
   const d = ensureDesign();
   const translation = travelTranslations?.[d.language];
   const source = translation?.length ? translation : t.itinerary;
@@ -550,7 +760,7 @@ function designSnapshot(d) {
 function designSave() {
   if (!requireCapability("tour_design_manage")) return;
   const d = ensureDesign();
-  if (!d.name.trim() && !d.lead && !d.program.length) return toast("Chưa có nội dung để lưu.");
+  if (!d.name.trim() && !d.lead && !d.customerId && !d.program.length) return toast("Chưa có nội dung để lưu.");
   const rec = (state.drafts ||= []).find((r) => r.id === d.id);
   const data = { lead: d.lead, owner: actor().name, ownerRole: actor().role, savedAt: nowISO(), design: designSnapshot(d) };
   if (rec) Object.assign(rec, data);
@@ -568,29 +778,154 @@ function designOpenDraft(id) {
   const rec = state.drafts.find((r) => r.id === id);
   if (!rec) return;
   design = { ...blankDesign(), ...rec.design, lead: rec.lead || rec.design.lead, id: rec.id, sort: false };
+  if (design.pricingMode === "pax") { design.pricingMode = "total"; design.pricingSource = "table"; }
+  if (rec.design.manualUnitPrice === undefined && design.pricingSource !== "table") design.manualUnitPrice = Number(rec.design.unitPrice) || 0;
+  // Backward compatibility: drafts created before the new price-profile flow only stored amount/paxPrices.
+  if (!Number(design.unitPrice) && Number(design.amount) > 0 && design.pricingMode !== "pax" && design.pricingSource !== "table") {
+    const factor = design.pricingMode === "daily" ? Math.max(1, design.program.length || design.days || 1) : 1;
+    design.unitPrice = Number(design.paxPrices?.[design.pax]) || Math.round(Number(design.amount) / Math.max(1, Number(design.pax) || 1) / factor);
+  }
   designOpenBuilder();
+}
+
+/* Chi tiết chương trình: cột lịch trình + bảng bên (dịch vụ, chi phí, thông tin).
+   Không dùng thẻ aside vì style.css biến nó thành sidebar cố định (xem css/mod-design.css). */
+function designDetailDay(day, index) {
+  const title = esc(day.title || `Ngày ${index + 1}`);
+  const text = esc(day.text || "Chưa có mô tả hoạt động.");
+  return `<li><span>${index + 1}</span><div><b>${title}</b><p>${text}</p></div></li>`;
+}
+
+function designDetailDays(d) {
+  if (!d.program.length) return `<li class="empty">Chưa có lịch trình.</li>`;
+  return d.program.map((day, index) => designDetailDay(day, index)).join("");
+}
+
+function designDetailService(d, cat) {
+  const label = `${systemIcon(svcIcons[cat] || "circle")} ${svcLabel(cat)}`;
+  const value = `${designItems(d, cat).length} mục · ${designFmt(d, designCatCost(d, cat))}`;
+  return `<div><span>${label}</span><b>${value}</b></div>`;
+}
+
+function designDetailHead(rec, d) {
+  const lead = findLead(rec.lead || d.lead);
+  const status = designStepState(d).done.preview ? "Sẵn sàng báo giá" : "Đang thiết kế";
+  const sub = `${esc(lead?.name || "Chưa gắn khách hàng")} · ${esc(d.country || "Chưa chọn thị trường")}`;
+  return [
+    `<header>`,
+    `<div><span class="tour-detail-status">${status}</span>`,
+    `<h2>${esc(d.name || "Chương trình chưa đặt tên")}</h2><p>${sub}</p></div>`,
+    `<div class="tour-detail-owner"><small>Người thiết kế</small>`,
+    `<b>${esc(rec.owner || "Chưa phân công")}</b><span>${esc(rec.ownerRole || "Người thiết kế")}</span></div>`,
+    `</header>`,
+  ].join("");
+}
+
+function designDetailKpi(label, value) {
+  return `<div><small>${label}</small><b>${value}</b></div>`;
+}
+
+function designDetailKpis(d) {
+  return [
+    `<section class="tour-detail-kpis">`,
+    designDetailKpi("Thời lượng", `${d.program.length || d.days || 0} ngày`),
+    designDetailKpi("Số khách", `${d.pax || 0} khách`),
+    designDetailKpi("Tổng chi phí", designFmt(d, designCost(d))),
+    designDetailKpi("Giá bán", designFmt(d, d.amount)),
+    `</section>`,
+  ].join("");
+}
+
+function designDetailSide(rec, d) {
+  const services = svcCats().map((cat) => designDetailService(d, cat)).join("");
+  const profit = designFmt(d, d.amount - designCost(d));
+  const start = d.start ? fmt(d.start) : "Chưa chọn";
+  return [
+    `<div class="tour-detail-side">`,
+    `<section class="tour-detail-panel"><h3>Dịch vụ & chi phí</h3>`,
+    `<div class="tour-detail-services">${services}</div>`,
+    `<div class="tour-detail-total"><span>Lợi nhuận dự kiến</span><b>${profit}</b></div></section>`,
+    `<section class="tour-detail-panel"><h3>Thông tin chương trình</h3><div class="tour-detail-info">`,
+    `<span>Khởi hành <b>${start}</b></span>`,
+    `<span>Loại tour <b>${esc(d.tourType || "—")}</b></span>`,
+    `<span>Cập nhật <b>${dateTimeVN(rec.savedAt)}</b></span>`,
+    `</div></section>`,
+    `</div>`,
+  ].join("");
+}
+
+function designDetailFooter(rec) {
+  const del = designCanDeleteDraft(rec)
+    ? btn(systemIcon("trash") + " Xóa nháp", `designDeleteDraft('${rec.id}')`, "danger tour-detail-delete")
+    : "";
+  const edit = can("tour_design_manage")
+    ? btn(systemIcon("pen") + " Tiếp tục thiết kế", `designOpenDraft('${rec.id}')`, "primary")
+    : "";
+  return `<footer>${del}${btn("Đóng", "closeModal()")}${edit}</footer>`;
 }
 
 function designDetail(id) {
   const rec = (state.drafts || []).find((item) => item.id === id && item.design);
   if (!rec || (!can("all") && rec.owner !== actor().name)) return toast("Bạn không có quyền xem chương trình này.");
   const d = { ...blankDesign(), ...rec.design };
-  const lead = findLead(rec.lead || d.lead);
-  const days = d.program.length ? d.program.map((day, index) => `<li><span>${index + 1}</span><div><b>${esc(day.title || `Ngày ${index + 1}`)}</b><p>${esc(day.text || "Chưa có mô tả hoạt động.")}</p></div></li>`).join("") : `<li class="empty">Chưa có lịch trình.</li>`;
-  const services = svcCats().map((cat) => `<div><span>${systemIcon(svcIcons[cat] || "circle")} ${svcLabel(cat)}</span><b>${designItems(d, cat).length} mục · ${designFmt(d, designCatCost(d, cat))}</b></div>`).join("");
-  modal(`Chi tiết chương trình · ${esc(rec.id)}`, `<div class="tour-detail">
-    <header><div><span class="tour-detail-status">${designStepState(d).done.preview ? "Sẵn sàng báo giá" : "Đang thiết kế"}</span><h2>${esc(d.name || "Chương trình chưa đặt tên")}</h2><p>${esc(lead?.name || "Chưa gắn khách hàng")} · ${esc(d.country || "Chưa chọn thị trường")}</p></div><div class="tour-detail-owner"><small>Người thiết kế</small><b>${esc(rec.owner || "Chưa phân công")}</b><span>${esc(rec.ownerRole || "Người thiết kế")}</span></div></header>
-    <section class="tour-detail-kpis"><div><small>Thời lượng</small><b>${d.program.length || d.days || 0} ngày</b></div><div><small>Số khách</small><b>${d.pax || 0} khách</b></div><div><small>Tổng chi phí</small><b>${designFmt(d, designCost(d))}</b></div><div><small>Giá bán</small><b>${designFmt(d, d.amount)}</b></div></section>
-    <div class="tour-detail-grid"><section><h3>Lịch trình chi tiết</h3><ol class="tour-detail-days">${days}</ol></section><aside><h3>Dịch vụ & chi phí</h3><div class="tour-detail-services">${services}</div><div class="tour-detail-total"><span>Lợi nhuận dự kiến</span><b>${designFmt(d, d.amount - designCost(d))}</b></div><h3>Thông tin chương trình</h3><div class="tour-detail-info"><span>Khởi hành <b>${d.start ? fmt(d.start) : "Chưa chọn"}</b></span><span>Loại tour <b>${esc(d.tourType || "—")}</b></span><span>Cập nhật <b>${dateTimeVN(rec.savedAt)}</b></span></div></aside></div>
-    <footer>${btn("Đóng", "closeModal()")}${can("tour_design_manage") ? btn(systemIcon("pen") + " Tiếp tục thiết kế", `designOpenDraft('${rec.id}')`, "primary") : ""}</footer>
-  </div>`);
+  const list = `<ol class="tour-detail-days">${designDetailDays(d)}</ol>`;
+  const days = `<section><h3>Lịch trình chi tiết</h3>${list}</section>`;
+  modal(
+    `Chi tiết chương trình · ${esc(rec.id)}`,
+    [
+      `<div class="tour-detail">`,
+      designDetailHead(rec, d),
+      designDetailKpis(d),
+      `<div class="tour-detail-grid">${days}${designDetailSide(rec, d)}</div>`,
+      designDetailFooter(rec),
+      `</div>`,
+    ].join(""),
+  );
+}
+
+/* Xóa chương trình nháp: chỉ người tạo (hoặc CEO), có hỏi lại và ghi nhật ký. */
+function designCanDeleteDraft(rec) {
+  if (!can("tour_design_manage")) return false;
+  return can("all") || rec.owner === actor().name;
+}
+
+function designCardFooter(item) {
+  const owner = esc(item.owner || "Chưa phân công");
+  const role = esc(item.ownerRole || "Người thiết kế");
+  const end = `<div class="tour-card-end"><time>${dateTimeVN(item.savedAt)}</time>${designCardDelete(item)}</div>`;
+  return `<footer><span><b>${owner}</b><small>${role}</small></span>${end}</footer>`;
+}
+
+function designCardDelete(rec) {
+  if (!designCanDeleteDraft(rec)) return "";
+  return [
+    `<button class="tour-card-delete" title="Xóa nháp" aria-label="Xóa nháp ${esc(rec.id)}"`,
+    ` onclick="designDeleteDraftClick(event,'${rec.id}')" onkeydown="event.stopPropagation()">`,
+    systemIcon("trash"),
+    `</button>`,
+  ].join("");
+}
+
+function designDeleteDraftClick(e, id) {
+  e.stopPropagation();
+  designDeleteDraft(id);
 }
 
 function designDeleteDraft(id) {
+  const rec = (state.drafts || []).find((r) => r.id === id);
+  if (!rec) return toast("Không tìm thấy chương trình nháp.");
+  if (!requireCapability("tour_design_manage")) return;
+  if (!designCanDeleteDraft(rec)) return toast("Bạn chỉ xóa được chương trình nháp do mình tạo.");
+  const name = rec.design?.name || "Chương trình chưa đặt tên";
+  if (!confirm(`Xóa chương trình nháp “${name}” (${rec.id})?\nThao tác này không thể hoàn tác.`)) return;
   state.drafts = state.drafts.filter((r) => r.id !== id);
   if (design?.id === id) design.id = "";
+  audit("draft", id, "DELETE", `Xóa chương trình nháp ${name} (${id})`);
   save();
+  if (document.querySelector(".tour-detail")) closeModal();
   designRefresh(["templates", "summary"]);
+  if (current === "design") render();
+  toast("Đã xóa chương trình nháp.");
 }
 
 function designSaveTemplate() {
@@ -599,7 +934,20 @@ function designSaveTemplate() {
   const titles = d.program.map((p) => p.title.trim()).filter(Boolean);
   if (!d.name.trim() || !titles.length) return toast("Hãy đặt tên và nhập lịch trình trước khi lưu mẫu.");
   if (state.tourTemplates.some((t) => t.name === d.name.trim())) return toast("Đã có mẫu trùng tên.");
-  const t = { id: nextBusinessId("tourTemplates"), name: d.name.trim(), itinerary: titles, country: d.country, type: d.tourType };
+  const program = d.program.filter((p) => p.title.trim()).map((p) => ({ title: p.title.trim(), text: p.text.trim() }));
+  const now = new Date().toISOString();
+  const t = {
+    id: nextBusinessId("tourTemplates"),
+    name: d.name.trim(),
+    region: designTemplateRegion({ country: d.country, name: d.name }),
+    itinerary: titles,
+    program,
+    country: d.country,
+    type: d.tourType,
+    owner: actor().name,
+    createdAt: now,
+    updatedAt: now,
+  };
   state.tourTemplates.push(t);
   audit("template", t.id, "CREATE", `Lưu mẫu tour ${t.name}`);
   designRefresh(["templates"]);
@@ -627,7 +975,7 @@ function designPreview() {
   if (!d.program.length) return toast("Hãy thêm lịch trình trước khi xem trước.");
   modal(
     "Xem trước chương trình · " + esc(d.name || "Chưa đặt tên"),
-    `<div class="quote-detail"><div class="quote-detail-summary">${line("Khách hàng", esc(findLead(d.lead)?.name || "—"))}${line("Khởi hành", d.start ? fmt(d.start) : "—")}${line("Số khách", d.pax)}${line("Giá bán", d.amount ? designFmt(d, d.amount) : "Chưa nhập")}</div>${d.program.map((p, i) => `<div class="quote-day"><b>Ngày ${i + 1}</b><div><strong>${esc(p.title)}</strong><p>${esc(p.text).replace(/\n/g, "<br>")}</p></div></div>`).join("")}</div>`,
+    `<div class="quote-detail"><div class="quote-detail-summary">${line("Khách hàng", esc(designCustomerName(d)))}${line("Khởi hành", d.start ? fmt(d.start) : "—")}${line("Số khách", d.pax)}${line("Giá bán", d.amount ? designFmt(d, d.amount) : "Chưa nhập")}</div>${d.program.map((p, i) => `<div class="quote-day"><b>Ngày ${i + 1}</b><div><strong>${esc(p.title)}</strong><p>${esc(p.text).replace(/\n/g, "<br>")}</p></div></div>`).join("")}</div>`,
   );
 }
 
@@ -635,25 +983,36 @@ function createQuote() {
   if (!requireCapability("quotes_manage")) return;
   const d = ensureDesign();
   const missing = [];
-  if (!d.lead) missing.push("chọn khách hàng");
+  if (!d.lead && !(d.customerType === "customer" && d.customerId)) missing.push("chọn khách hàng");
   if (!d.name.trim()) missing.push("đặt tên chương trình");
   if (!d.start) missing.push("chọn ngày khởi hành");
   if (!d.program.length || d.program.some((p) => !p.title.trim())) missing.push("nhập tiêu đề cho tất cả các ngày");
   if (!(designCost(d) > 0)) missing.push("nhập chi phí dịch vụ");
   if (!(d.amount > 0)) missing.push("nhập giá bán");
   if (missing.length) return toast("Cần " + missing.join(", ") + ".");
-  const lead = findLead(d.lead);
-  if (!lead) return toast("Lead không còn tồn tại.");
+  const lead = designSelectedCustomer(d);
+  if (!lead) return toast("Khách hàng đã chọn không còn tồn tại.");
   const id = nextBusinessId("quotes");
   const breakdown = Object.fromEntries(svcCats().map((c) => [c, designCatCost(d, c)]));
   const tour = `${d.name.trim()} · ${d.program.length} ngày`;
   state.quotes.push({
     id,
-    lead: d.lead,
+    lead: d.lead || "",
+    customerId: d.customerId || "",
+    customerType: d.customerType || "lead",
     client: lead.name,
     tour,
     days: d.program.length,
     pax: d.pax,
+    pricingMode: d.pricingMode || "total",
+    pricingSource: d.pricingSource || (d.pricingMode === "pax" ? "table" : "manual"),
+    pricingProfileId: d.pricingProfileId || "",
+    pricingProfileName: typeof pricingProfileName === "function" ? pricingProfileName(d.pricingProfileId) : "",
+    pricingTierPax: Number(d.pricingTierPax || designPricingTier(d).tier?.pax || 1),
+    unitPrice: Number(d.unitPrice || 0),
+    manualUnitPrice: Number(d.manualUnitPrice || 0),
+    paxPrices: JSON.parse(JSON.stringify(d.paxPrices || {})),
+    pricePerPax: d.pax ? Math.round(d.amount / d.pax) : 0,
     amount: d.amount,
     cost: designCost(d),
     costBreakdown: breakdown,
@@ -674,9 +1033,11 @@ function createQuote() {
     createdAt: nowISO(),
     createdBy: actor().name,
   });
-  lead.tour = tour;
-  lead.days = d.program.length;
-  lead.start = d.start;
+  if (d.customerType !== "customer") {
+    lead.tour = tour;
+    lead.days = d.program.length;
+    lead.start = d.start;
+  }
   if (d.id) state.drafts = state.drafts.filter((r) => r.id !== d.id);
   audit("quote", id, "CREATE", `Tạo báo giá ${id} cho ${lead.name} (${money(d.amount)})`);
   design = null;

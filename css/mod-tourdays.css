@@ -1,0 +1,138 @@
+/* Ngân hàng ngày tour (T3-02) */
+.tour-day-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tour-day-filters .dz-search {
+  margin-bottom: 0;
+}
+
+.tour-day-filters select {
+  padding: 8px;
+  font-size: 12px;
+}
+
+.tour-day-pick {
+  cursor: pointer;
+}
+
+/* style.css cho input rộng 100%: ô tích phải ép lại kích thước, nếu không hàng bị xuống dòng và rất cao. */
+.tour-day-pick input[type="checkbox"],
+.tour-day-with input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: 0 0 16px;
+}
+
+.tour-day-pick {
+  margin: 0;
+}
+
+.tour-day-pick > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.tour-day-pick.picked {
+  border-color: var(--info);
+  background: var(--info-soft);
+}
+
+.tour-day-order {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 99px;
+  background: var(--info);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.tour-day-sub {
+  margin: 18px 0 8px;
+  font-size: 13px;
+}
+
+/* .modal là flex cột, overflow hidden: hộp thoại nhặt ngày phải tự cuộn (xem T3-13). */
+body .modal > .tour-day-picker {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 20px;
+}
+
+.tour-day-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px -20px 0;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.tour-day-actions > div {
+  display: flex;
+  gap: 8px;
+}
+
+.tour-day-with {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.tour-day-svc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 4px;
+}
+
+.tour-day-svc {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 32px;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tour-day-svc button {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tour-day-svc button:hover {
+  color: var(--bad);
+  border-color: #f4c2bf;
+}
+
+@media (max-width: 600px) {
+  .tour-day-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .tour-day-svc {
+    grid-template-columns: 1fr 32px;
+  }
+
+  .tour-day-svc select {
+    grid-column: 1 / -1;
+  }
+}

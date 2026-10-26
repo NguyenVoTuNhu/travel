@@ -1,0 +1,109 @@
+/* Quản lý tour mẫu (T3-03): form thêm/sửa và hộp thoại nhập CSV. */
+.tpl-days-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.tpl-days {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  counter-reset: tplday;
+}
+
+.tpl-day {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  counter-increment: tplday;
+}
+
+.tpl-day::before {
+  content: "Ngày " counter(tplday);
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tpl-day textarea {
+  grid-column: 1 / -1;
+  min-height: 54px;
+}
+
+.tpl-day button {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tpl-day button:hover {
+  color: var(--bad);
+  border-color: #f4c2bf;
+}
+
+/* Hộp thoại nhập CSV không phải form nên phải tự cho phép cuộn (xem claude.md 3.10 mục 12). */
+body .modal > .tpl-import {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tpl-import-cols {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.tpl-import small {
+  display: block;
+  margin-top: 6px;
+}
+
+.tpl-import .dz-tools {
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.tpl-file {
+  cursor: pointer;
+}
+
+.tpl-file input {
+  display: none;
+}
+
+.tpl-import-error {
+  color: var(--bad);
+  font-weight: 700;
+}
+
+.tpl-import-block {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.tpl-import-block ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.tpl-import-block.is-bad {
+  border-color: #f4c2bf;
+}
+
+.tpl-import-block.is-warn {
+  border-color: #f1dca0;
+}

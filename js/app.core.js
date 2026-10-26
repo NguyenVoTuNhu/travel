@@ -289,6 +289,7 @@ const pages = [
   ["customers", "users", "Khách hàng"],
   ["design", "route", "Mẫu và thiết kế tour"],
   ["quotes", "file-invoice-dollar", "Danh sách báo giá"],
+  ["pricing", "tags", "Điều chỉnh bảng giá"],
   ["bookings", "calendar-check", "Danh sách đặt tour"],
   ["operations", "gears", "Bảng điều hành tour"],
   ["suppliers", "building", "Danh mục nhà cung cấp"],
@@ -307,7 +308,7 @@ const navGroups = [
   ["TỔNG QUAN", ["dashboard"]],
   ["CRM VÀ KINH DOANH", ["marketing", "crm", "customers"]],
   ["THIẾT KẾ CHƯƠNG TRÌNH TOUR", ["design"]],
-  ["BÁO GIÁ", ["quotes"]],
+  ["BÁO GIÁ", ["quotes", "pricing"]],
   ["ĐẶT TOUR", ["bookings"]],
   ["TRUNG TÂM ĐIỀU HÀNH", ["operations"]],
   ["NHÀ CUNG CẤP", ["suppliers"]],
@@ -333,7 +334,7 @@ function systemIcon(name, className = "") {
 function sidebarIcon(id) {
   const icons = {
     dashboard: "table-cells-large", crm: "user-check", customers: "users",
-    design: "route", quotes: "file-invoice-dollar", bookings: "calendar-check", operations: "gears",
+    design: "route", quotes: "file-invoice-dollar", pricing: "tags", bookings: "calendar-check", operations: "gears",
     suppliers: "building", guides: "user-tie", vehicles: "van-shuttle", accounting: "wallet",
     marketing: "bullhorn", documents: "folder-open", care: "headset", guideapp: "suitcase-rolling",
     approvals: "stamp", users: "user-shield", settings: "sliders",
@@ -406,8 +407,8 @@ const businessRolePolicies = {
   sales: {
     label: "Kinh doanh / Sales",
     aliases: ["sales", "kinh doanh"],
-    menus: ["dashboard", "crm", "customers", "design", "quotes", "bookings", "documents", "care"],
-    capabilities: ["crm_manage", "customers_manage", "tour_design_manage", "quotes_manage", "bookings_manage", "care_manage", "documents_manage", "sales_financials", "crm_scope_assigned"],
+    menus: ["dashboard", "crm", "customers", "design", "quotes", "pricing", "bookings", "documents", "care"],
+    capabilities: ["crm_manage", "customers_manage", "tour_design_manage", "quotes_manage", "pricing_manage", "bookings_manage", "care_manage", "documents_manage", "sales_financials", "crm_scope_assigned"],
     features: ["Lead & Follow-up được giao", "Khách hàng", "Thiết kế tour và báo giá nhiều phiên bản", "Chốt báo giá → tạo Booking", "Đề nghị miễn cọc / hủy tour (CEO duyệt)", "Chăm sóc khách của mình"],
   },
   operations: {

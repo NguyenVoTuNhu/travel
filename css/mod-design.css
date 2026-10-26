@@ -1,0 +1,141 @@
+/* Kéo–thả đổi thứ tự ngày trong lịch trình tour (T3-01).
+   Bật "Sắp xếp": thẻ ngày chỉ đọc và kéo được ở bất kỳ đâu trên thẻ. */
+.dz-day.is-sorting {
+  cursor: grab;
+  user-select: none;
+  background: #f9fbff;
+}
+
+.dz-day.is-sorting:active {
+  cursor: grabbing;
+}
+
+.dz-day.is-sorting:hover {
+  border-color: var(--info);
+}
+
+.dz-day-title {
+  min-width: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.dz-day-text {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.dz-day.is-dragging {
+  opacity: 0.45;
+}
+
+.dz-day.drop-before {
+  box-shadow: 0 -3px 0 0 var(--info);
+}
+
+.dz-day.drop-after {
+  box-shadow: 0 3px 0 0 var(--info);
+}
+
+/* Chi tiết chương trình tour: lịch trình bên trái, bảng dịch vụ & chi phí bên phải.
+   Không dùng thẻ aside: style.css gán aside là sidebar cố định bên trái toàn trang. */
+.tour-detail .tour-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.tour-detail .tour-detail-side {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 14px;
+}
+
+.tour-detail .tour-detail-panel {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f9fbff;
+}
+
+.tour-detail .tour-detail-panel h3 {
+  margin: 0 0 10px;
+}
+
+.tour-detail .tour-detail-panel .tour-detail-services {
+  margin-bottom: 12px;
+}
+
+.tour-detail .tour-detail-panel .tour-detail-total {
+  margin: 0;
+}
+
+.tour-detail .tour-detail-panel .tour-detail-info span:last-child {
+  border-bottom: 0;
+}
+
+/* .modal là flex cột, overflow hidden (erp-v4.css): phải cho .tour-detail tự cuộn, nếu không phần dưới bị cắt (T3-13). */
+body .modal > .tour-detail {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tour-detail > footer {
+  flex-wrap: wrap;
+}
+
+.tour-detail > footer .tour-detail-delete {
+  margin-right: auto;
+}
+
+@media (max-width: 900px) {
+  .tour-detail .tour-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tour-detail .tour-detail-side {
+    position: static;
+  }
+}
+
+/* Nút xóa nháp ở thẻ chương trình trong thư viện */
+.tour-card-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tour-card-delete {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tour-card-delete:hover,
+.tour-card-delete:focus-visible {
+  color: var(--bad);
+  border-color: #f4c2bf;
+  background: #fff2f4;
+}
+
+/* T3-04: bảng giá theo quy mô đoàn */
+.dz-pax-pricing{margin-top:14px;padding-top:12px;border-top:1px solid var(--line,#e5e7eb)}
+.dz-pax-pricing-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.dz-pax-pricing-head b{font-size:13px}
+.dz-pax-pricing-head select{max-width:100%;min-width:190px;border:1px solid var(--line,#d1d5db);border-radius:8px;padding:8px;background:var(--surface,#fff);color:inherit}
+.dz-pax-pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:360px;overflow:auto;padding:2px 2px 8px}
+.dz-pax-pricing-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted,#64748b)}
+.dz-pax-pricing-grid input{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#d1d5db);border-radius:7px;padding:7px 5px;font-size:12px;background:var(--surface,#fff);color:inherit}
+@media(min-width:1100px){.dz-pax-pricing-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}

@@ -328,16 +328,24 @@ function acceptQuote(id) {
   const lead = findLead(q.lead);
   const bid = nextBusinessId("bookings");
   const p = policy();
-  const services = serviceTypes.map((t, k) => ({
-    type: t,
-    needed: true,
-    supplier: state.suppliers.find((supplier) => supplier.type === t)?.id || "",
-    cost: q.costBreakdown ? Math.round((q.costBreakdown[t] || 0) + (k === 0 ? q.costBreakdown.Other || 0 : 0)) : Math.round(q.cost * (serviceCostWeights[k] || 0)),
-    confirmed: false,
-    status: "NOT_BOOKED",
-    history: [],
-  }));
-  if (services.length && !q.costBreakdown) services[services.length - 1].cost = q.cost - services.slice(0, -1).reduce((n, s) => n + s.cost, 0);
+  // Chỉ đưa các nhà cung cấp đã được người dùng chọn trong phần thiết kế tour vào booking.
+  // Không tự tạo dịch vụ cho mọi loại và không tự gán nhà cung cấp đầu tiên theo danh mục.
+  const selectedServices = q.services && typeof q.services === "object" && !Array.isArray(q.services) ? q.services : {};
+  const services = Object.entries(selectedServices).flatMap(([type, items]) =>
+    (Array.isArray(items) ? items : [])
+      .filter((item) => item && item.supplier && state.suppliers.some((supplier) => supplier.id === item.supplier))
+      .map((item) => ({
+        type,
+        needed: true,
+        supplier: item.supplier,
+        cost: Math.max(0, Number(item.cost) || 0),
+        serviceName: String(item.name || "").trim(),
+        vehicle: item.vehicle || "",
+        confirmed: false,
+        status: "NOT_BOOKED",
+        history: [],
+      })),
+  );
   let customer = q.customerId ? (state.customers || []).find((c) => c.id === q.customerId) : null;
   if (!customer && lead) {
     customer = (state.customers || []).find((c) => (c.email && c.email === lead.email) || c.name === lead.name);

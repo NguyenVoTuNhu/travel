@@ -61,13 +61,112 @@ function opsTourCard(b) {
 }
 
 function opsBoardTab(bs) {
+  // Any booking attached to a SIC departure belongs to the shared trip card,
+  // including cancelled units/bookings, so it must never reappear as an individual tour.
+  const departures = state.departures || [];
+  const sicBookings = new Set(departures.flatMap((dep) => (dep.units || []).map((u) => u.bookingId).filter(Boolean)));
+  const sicDepartureIds = new Set(departures.map((dep) => dep.id));
+  const regular = bs.filter((b) => !sicBookings.has(b.id) && !b.departureId && !b.sicDepartureId && !sicDepartureIds.has(b.departureId || b.sicDepartureId));
   const cols = [
-    ["Confirmed", "Chờ tiếp nhận", bs.filter((b) => b.status === "Confirmed")],
-    ["Preparing", "Đang chuẩn bị", bs.filter((b) => b.status === "Preparing").sort((a, b) => a.start.localeCompare(b.start))],
-    ["Running", "Đang chạy", bs.filter((b) => b.status === "Running")],
-    ["Completed", "Hoàn tất gần đây", bs.filter((b) => b.status === "Completed").sort((a, b) => b.end.localeCompare(a.end)).slice(0, 4)],
+    ["Confirmed", "Chờ tiếp nhận", regular.filter((b) => b.status === "Confirmed")],
+    ["Preparing", "Đang chuẩn bị", regular.filter((b) => b.status === "Preparing").sort((a, b) => a.start.localeCompare(b.start))],
+    ["Running", "Đang chạy", regular.filter((b) => b.status === "Running")],
+    ["Completed", "Hoàn tất gần đây", regular.filter((b) => b.status === "Completed").sort((a, b) => b.end.localeCompare(a.end)).slice(0, 4)],
   ];
-  return `<div class="ops-board">${cols.map(([k, label, items]) => `<section class="ops-col ops-col--${k}"><header><b>${label}</b><span>${items.length}</span></header><div class="ops-col-body">${items.map(opsTourCard).join("") || '<div class="empty">Không có booking.</div>'}</div></section>`).join("")}</div>`;
+  const sic = departures.filter((dep) => dep.status !== "CANCELLED" && (dep.units || []).some((u) => u.status !== "CANCELLED"));
+  return `${sic.length ? `<section class="card" style="margin-bottom:16px"><div class="cardhead"><h3>Tour ghép SIC</h3><span class="sub">Mỗi chuyến hiển thị như một tour điều hành</span></div><div class="ops-sic-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">${sic.map(opsSicDepartureCard).join("")}</div></section>` : ""}<div class="ops-board">${cols.map(([k, label, items]) => `<section class="ops-col ops-col--${k}"><header><b>${label}</b><span>${items.length}</span></header><div class="ops-col-body">${items.map(opsTourCard).join("") || '<div class="empty">Không có booking.</div>'}</div></section>`).join("")}</div>`;
+}
+
+function opsSicDepartureState(dep) {
+  const units = (dep.units || []).filter((u) => u.status !== "CANCELLED");
+  const entries = units.map((u) => ({ u, b: u.bookingId ? findBooking(u.bookingId) : null }));
+  const eligible = (b) => !!b && b.status !== "Cancelled" && (b.depositWaived || Number(b.received || 0) >= depositRequired(b));
+  const paid = entries.filter(({ b }) => eligible(b)).length;
+  const allPaid = entries.length > 0 && paid === entries.length;
+  const bookings = entries.map(({ b }) => b).filter(Boolean);
+  const progressed = !!dep.operationsAcceptedAt || ["PREPARING", "RUNNING", "COMPLETED"].includes(dep.operationsStatus);
+  const running = bookings.some((b) => b.status === "Running") || dep.operationsStatus === "RUNNING";
+  return { units, entries, paid, allPaid, bookings, progressed, running };
+}
+
+function opsSicDepartureCard(dep) {
+  const x = opsSicDepartureState(dep);
+  const pax = x.units.reduce((n, u) => n + Number(u.pax || 0), 0);
+  const op = x.bookings.find((b) => b.operator)?.operator || dep.operationsOperator || "";
+  const unpaidUnits = x.entries.filter(({ b }) => !b || b.status === "Cancelled" || !(b.depositWaived || Number(b.received || 0) >= depositRequired(b))).length;
+  const status = x.running ? "Đang chạy" : x.progressed ? "Đang chuẩn bị" : x.allPaid ? "Đủ điều kiện tiếp nhận" : "Chờ đủ cọc";
+  const tone = x.progressed ? "green" : x.allPaid ? "blue" : "amber";
+  const depositSummary = x.allPaid ? `${x.paid}/${x.units.length} đơn vị đủ điều kiện cọc` : `${unpaidUnits} đơn vị chưa cọc đủ`;
+  return `<article class="tourcard">
+    <div class="cardhead"><span class="eyebrow">${esc(dep.id)} · ${pax} KHÁCH</span>${badge(status, tone)}</div>
+    <h3>${esc(dep.name || dep.design?.name || "Tour ghép SIC")}</h3>
+    <div class="dates">${systemIcon("calendar-days")} ${fmt(dep.start)} · ${esc(depositSummary)}</div>
+    <div class="bottom"><div class="sub">${op ? `Điều hành: ${esc(op)}` : "Chưa phân công điều hành"}${x.progressed ? "" : `<br><span class="${x.allPaid ? "text-good" : "text-warn"}">${x.allPaid ? "✓ Đã đủ điều kiện tiếp nhận" : `● ${unpaidUnits} đơn vị chưa đủ điều kiện đặt cọc`}</span>`}</div>
+      <div class="actions"><button class="btn small" onclick="sicDepartureDetails('${dep.id}')">Xem chi tiết</button>${!x.progressed && can("operations_manage") ? `<button class="btn small primary" ${x.allPaid ? "" : "disabled title=\"Chờ tất cả đơn vị đủ cọc\" style=\"opacity:.5;cursor:not-allowed\""} onclick="sicTakeoverForm('${dep.id}')">Tiếp nhận chuyến</button>` : btn("Mở chuyến", `sicOpenDeparture('${dep.id}')`, "small")}</div>
+    </div>
+  </article>`;
+}
+
+function sicDepartureDetails(id) {
+  const dep = (state.departures || []).find((d) => d.id === id);
+  if (!dep) return toast("Không tìm thấy chuyến SIC.");
+  const x = opsSicDepartureState(dep);
+  const rows = x.entries.map(({ u, b }) => {
+    let depositState;
+    if (u.status === "CANCELLED" || b?.status === "Cancelled") depositState = badge("Đã hủy", "");
+    else if (!b) depositState = badge(u.quoteId || u.status === "QUOTED" ? "Chưa cọc · chưa có booking" : "Chưa có booking", "amber");
+    else depositState = eligibleSicBadge(b);
+    return `<tr><td><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(u.name || u.customerName || "Đơn vị chưa đặt tên")}</b>${depositState}</div><span class="sub">${b ? esc(b.id) : "Chưa có booking"}</span></td><td>${Number(u.pax || b?.pax || 0)} khách</td><td>${b ? bookingBadge(b) : "—"}</td></tr>`;
+  });
+  modal(`Chi tiết tour ghép SIC · ${id}`, `<div class="operation-detail"><div class="stats">${stat("ĐƠN VỊ", x.units.length, "Chưa tính đơn vị đã hủy")}${stat("TỔNG KHÁCH", x.units.reduce((n,u)=>n+Number(u.pax||0),0), esc(dep.name || "Tour ghép SIC"))}${stat("ĐỦ ĐIỀU KIỆN CỌC", `${x.paid}/${x.units.length}`, x.allPaid ? "Có thể tiếp nhận" : `${x.entries.length-x.paid} đơn vị còn thiếu`)}</div>${table(["KHÁCH / ĐƠN VỊ", "SỐ KHÁCH", "TRẠNG THÁI BOOKING"], rows)}<div class="formfooter"><button class="btn" onclick="closeModal()">Đóng</button>${!x.progressed && can("operations_manage") ? `<button class="btn primary" ${x.allPaid ? "" : "disabled"} onclick="closeModal();sicTakeoverForm('${id}')">Tiếp nhận chuyến</button>` : ""}</div></div>`, true);
+}
+
+function eligibleSicBadge(b) {
+  if (b.depositWaived || Number(b.received || 0) >= depositRequired(b)) return badge(b.depositWaived ? "CEO miễn cọc" : "Đã cọc", "green");
+  return badge(Number(b.received || 0) > 0 ? "Cọc chưa đủ" : "Chưa cọc", "amber");
+}
+
+function sicOpenDeparture(id) {
+  const dep = (state.departures || []).find((d) => d.id === id);
+  if (!dep) return toast("Không tìm thấy chuyến SIC.");
+  const first = (dep.units || []).find((u) => u.bookingId && findBooking(u.bookingId));
+  if (first) return openBooking(first.bookingId);
+  toast("Chuyến này chưa có booking để mở hồ sơ.");
+}
+
+function sicTakeoverForm(id) {
+  if (!requireCapability("operations_manage")) return;
+  const dep = (state.departures || []).find((d) => d.id === id);
+  if (!dep) return toast("Không tìm thấy chuyến SIC.");
+  const x = opsSicDepartureState(dep);
+  if (!x.allPaid) return toast("Chưa thể tiếp nhận: cần tất cả đơn vị đủ cọc hoặc được CEO miễn cọc.");
+  const me = currentUser?.fullName || "";
+  modal(`Tiếp nhận chuyến SIC · ${id}`, `<p>Chuyến <b>${esc(dep.name || dep.design?.name || id)}</b> có ${x.units.length} đơn vị, ${x.units.reduce((n,u)=>n+Number(u.pax||0),0)} khách. Tất cả đơn vị đã đủ điều kiện cọc.</p><p class="notice">Chỉ khi bạn xác nhận tại đây, các booking của chuyến mới chuyển sang bước chuẩn bị. Hệ thống không tự động chuyển bước.</p><form onsubmit="sicTakeover(event,'${id}')"><label>Điều hành viên phụ trách<select name="operator" required>${operationOwners.map((owner) => `<option ${owner === me ? "selected" : ""}>${esc(owner)}</option>`).join("")}</select></label><div class="formfooter"><button class="btn primary">Xác nhận tiếp nhận chuyến</button></div></form>`, true);
+}
+
+function sicTakeover(e, id) {
+  e.preventDefault();
+  if (!requireCapability("operations_manage")) return;
+  const dep = (state.departures || []).find((d) => d.id === id);
+  if (!dep) return toast("Không tìm thấy chuyến SIC.");
+  const x = opsSicDepartureState(dep);
+  if (!x.allPaid) return toast("Không thể tiếp nhận: trạng thái cọc đã thay đổi, cần kiểm tra lại tất cả đơn vị.");
+  const operator = new FormData(e.target).get("operator");
+  let changed = 0;
+  x.entries.forEach(({u,b}) => {
+    if (!b || b.status === "Cancelled") return;
+    b.operator = operator;
+    if (b.status === "Confirmed") { setBookingStatus(b, "Preparing", `Điều hành tiếp nhận chuyến SIC ${id} cùng ${x.units.length} đơn vị`); changed++; }
+    else audit("booking", b.id, "SIC_TAKEOVER", `Tiếp nhận chung chuyến SIC ${id}; điều hành ${operator}`);
+  });
+  dep.operationsStatus = "PREPARING";
+  dep.operationsOperator = operator;
+  dep.operationsAcceptedAt = nowISO();
+  dep.operationsAcceptedBy = currentUser?.id || "";
+  dep.updatedAt = nowISO();
+  audit("departure", id, "OPERATIONS_TAKEOVER", `Điều hành xác nhận tiếp nhận chuyến SIC ${id}; ${x.units.length} đơn vị, ${x.units.reduce((n,u)=>n+Number(u.pax||0),0)} khách; phụ trách ${operator}`);
+  render();
+  toast(`Đã tiếp nhận chuyến SIC ${id}; ${changed} booking chuyển sang chuẩn bị.`);
 }
 
 function opsServicesTab(svcs) {

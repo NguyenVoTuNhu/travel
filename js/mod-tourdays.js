@@ -17,7 +17,11 @@ function tourDayCanEdit(day) {
 }
 
 function tourDayServiceText(day) {
-  return (day.services || []).map((svc) => `${svcLabel(svc.cat)}: ${svc.name}`).join(" · ");
+  return (day.services || []).map((svc) => {
+    const sup = findSupplier(svc.supplier);
+    const price = sup && svc.priceIndex !== "" && svc.priceIndex != null ? (sup.prices || [])[Number(svc.priceIndex)] : null;
+    return `${svcLabel(svc.cat)}: ${sup?.name || ""}${price ? ` ${price.name}` : ""}`;
+  }).join(" · ");
 }
 
 function tourDayFiltered() {
@@ -96,15 +100,37 @@ function tourDayManagePanel() {
 }
 
 /* Form thêm/sửa một ngày. `seed` là dữ liệu điền sẵn khi lưu từ lịch trình đang thiết kế. */
-function tourDayServiceRow(svc = { cat: "", name: "" }) {
-  const cats = svcCats().map((c) => `<option value="${esc(c)}" ${c === svc.cat ? "selected" : ""}>${esc(svcLabel(c))}</option>`);
-  return [
-    `<div class="tour-day-svc">`,
-    `<select name="svcCat" aria-label="Loại dịch vụ">${cats.join("")}</select>`,
-    `<input name="svcName" maxlength="160" placeholder="Tên dịch vụ gợi ý" value="${esc(svc.name)}">`,
-    `<button type="button" title="Bỏ dịch vụ" onclick="tourDayRemoveServiceRow(this)">${systemIcon("xmark")}</button>`,
-    `</div>`,
-  ].join("");
+function tourDayServiceRow(svc = { cat: "Hotel", supplier: "", priceIndex: "" }) {
+  const cats = svcCats();
+  const cat = cats.includes(svc.cat) ? svc.cat : (cats[0] || "Other");
+  const suppliers = (state.suppliers || []).filter((sup) => sup.type === cat);
+  const supplier = suppliers.find((sup) => sup.id === svc.supplier) || null;
+  const prices = supplier ? (supplier.prices || []).map((price, i) => ({ price, i })) : [];
+  const catOptions = cats.map((c) => `<option value="${esc(c)}" ${c === cat ? "selected" : ""}>${esc(svcLabel(c))}</option>`).join("");
+  const supplierOptions = [`<option value="">Chọn nhà cung cấp trong hệ thống</option>`, ...suppliers.map((sup) => `<option value="${esc(sup.id)}" ${sup.id === svc.supplier ? "selected" : ""}>${esc(sup.name)}</option>`)].join("");
+  const priceOptions = [`<option value="">Chỉ chọn NCC (chưa chọn hạng mục giá)</option>`, ...prices.map(({ price, i }) => `<option value="${i}" ${String(i) === String(svc.priceIndex) ? "selected" : ""}>${esc(price.name)} · ${money(price.price)} ${esc(price.unit || "")}</option>`)].join("");
+  return `<div class="tour-day-svc"><div class="tour-day-svc-top"><select name="svcCat" aria-label="Loại dịch vụ" onchange="tourDayRefreshServiceRow(this)">${catOptions}</select><input type="search" aria-label="Tìm nhà cung cấp" placeholder="Tìm nhà cung cấp…" oninput="tourDayFilterSupplierOptions(this)"></div><div class="tour-day-svc-bottom"><select name="svcSupplier" aria-label="Chọn nhà cung cấp" onchange="tourDayRefreshServiceRow(this)">${supplierOptions}</select><select name="svcPrice" aria-label="Hạng mục giá">${priceOptions}</select><button type="button" title="Xóa dịch vụ" aria-label="Xóa dịch vụ" onclick="tourDayRemoveServiceRow(this)">${systemIcon("trash")}</button></div></div>`;
+}
+
+function tourDayFilterSupplierOptions(input) {
+  const query = String(input.value || "").trim().toLowerCase();
+  const select = input.closest(".tour-day-svc")?.querySelector('[name="svcSupplier"]');
+  if (!select) return;
+  for (const option of select.options) option.hidden = !!query && option.value !== "" && !option.textContent.toLowerCase().includes(query);
+}
+
+function tourDayRefreshServiceRow(control) {
+  const row = control.closest(".tour-day-svc");
+  if (!row) return;
+  const rows = Array.from(document.querySelectorAll(".tour-day-svc"));
+  const rowIndex = rows.indexOf(row);
+  const cat = row.querySelector('[name="svcCat"]')?.value || "Hotel";
+  const supplier = row.querySelector('[name="svcSupplier"]')?.value || "";
+  const search = row.querySelector('input[type="search"]')?.value || "";
+  const priceIndex = row.querySelector('[name="svcPrice"]')?.value || "";
+  row.outerHTML = tourDayServiceRow({ cat, supplier, priceIndex });
+  const replacement = document.querySelectorAll(".tour-day-svc")[rowIndex];
+  if (replacement && search) { const input = replacement.querySelector('input[type="search"]'); if (input) { input.value = search; tourDayFilterSupplierOptions(input); } }
 }
 
 function tourDayRemoveServiceRow(button) {
@@ -129,7 +155,7 @@ function tourDayFormHtml(day, id) {
     ` placeholder="Hoạt động, bữa ăn, nơi nghỉ…">${esc(day.text)}</textarea></label>`,
     `<div class="tour-day-svc-head"><b>Dịch vụ gợi ý</b>`,
     `${btn(systemIcon("plus") + " Thêm dịch vụ", "tourDayAddServiceRow()", "small")}</div>`,
-    `<small class="muted">Khi ghép ngày này vào tour, dịch vụ được thêm vào bước Chi phí với giá 0 để Sales nhập.</small>`,
+    `<small class="muted">Chỉ chọn nhà cung cấp có sẵn trong hệ thống. Có thể chọn hạng mục giá để tự tính chi phí khi ghép ngày vào tour; không nhập tên NCC thủ công.</small>`,
     `<div id="tourDaySvcRows">${rows}</div>`,
     `<div class="formfooter">${btn("Hủy", "tourDayReturn()")}<button class="btn primary" type="submit">Lưu</button></div>`,
     `</form>`,
@@ -165,11 +191,17 @@ function tourDaySaveFrom(index) {
 
 function tourDayServicesFromForm(form) {
   const cats = form.getAll("svcCat");
-  const names = form.getAll("svcName");
+  const suppliers = form.getAll("svcSupplier");
+  const prices = form.getAll("svcPrice");
   const list = [];
-  names.forEach((name, i) => {
-    const text = String(name).trim();
-    if (text) list.push({ cat: String(cats[i] || "Other"), name: text });
+  cats.forEach((cat, i) => {
+    const supplier = String(suppliers[i] || "");
+    if (!supplier || !findSupplier(supplier)) return;
+    const sup = findSupplier(supplier);
+    if (sup.type !== cat) return;
+    const priceIndex = String(prices[i] || "");
+    const price = priceIndex !== "" ? (sup.prices || [])[Number(priceIndex)] : null;
+    list.push({ cat: String(cat), supplier, priceIndex: price && Number.isInteger(Number(priceIndex)) ? Number(priceIndex) : "" });
   });
   return list;
 }
@@ -325,8 +357,13 @@ function tourDayMergeServices(d, groups) {
     const key = svcCats().includes(cat) ? cat : "Other";
     const list = (d.services[key] ||= []);
     for (const item of items) {
-      if (list.some((x) => x.name === item.name)) continue;
-      list.push({ name: item.name, cost: 0 });
+      const sup = findSupplier(item.supplier);
+      if (!sup || sup.type !== key) continue;
+      const price = item.priceIndex !== "" && item.priceIndex != null ? (sup.prices || [])[Number(item.priceIndex)] : null;
+      const qty = price ? priceQuantity(price, { pax: d.pax, days: d.days || d.program.length }) : 1;
+      const name = price ? `${sup.name} – ${price.name} (${qty}${price.unit || ""})` : sup.name;
+      if (list.some((x) => x.supplier === sup.id && x.name === name)) continue;
+      list.push({ name, cost: price ? Number(price.price || 0) * qty : 0, supplier: sup.id });
     }
   }
 }
@@ -334,7 +371,10 @@ function tourDayMergeServices(d, groups) {
 function tourDayServiceGroups(days) {
   const groups = {};
   for (const day of days) {
-    for (const svc of day.services || []) (groups[svc.cat] ||= []).push({ name: svc.name });
+    for (const svc of day.services || []) {
+      if (!svc.supplier || !findSupplier(svc.supplier)) continue;
+      (groups[svc.cat] ||= []).push({ supplier: svc.supplier, priceIndex: svc.priceIndex ?? "" });
+    }
   }
   return groups;
 }

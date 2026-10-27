@@ -359,7 +359,41 @@ function departureUnitsCard(dep) {
 
 function departureProgramPanel(dep) {
   const days = designDetailDays({ ...blankDesign(), ...dep.design });
-  return `<details class="dep-program"><summary>Lịch trình của chuyến</summary><ol class="tour-detail-days">${days}</ol></details>`;
+  const draft = (state.drafts || []).find((r) => r.id === dep.draftId && r.design);
+  const update = departureCanManage() && dep.status !== "CANCELLED" && draft
+    ? `<div class="dep-program-actions"><button type="button" class="btn" onclick="departureUpdateFromDraft('${dep.id}')">${systemIcon("refresh-cw")} Cập nhật chương trình từ nháp</button><small>Cập nhật lịch trình, dịch vụ và giá; giữ nguyên ngày/sức chứa chuyến và các đơn vị đã ghép. Báo giá đã tạo không thay đổi.</small></div>`
+    : (!draft ? `<p class="dep-note">Không còn bản nháp nguồn (${esc(dep.draftId)}), không thể cập nhật chương trình từ nháp.</p>` : "");
+  return `<details class="dep-program"><summary>Lịch trình của chuyến</summary>${update}<ol class="tour-detail-days">${days}</ol></details>`;
+}
+
+/* T3-07g: đồng bộ bản sao chương trình/giá từ nháp, không sửa ngày, sức chứa hoặc đơn vị của chuyến. Báo giá đã tạo là snapshot độc lập. */
+function departureUpdateFromDraft(id) {
+  if (!requireCapability("tour_design_manage")) return;
+  const dep = departureFind(id);
+  if (!dep || dep.status === "CANCELLED") return toast("Không thể cập nhật chương trình của chuyến đã hủy.");
+  const rec = (state.drafts || []).find((r) => r.id === dep.draftId && r.design);
+  if (!rec) return toast(`Không tìm thấy bản nháp nguồn ${dep.draftId}.`);
+  const source = { ...blankDesign(), ...rec.design };
+  if (!designIsSic(source)) return toast("Bản nháp nguồn không còn là tour SIC.");
+  if (!source.name.trim() || !(Number(source.days) > 0)) return toast("Bản nháp cần có tên và thời lượng trước khi cập nhật.");
+  const liveDocs = departureUnits(dep).filter((u) => u.status !== "CANCELLED" && (u.quoteId || u.bookingId)).length;
+  const ask = [
+    `Cập nhật chương trình chuyến ${dep.id} từ bản nháp mới nhất?`,
+    "Lịch trình, dịch vụ và cấu hình giá sẽ được thay bằng nội dung trong nháp.",
+    "Ngày khởi hành, sức chứa và các đơn vị ghép của chuyến sẽ được giữ nguyên.",
+    liveDocs ? `${liveDocs} đơn vị đã có báo giá/booking; chứng từ đã tạo sẽ không thay đổi.` : "",
+  ].filter(Boolean).join("\n");
+  if (!confirm(ask)) return;
+  const next = designSnapshot(source);
+  next.start = dep.start;
+  next.sicCapacity = dep.capacity;
+  next.sicUnits = [];
+  dep.design = next;
+  dep.name = String(source.name || dep.name).trim();
+  dep.days = Number(source.days) || (Array.isArray(source.program) ? source.program.length : dep.days);
+  departureTouch(dep, `Cập nhật chương trình/giá chuyến ${dep.id} từ nháp ${dep.draftId}; giữ nguyên ngày, sức chứa, đơn vị và snapshot chứng từ`);
+  departureRefreshAll(dep);
+  toast(`Đã cập nhật chương trình chuyến ${dep.id} từ bản nháp. Báo giá/booking đã tạo được giữ nguyên.`);
 }
 
 function departureFooter(dep) {
@@ -671,9 +705,6 @@ function departureUnitActions(dep, u, i) {
   if (u.quoteId) parts.push(entityLink("quote", u.quoteId));
   if (u.bookingId) parts.push(entityLink("booking", u.bookingId));
   const live = dep.status !== "CANCELLED";
-  if (live && u.status === "NEW" && u.refType === "manual" && can("customers_manage")) {
-    parts.push(`<button type="button" class="btn small" onclick="departureCreateCustomer('${dep.id}',${i})">Thêm khách hàng</button>`);
-  }
   if (live && u.status === "NEW" && can("quotes_manage")) {
     parts.push(`<button type="button" class="btn small primary" onclick="departureCreateQuote('${dep.id}',${i})">Tạo báo giá</button>`);
   }
@@ -681,54 +712,6 @@ function departureUnitActions(dep, u, i) {
     parts.push(`<button type="button" class="btn small" onclick="departureCancelUnit('${dep.id}',${i})">Hủy đơn vị</button>`);
   }
   return parts.join("");
-}
-
-function departureCreateCustomer(id, i) {
-  if (!requireCapability("customers_manage")) return;
-  const dep = departureFind(id);
-  const unit = dep ? departureUnits(dep)[i] : null;
-  if (!unit || unit.refType !== "manual" || unit.status !== "NEW") {
-    return toast("Chỉ có thể tạo hồ sơ cho đơn vị nhập tay chưa báo giá.");
-  }
-  modal("Thêm khách hàng từ đơn vị ghép", `<form class="customer-form" onsubmit="departureSaveCustomer(event,'${esc(id)}',${i})">
-    <p>Khách hàng mới sẽ được lưu vào hệ thống và liên kết với đơn vị <b>${esc(unit.name)}</b> trong chuyến SIC để có thể tạo báo giá.</p>
-    <h3>Thông tin khách hàng</h3>
-    <div class="formgrid">
-      <label class="full">Tên khách hàng / Công ty<input name="name" required maxlength="120" value="${esc(unit.name)}"></label>
-      <label>Người liên hệ<input name="contact" required maxlength="120" value="${esc(unit.name)}"></label>
-      <label>Số điện thoại<input name="phone" type="tel" required maxlength="40"></label>
-      <label>Email<input name="email" type="email" maxlength="120"></label>
-      <label>Tỉnh / Thành phố<input name="country" maxlength="100"></label>
-      <label class="full">Địa chỉ<input name="address" maxlength="240"></label>
-    </div>
-    <div class="formfooter"><button class="btn" type="button" onclick="closeModal()">Hủy</button><button class="btn primary" type="submit">Tạo khách hàng và liên kết</button></div>
-  </form>`, false);
-}
-
-function departureSaveCustomer(event, id, i) {
-  event.preventDefault();
-  if (!requireCapability("customers_manage")) return;
-  const dep = departureFind(id);
-  const unit = dep ? departureUnits(dep)[i] : null;
-  if (!unit || unit.refType !== "manual" || unit.status !== "NEW") {
-    return toast("Đơn vị đã thay đổi trạng thái, không thể liên kết khách hàng.");
-  }
-  const form = new FormData(event.target);
-  const values = Object.fromEntries(["name", "contact", "phone", "email", "country", "address"].map((key) => [key, String(form.get(key) || "").trim()]));
-  if (!values.name || !values.contact || !values.phone) return toast("Hãy nhập tên khách hàng, người liên hệ và số điện thoại.");
-  if (values.email && (state.customers || []).some((item) => String(item.email || "").toLowerCase() === values.email.toLowerCase())) {
-    return toast("Email đã tồn tại trong hệ thống. Hãy kiểm tra khách hàng hiện có.");
-  }
-  const customer = { id: nextBusinessId("customers"), careLog: [], segment: "", whatsapp: "", birthday: "", owner: actor().name || "", status: "prospect", ...values };
-  (state.customers ||= []).push(customer);
-  unit.refType = "customer";
-  unit.refId = customer.id;
-  unit.name = customer.name.slice(0, 80);
-  save();
-  log(`Thêm khách hàng ${customer.name} từ chuyến SIC ${dep.id}`);
-  closeModal();
-  departureDetail(id);
-  toast("Đã tạo khách hàng và liên kết với đơn vị. Có thể tạo báo giá.");
 }
 
 function departureCreateQuote(id, i) {

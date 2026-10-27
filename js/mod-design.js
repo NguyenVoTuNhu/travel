@@ -14,6 +14,7 @@ const designSteps = [
 const tourRegions = ["Việt Nam", "Đông Nam Á", "Đông Bắc Á", "Nam Á", "Châu Âu", "Châu Mỹ", "Châu Úc", "Châu Phi", "Trung Đông"];
 let designLibraryQuery = "";
 let designLibraryTab = "programs";
+let designSupplierQueries = {};
 
 const optionList = (values) => values.map((value) => `<option>${esc(value)}</option>`).join("");
 const svcCats = () => serviceTypes.concat(["Other"]);
@@ -210,12 +211,22 @@ function designServicesCard(d) {
   const cat = cats.includes(d.svcTab) ? d.svcTab : cats[0];
   const items = designItems(d, cat);
   const body = items.length
-    ? items.map((it, i) => `<div class="dz-item"><input value="${esc(it.name)}" placeholder="Tên dịch vụ / nhà cung cấp" onchange="designItem('${cat}',${i},'name',this.value)"><input type="number" min="0" step="${designInputStep(d, 100000)}" value="${designInputValue(d, it.cost)}" aria-label="Chi phí (${designInputCode(d)})" onchange="designItem('${cat}',${i},'cost',this.value)"><span class="sub">${designInputCode(d)}</span><button title="Xóa" onclick="designDelItem('${cat}',${i})">${systemIcon("trash")}</button></div>`).join("") + `<div class="dz-tools" style="margin-top:10px">${btn(systemIcon("plus") + " Thêm dịch vụ " + svcLabel(cat).toLowerCase(), `designAddItem('${cat}')`, "small")}</div>`
-    : `<div class="dz-manual-empty"><span>Chưa chọn dịch vụ ${svcLabel(cat).toLowerCase()}.</span>${btn(systemIcon("plus") + " Nhập thủ công", `designAddItem('${cat}')`, "small")}</div>`;
+    ? items.map((it, i) => {
+        const sup = it.supplier ? findSupplier(it.supplier) : null;
+        const vehicle = it.vehicle ? (state.vehicles || []).find((v) => v.id === it.vehicle) : null;
+        const guide = it.guide ? findGuide(it.guide) : null;
+        const resource = vehicle || guide;
+        const label = sup ? (it.name || sup.name) : resource ? (it.name || resource.name) : (it.name || "Dịch vụ cũ chưa gắn nhà cung cấp");
+        const valid = !!(sup || resource);
+        return `<div class="dz-item"><div style="min-width:0;flex:1"><b>${esc(label)}</b><small class="sub">${valid ? (sup ? `NCC: ${esc(sup.name)}` : "Nguồn lực trong hệ thống") : "Dữ liệu cũ chưa chọn NCC trong hệ thống · hãy xóa và chọn lại"}</small></div><input type="number" min="0" step="${designInputStep(d, 100000)}" value="${designInputValue(d, it.cost)}" aria-label="Chi phí (${designInputCode(d)})" onchange="designItem('${cat}',${i},'cost',this.value)"><span class="sub">${designInputCode(d)}</span><button title="Xóa" onclick="designDelItem('${cat}',${i})">${systemIcon("trash")}</button></div>`;
+      }).join("")
+    : `<div class="dz-manual-empty"><span>Chưa chọn nhà cung cấp hoặc nguồn lực cho ${svcLabel(cat).toLowerCase()}.</span></div>`;
+  const query = designSupplierQueries[cat] || "";
+  const search = `<div class="dz-tools" style="margin:8px 0"><input class="dz-search" style="flex:1;min-width:180px" value="${esc(query)}" placeholder="Tìm nhà cung cấp / hạng mục…" oninput="designSupplierQueries['${cat}']=this.value"><button class="btn small" type="button" onclick="designSetSupplierQuery('${cat}',this.previousElementSibling.value)">Tìm kiếm</button></div>`;
   const suggestions = designServiceSuggestions(cat, d);
   return card(
     `<span class="dz-num">4</span> Dịch vụ trong tour`,
-    `<nav class="dz-pills">${cats.map((c) => `<button class="${c === cat ? "active" : ""}" onclick="designSvcTab('${c}')">${systemIcon(svcIcons[c] || "circle")} ${svcLabel(c)}${designItems(d, c).length ? ` <em>${designItems(d, c).length}</em>` : ""}</button>`).join("")}</nav>${suggestions}<div class="dz-services">${body}</div>`,
+    `<nav class="dz-pills">${cats.map((c) => `<button class="${c === cat ? "active" : ""}" onclick="designSvcTab('${c}')">${systemIcon(svcIcons[c] || "circle")} ${svcLabel(c)}${designItems(d, c).length ? ` <em>${designItems(d, c).length}</em>` : ""}</button>`).join("")}</nav>${search}${suggestions}<div class="dz-services">${body}</div>`,
   );
 }
 
@@ -230,28 +241,41 @@ function designResourceAvailable(kind, id, d) {
   return !(state.bookings || []).some((b) => b.vehicle === id && !["Completed", "Cancelled"].includes(b.status) && !(b.end < d.start || b.start > end));
 }
 
+function designSetSupplierQuery(cat, value) {
+  designSupplierQueries[cat] = String(value || "").trim();
+  designRefresh(["services"]);
+}
+
 function designServiceSuggestions(cat, d) {
   let cards = [];
+  const query = String(designSupplierQueries[cat] || "").toLowerCase();
   if (cat === "Vehicle") {
-    cards = (state.vehicles || []).map((v) => {
+    cards = (state.vehicles || []).filter((v) => !query || `${v.name} ${v.plate} ${findSupplier(v.supplier)?.name || ""}`.toLowerCase().includes(query)).map((v) => {
       const free = designResourceAvailable("vehicle", v.id, d), sup = findSupplier(v.supplier);
       const price = supplierLibrary("Vehicle", d.start).find((x) => x.sup.id === v.supplier);
       const total = price ? price.item.price * priceQuantity(price.item, { pax: d.pax, days: d.days }) : 0;
       return `<article class="dz-suggestion ${free ? "" : "is-busy"}"><span class="dz-suggestion-icon">${systemIcon("van-shuttle")}</span><div><b>${esc(v.name)}</b><small>${esc(v.plate)} · ${v.capacity} chỗ${sup ? ` · ${esc(sup.name)}` : ""}</small><strong>${total ? designFmt(d, total) : "Chưa có bảng giá"}</strong></div><button class="btn small" ${free ? `onclick="designAddResource('vehicle','${v.id}')"` : "disabled"}>${free ? "+ Chọn" : "Bận lịch"}</button></article>`;
     });
   } else if (cat === "Guide") {
-    cards = (state.guides || []).map((g) => {
+    cards = (state.guides || []).filter((g) => !query || `${g.name} ${g.area || ""} ${g.lang || ""}`.toLowerCase().includes(query)).map((g) => {
       const free = designResourceAvailable("guide", g.id, d), total = Number(g.rate || 0) * Math.max(1, d.days || 1);
       return `<article class="dz-suggestion ${free ? "" : "is-busy"}"><span class="dz-suggestion-icon">${systemIcon("user-tie")}</span><div><b>${esc(g.name)}</b><small>${esc(g.area || "Toàn quốc")} · ${esc(g.lang || "Chưa cập nhật ngôn ngữ")} · ${Number(g.rating || 0).toFixed(1)}/5</small><strong>${total ? designFmt(d, total) : "Chưa có đơn giá"}</strong></div><button class="btn small" ${free ? `onclick="designAddResource('guide','${g.id}')"` : "disabled"}>${free ? "+ Chọn" : "Bận lịch"}</button></article>`;
     });
   } else {
-    cards = supplierLibrary(cat, d.start).map((x) => {
-      const qty = priceQuantity(x.item, { pax: d.pax, days: d.days }), total = x.item.price * qty;
-      return `<article class="dz-suggestion"><span class="dz-suggestion-icon">${systemIcon(svcIcons[cat] || "building")}</span><div><b>${esc(x.sup.name)}</b><small>${esc(x.item.name)} · ${qty}${esc(x.item.unit)}${x.item.season && x.item.season !== "Quanh năm" ? ` · ${esc(x.item.season)}` : ""}</small><strong>${designFmt(d, total)}</strong></div><button class="btn small" onclick="designAddFromLibrary('${cat}','${x.key}')">+ Chọn</button></article>`;
+    const library = supplierLibrary(cat, d.start);
+    const matchingPrices = library.filter((x) => !query || `${x.sup.name} ${x.item.name} ${x.sup.id}`.toLowerCase().includes(query));
+    const priceCards = matchingPrices.map((x) => {
+      const qty = priceQuantity(x.item, { pax: d.pax, days: d.days || d.program.length }), total = x.item.price * qty;
+      return `<article class="dz-suggestion"><span class="dz-suggestion-icon">${systemIcon(svcIcons[cat] || "building")}</span><div><b>${esc(x.sup.name)}</b><small>Hạng mục: ${esc(x.item.name)} · ${qty}${esc(x.item.unit || "")}</small><strong>${designFmt(d, total)}</strong></div><button class="btn small" onclick="designAddFromLibrary('${cat}','${x.key}')">Chọn dịch vụ</button></article>`;
     });
+    const suppliers = (state.suppliers || []).filter((sup) => sup.type === cat && (!query || `${sup.name} ${sup.id} ${sup.code || ""}`.toLowerCase().includes(query)));
+    const supplierCards = suppliers.map((sup) => `<article class="dz-suggestion"><span class="dz-suggestion-icon">${systemIcon(svcIcons[cat] || "building")}</span><div><b>${esc(sup.name)}</b><small>Nhà cung cấp · ${esc(sup.id)}</small><strong>Chọn NCC không kèm hạng mục giá</strong></div><button class="btn small" onclick="designAddSupplierOnly('${cat}','${sup.id}')">Chọn NCC</button></article>`);
+    // Khi chưa tìm kiếm, chia đều danh sách gợi ý để NCC không che khuất toàn bộ hạng mục giá.
+    cards = query ? [...supplierCards, ...priceCards] : [...supplierCards.slice(0, 4), ...priceCards.slice(0, 4)];
   }
-  if (!cards.length) return `<div class="dz-suggestion-empty">Chưa có ${svcLabel(cat).toLowerCase()} hoặc bảng giá phù hợp trong hệ thống.</div>`;
-  return `<section class="dz-suggestions"><div class="dz-suggestions-head"><b>Đề xuất từ hệ thống</b><span>${cards.length} lựa chọn${d.start ? ` cho ngày ${fmt(d.start)}` : " · chọn ngày khởi hành để kiểm tra lịch trống"}</span></div><div class="dz-suggestion-list">${cards.slice(0, 8).join("")}</div></section>`;
+  if (!cards.length) return `<section class="dz-suggestions"><div class="dz-suggestions-head"><b>Kết quả tìm nhà cung cấp</b></div><div class="dz-suggestion-empty">Không tìm thấy nhà cung cấp hoặc hạng mục phù hợp trong danh mục hệ thống.</div></section>`;
+  const visible = cards;
+  return `<section class="dz-suggestions"><div class="dz-suggestions-head"><b>Kết quả tìm kiếm · NCC và hạng mục giá</b><span>${cards.length} lựa chọn${query ? " khớp tìm kiếm" : " · gợi ý NCC và hạng mục; nhập từ khóa rồi nhấn Tìm kiếm"}${d.start ? ` · ngày ${fmt(d.start)}` : ""}</span></div><div class="dz-suggestion-list">${visible.join("")}</div></section>`;
 }
 
 function designPricingTier(d) {
@@ -668,10 +692,17 @@ function designSvcTab(cat) {
   designRefresh(["services"]);
 }
 
-function designAddItem(cat) {
-  const d = ensureDesign();
-  (d.services[cat] ||= []).push({ name: "", cost: 0 });
+function designAddItem() {
+  toast("Không thể nhập nhà cung cấp thủ công. Hãy tìm và chọn nhà cung cấp trong hệ thống.");
+}
+
+/* Thêm dịch vụ chỉ gắn NCC; không tự tạo nhà cung cấp và không tự thêm hạng mục giá. */
+function designAddSupplierOnly(cat, sid) {
+  const d = ensureDesign(), sup = findSupplier(sid);
+  if (!sup || sup.type !== cat) return toast("Nhà cung cấp không hợp lệ cho loại dịch vụ này.");
+  (d.services[cat] ||= []).push({ name: sup.name, cost: 0, supplier: sid });
   designRefresh(["services", "summary", "steps"]);
+  toast("Đã thêm nhà cung cấp vào dịch vụ tour.");
 }
 
 /* Thêm dịch vụ từ bảng giá NCC: tên "NCC – hạng mục", chi phí = đơn giá × số lượng theo đơn vị tính. */

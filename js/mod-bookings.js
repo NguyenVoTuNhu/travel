@@ -17,6 +17,7 @@ views.bookings = () => {
   const count = (s) => all.filter((b) => b.status === s).length;
   const statuses = opsView ? bookingFilterOrder.filter((s) => bookingOpsStatuses.includes(s)) : bookingFilterOrder;
   const filtered = all.filter((b) => bookingFilter === "all" || b.status === bookingFilter);
+  const listRows = bookingListTableRows(filtered, opsView, showFinancials);
   const active = all.filter((b) => bookingOpenStatuses.includes(b.status));
   const totalRev = all.filter((b) => b.status !== "Cancelled").reduce((sum, b) => sum + (b.revenue || 0), 0);
   const waitingDeposit = count("PendingDeposit") + count("PendingApproval");
@@ -43,21 +44,54 @@ views.bookings = () => {
           <option value="all">Tất cả trạng thái (${all.length})</option>
           ${statuses.map((s) => `<option value="${s}" ${bookingFilter === s ? "selected" : ""}>${bookingLabels[s]} (${count(s)})</option>`).join("")}
         </select>
-        <span class="sub" style="margin-left: auto; font-weight: 600;">Hiển thị ${filtered.length} / ${all.length} booking</span>
+        <span class="sub" style="margin-left: auto; font-weight: 600;">${opsView ? `Hiển thị ${listRows.length} dòng (${filtered.length} booking, đã gộp tour SIC)` : `Hiển thị ${filtered.length} / ${all.length} booking`}</span>
       </div>` +
         (filtered.length
           ? table(
-              ["MÃ BOOKING", "KHÁCH HÀNG / TOUR", "THỜI GIAN", "KHÁCH", ...(showFinancials ? ["GIÁ TRỊ", "THANH TOÁN"] : []), "SẴN SÀNG", "TRẠNG THÁI", ""],
-              filtered.map(
-                (b) =>
-                  `<tr class="bookrow" data-search="${esc([b.id, b.client, b.tour, b.operator, b.sales].join(" ").toLowerCase())}"><td>${bkLink(b)}</td><td><strong>${customerLink(b.client)}</strong><span class="sub">${esc(b.tour)}</span></td><td>${fmt(b.start)}<span class="sub">đến ${fmt(b.end)}</span></td><td><b>${b.pax}</b></td>${showFinancials ? `<td><b class="moneypositive">${fxLedgerMoney(b, b.revenue)}</b></td><td>${paymentBadge(b)}</td>` : ""}<td><div class="barrow"><div class="bar" style="flex: 1;"><i style="width:${progress(b)}%"></i></div><small>${progress(b)}%</small></div></td><td>${bookingBadge(b)}</td><td>${btn("Chi tiết", `openBooking('${b.id}')`, "small")}</td></tr>`,
-              ),
+              [opsView ? "MÃ BOOKING / CHUYẾN" : "MÃ BOOKING", "KHÁCH HÀNG / TOUR", "THỜI GIAN", "KHÁCH", ...(showFinancials ? ["GIÁ TRỊ", "THANH TOÁN"] : []), "SẴN SÀNG", "TRẠNG THÁI", ""],
+              listRows,
             )
           : '<div class="empty">Không có booking nào ở trạng thái này.</div>'),
     ) +
     `<div class="alert green"><b>Luồng trạng thái:</b> Chờ đặt cọc → Đã xác nhận (kế toán xác nhận cọc hoặc CEO miễn cọc) → Đang chuẩn bị (điều hành tiếp nhận) → Đang chạy → Hoàn tất → Quyết toán → Chăm sóc sau tour. Thanh toán và trạng thái tour được theo dõi riêng.</div>`
   );
 };
+
+
+/* Điều hành xem mỗi chuyến SIC như một dòng tour ghép, không lặp lại theo từng booking/đơn vị. */
+function bookingListTableRows(filtered, opsView, showFinancials) {
+  const rows = [];
+  const seenDepartures = new Set();
+  const departureByBooking = new Map();
+  for (const dep of state.departures || []) {
+    for (const unit of dep.units || []) {
+      if (unit.bookingId) departureByBooking.set(unit.bookingId, dep);
+    }
+  }
+
+  for (const b of filtered) {
+    const dep = opsView ? (departureByBooking.get(b.id) || (state.departures || []).find((d) => d.id === (b.departureId || b.sicDepartureId))) : null;
+    if (dep) {
+      if (seenDepartures.has(dep.id)) continue;
+      seenDepartures.add(dep.id);
+      const units = (dep.units || []).filter((u) => u.status !== "CANCELLED");
+      const unitBookings = units.map((u) => u.bookingId ? findBooking(u.bookingId) : null).filter((item) => item && item.status !== "Cancelled");
+      const pax = units.reduce((sum, u) => sum + Number(u.pax || (u.bookingId ? findBooking(u.bookingId)?.pax : 0) || 0), 0);
+      const totalRevenue = unitBookings.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
+      const paidUnits = units.filter((u) => {
+        const booking = u.bookingId ? findBooking(u.bookingId) : null;
+        return !!booking && booking.status !== "Cancelled" && (booking.depositWaived || Number(booking.received || 0) >= depositRequired(booking));
+      }).length;
+      const readinessPct = units.length ? Math.round((paidUnits / units.length) * 100) : 0;
+      const searchText = [dep.id, dep.name, dep.design?.name, ...units.map((u) => u.name || u.customerName || ""), ...unitBookings.flatMap((item) => [item.id, item.client, item.tour])].join(" ").toLowerCase();
+      const statusLabel = dep.operationsStatus === "RUNNING" || unitBookings.some((item) => item.status === "Running") ? "Đang chạy" : dep.operationsStatus === "PREPARING" || dep.operationsAcceptedAt || unitBookings.some((item) => item.status === "Preparing") ? "Đang chuẩn bị" : "Tour ghép SIC";
+      rows.push(`<tr class="bookrow" data-search="${esc(searchText)}"><td><b>${esc(dep.id)}</b><span class="sub">${units.length} đơn vị</span></td><td><strong>${esc(dep.name || dep.design?.name || "Tour ghép SIC")}</strong><span class="sub">Tour ghép SIC · ${units.length} đơn vị tham gia</span></td><td>${fmt(dep.start)}<span class="sub">đến ${fmt(dep.end)}</span></td><td><b>${pax}</b></td>${showFinancials ? `<td><b class="moneypositive">${fxMoney(totalRevenue)}</b></td><td>${paidUnits}/${units.length} đơn vị đủ điều kiện cọc</td>` : ""}<td><div class="barrow"><div class="bar" style="flex: 1;"><i style="width:${readinessPct}%"></i></div><small>${paidUnits}/${units.length}</small></div></td><td>${badge(statusLabel, statusLabel === "Đang chạy" ? "green" : statusLabel === "Đang chuẩn bị" ? "blue" : "amber")}</td><td><button class="btn small" onclick="sicDepartureDetails('${dep.id}')">Xem chi tiết</button></td></tr>`);
+      continue;
+    }
+    rows.push(`<tr class="bookrow" data-search="${esc([b.id, b.client, b.tour, b.operator, b.sales].join(" ").toLowerCase())}"><td>${bkLink(b)}</td><td><strong>${customerLink(b.client)}</strong><span class="sub">${esc(b.tour)}</span></td><td>${fmt(b.start)}<span class="sub">đến ${fmt(b.end)}</span></td><td><b>${b.pax}</b></td>${showFinancials ? `<td><b class="moneypositive">${fxLedgerMoney(b, b.revenue)}</b></td><td>${paymentBadge(b)}</td>` : ""}<td><div class="barrow"><div class="bar" style="flex: 1;"><i style="width:${progress(b)}%"></i></div><small>${progress(b)}%</small></div></td><td>${bookingBadge(b)}</td><td>${btn("Chi tiết", `openBooking('${b.id}')`, "small")}</td></tr>`);
+  }
+  return rows;
+}
 
 function filterBookingRows(q) {
   const rows = document.querySelectorAll(".bookrow");

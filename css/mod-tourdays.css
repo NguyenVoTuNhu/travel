@@ -104,14 +104,45 @@ body .modal > .tour-day-picker {
 
 .tour-day-svc {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 32px;
-  gap: 6px;
-  margin-top: 6px;
+  grid-template-rows: auto auto;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  min-width: 0;
 }
 
+.tour-day-svc-top,
+.tour-day-svc-bottom {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.tour-day-svc-top {
+  grid-template-columns: minmax(130px, 0.8fr) minmax(0, 1.5fr);
+}
+
+.tour-day-svc-bottom {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px;
+}
+
+.tour-day-svc select,
+.tour-day-svc input[type="search"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 .tour-day-svc button {
   appearance: none;
   border: 1px solid var(--line);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
   border-radius: 8px;
   background: #fff;
   color: var(--muted);
@@ -128,11 +159,11 @@ body .modal > .tour-day-picker {
     grid-template-columns: 1fr;
   }
 
-  .tour-day-svc {
-    grid-template-columns: 1fr 32px;
+  .tour-day-svc-top {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   }
 
-  .tour-day-svc select {
-    grid-column: 1 / -1;
+  .tour-day-svc-bottom {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px;
   }
 }

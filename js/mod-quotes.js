@@ -116,6 +116,7 @@ function quoteDetail(id) {
           <div class="quote-identity-line"><h3>${q.id}</h3>${quoteBadge(q.status)}</div>
           <strong>Khách hàng: ${customerLink(q.client)}</strong>
           <p>${esc(q.tour)}</p>
+          ${q.departureId ? `<p class="sub">Chuyến SIC ${esc(q.departureId)} · giá theo ${Number(q.departurePax) || q.pax} khách cả chuyến</p>` : ""}
         </div>
       </section>
       ${quoteExpired(q) ? `<div class="alert red"><b>Báo giá đã hết hạn ${fmt(q.validUntil)}.</b> Gia hạn hoặc tạo phiên bản mới trước khi ghi nhận khách chấp nhận.</div>` : ""}
@@ -320,6 +321,10 @@ function acceptQuote(id) {
   if (q.status === "Accepted") return;
   if (q.status !== "Sent") return toast("Hãy gửi báo giá cho khách trước khi ghi nhận khách chấp nhận.");
   if (quoteExpired(q)) return toast("Báo giá đã hết hạn — hãy gia hạn hoặc tạo phiên bản mới.");
+  if (q.departureId) {
+    const blocked = departureAcceptBlock(q);
+    if (blocked) return toast(blocked);
+  }
   const lead = findLead(q.lead);
   const bid = nextBusinessId("bookings");
   const p = policy();
@@ -333,7 +338,10 @@ function acceptQuote(id) {
     history: [],
   }));
   if (services.length && !q.costBreakdown) services[services.length - 1].cost = q.cost - services.slice(0, -1).reduce((n, s) => n + s.cost, 0);
-  let customer = lead && (state.customers || []).find((c) => (c.email && c.email === lead.email) || c.name === lead.name);
+  let customer = q.customerId ? (state.customers || []).find((c) => c.id === q.customerId) : null;
+  if (!customer && lead) {
+    customer = (state.customers || []).find((c) => (c.email && c.email === lead.email) || c.name === lead.name);
+  }
   if (!customer) {
     customer = { id: nextBusinessId("customers"), name: q.client, contact: q.client, country: q.country || "", email: lead?.email || "", whatsapp: lead?.whatsapp || "", phone: lead?.whatsapp || "", owner: lead?.sales || myName(), careLog: [] };
     state.customers.push(customer);
@@ -370,7 +378,9 @@ function acceptQuote(id) {
     statusHistory: [{ at: nowISO(), by: actor().name, from: "", to: p.requireDeposit ? "PendingDeposit" : "Confirmed", note: "Khách chấp nhận " + q.id }],
     createdAt: nowISO(),
   };
+  if (q.departureId) booking.departureId = q.departureId;
   state.bookings.push(booking);
+  if (q.departureId) departureOnBookingCreated(q, booking);
   if (booking.status === "Confirmed") ensureBookingContract(booking);
   q.status = "Accepted";
   q.acceptedAt = nowISO();

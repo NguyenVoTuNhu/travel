@@ -552,6 +552,7 @@ function cancelBooking(b, refund = 0, reason = "") {
   b.cancelReason = reason;
   b.cancelledAt = nowISO();
   setBookingStatus(b, "Cancelled", reason || "Hủy tour");
+  if (b.departureId) departureOnBookingCancelled(b);
   if (refund > 0) createRefundPayable(b, refund, "Hoàn tiền do hủy " + b.id);
   const lead = findLead(b.lead);
   if (lead && lead.status === "WON") {

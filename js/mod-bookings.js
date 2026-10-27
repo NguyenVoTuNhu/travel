@@ -158,6 +158,20 @@ function bookingTabContent(b, tab, pay) {
   return bookingOverviewTab(b);
 }
 
+/* Thẻ "Nguồn gốc booking": lead, báo giá, thời điểm tạo, chương trình và chuyến SIC (nếu có). */
+function bookingOriginCard(b, lead, quote) {
+  const leadText = lead ? entityLink("lead", lead.id, lead.id + " · " + lead.name) : "—";
+  const quoteText = quote ? entityLink("quote", quote.id, quote.id + " · v" + quote.version) : "—";
+  const rows = [
+    line("Lead", leadText),
+    line("Báo giá", quoteText),
+    line("Tạo lúc", dateTimeVN(b.createdAt)),
+    line("Chương trình", esc(b.tour)),
+  ];
+  if (b.departureId) rows.push(line("Chuyến SIC", esc(b.departureId)));
+  return card("Nguồn gốc booking", rows.join(""));
+}
+
 function bookingOverviewTab(b) {
   const checks = readiness(b);
   const approvals = approvalsFor(b.id);
@@ -166,7 +180,7 @@ function bookingOverviewTab(b) {
   return `<div class="split">
     ${card("Mức độ sẵn sàng khởi hành · " + progress(b) + "%", checks.map((c) => `<div class="checkitem"><span class="${c.ok ? "ok" : "no"}">${systemIcon(c.ok ? "circle-check" : "circle")}</span><div class="grow"><b>${esc(c.label)}</b>${c.ok ? "" : `<div class="sub">${esc(c.fix)}</div>`}</div></div>`).join(""))}
     <div>
-      ${card("Nguồn gốc booking", line("Lead", lead ? entityLink("lead", lead.id, lead.id + " · " + lead.name) : "—") + line("Báo giá", quote ? entityLink("quote", quote.id, quote.id + " · v" + quote.version) : "—") + line("Tạo lúc", dateTimeVN(b.createdAt)) + line("Chương trình", esc(b.tour)))}
+      ${bookingOriginCard(b, lead, quote)}
       ${approvals.length ? card("Phê duyệt liên quan", approvals.slice(0, 5).map((a) => `<div class="metricline"><span>${approvalTypes[a.type]}${a.reason ? `<small class="sub"> · ${esc(a.reason)}</small>` : ""}</span>${badge(approvalLabels[a.status], a.status === "APPROVED" ? "green" : a.status === "REJECTED" ? "red" : "amber")}</div>`).join("")) : ""}
     </div>
   </div>

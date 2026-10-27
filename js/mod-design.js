@@ -13,6 +13,7 @@ const designSteps = [
 ];
 const tourRegions = ["Việt Nam", "Đông Nam Á", "Đông Bắc Á", "Nam Á", "Châu Âu", "Châu Mỹ", "Châu Úc", "Châu Phi", "Trung Đông"];
 let designLibraryQuery = "";
+let designLibraryTab = "programs";
 
 const optionList = (values) => values.map((value) => `<option>${esc(value)}</option>`).join("");
 const svcCats = () => serviceTypes.concat(["Other"]);
@@ -27,7 +28,10 @@ function designSelectedCustomer(d = ensureDesign()) {
   if (d.customerType === "customer" && d.customerId) return (state.customers || []).find((c) => c.id === d.customerId) || null;
   return findLead(d.lead) || null;
 }
-function designCustomerName(d = ensureDesign()) { return designSelectedCustomer(d)?.name || "Chưa chọn"; }
+function designCustomerName(d = ensureDesign()) {
+  if (designIsSic(d)) return `Tour ghép SIC · ${designSicUnits(d).length} đơn vị`;
+  return designSelectedCustomer(d)?.name || "Chưa chọn";
+}
 function designCustomerSelection(d = ensureDesign()) {
   return d.customerType === "customer" && d.customerId ? `customer|${d.customerId}` : d.lead ? `lead|${d.lead}` : "";
 }
@@ -77,9 +81,18 @@ function designCurToggle(d) {
 }
 
 /* ---------- Trạng thái các bước ---------- */
+function designInfoDone(d) {
+  const named = d.name.trim() && d.days > 0 && d.start;
+  if (designIsSic(d)) {
+    const total = designSicTotal(d);
+    return !!(named && d.sicCapacity > 0 && total > 0 && total <= d.sicCapacity);
+  }
+  return !!((d.lead || (d.customerType === "customer" && d.customerId)) && named && d.pax > 0);
+}
+
 function designStepState(d) {
   const done = {
-    info: !!((d.lead || (d.customerType === "customer" && d.customerId)) && d.name.trim() && d.pax > 0 && d.days > 0 && d.start),
+    info: designInfoDone(d),
     template: !!(d.template || d.program.some((p) => p.title.trim())),
     itinerary: d.program.length > 0 && d.program.every((p) => p.title.trim()),
     cost: designCost(d) > 0 && d.amount > 0,
@@ -99,11 +112,12 @@ function designStepsHtml(d) {
 
 /* ---------- Khối giao diện ---------- */
 function designInfoCard(d) {
+  if (designIsSic(d)) return designSicInfoCard(d) + `<div id="dz-sic">${designSicUnitsCard(d)}</div>`;
   const leads = designableLeads();
   const leadOptions = leads.map((l) => `<option value="lead|${l.id}" ${d.customerType !== "customer" && d.lead === l.id ? "selected" : ""}>${esc(l.name)} · ${l.id} (${leadLabels[l.status]})</option>`).join("");
   const customers = (state.customers || []).filter((c) => !isScoped() || !crmOwners.includes(myName()) || !c.owner || c.owner === myName());
   const customerOptions = customers.map((c) => `<option value="customer|${c.id}" ${d.customerType === "customer" && d.customerId === c.id ? "selected" : ""}>${esc(c.name)} · ${c.id} (Khách hàng thường)</option>`).join("");
-  const sel = (name, values, current, placeholder) => `<select onchange="designSet('${name}',this.value)">${placeholder ? `<option value="">${placeholder}</option>` : ""}${values.map((v) => `<option ${v === current ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>`;
+  const sel = (name, values, current, placeholder) => `<select onchange="designSet('${name}',this.value)">${placeholder ? `<option value="">${placeholder}</option>` : ""}${designOptionValues(values, current).map((v) => `<option ${v === current ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>`;
   return card(
     `<span class="dz-num">1</span> Thông tin khách hàng & yêu cầu`,
     `<div class="dz-form">
@@ -309,6 +323,7 @@ const designParts = {
   services: (d) => designServicesCard(d),
   summary: (d) => designSummary(d),
   stage: (d) => designStageHtml(d),
+  sic: (d) => designSicUnitsCard(d),
 };
 
 function designStageHtml(d) {
@@ -348,7 +363,7 @@ function designLibraryCard(item) {
   return `<article class="tour-card" onclick="designDetail('${item.id}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();designDetail('${item.id}')}" aria-label="Xem chi tiết ${esc(d.name || "tour chưa đặt tên")}">
     <div class="tour-card-cover"><span>${systemIcon("route")}</span><em class="${complete ? "is-ready" : ""}">${complete ? "Sẵn sàng báo giá" : "Đang thiết kế"}</em></div>
     <div class="tour-card-body"><div class="tour-card-title"><div><small>${esc(item.id)}</small><h3>${esc(d.name || "Chương trình chưa đặt tên")}</h3></div><span>${systemIcon("arrow-right")}</span></div>
-    <p>${esc(lead?.name || "Chưa gắn khách hàng")} · ${esc(d.country || "Chưa chọn thị trường")}</p>
+    <p>${designCardSubline(d, lead)}</p>
     <div class="tour-card-meta"><span>${systemIcon("calendar-days")} ${d.program.length || d.days || 0} ngày</span><span>${systemIcon("users")} ${d.pax || 0} khách</span><span>${systemIcon("wallet")} ${designFmt(d, d.amount || cost)}</span></div></div>
     ${designCardFooter(item)}
   </article>`;
@@ -367,16 +382,29 @@ function designRefresh(parts = Object.keys(designParts)) {
 }
 
 views.design = () => {
+  const body = designLibraryTab === "departures" ? departureLibraryBody() : designProgramsBody();
+  return `<div class="tour-library">
+    <header class="tour-library-head">
+      <div>
+        <span class="dz-eyebrow">TOUR WORKSPACE</span>
+        <h1>Chương trình tour</h1>
+        <p>Quản lý, xem lại và tiếp tục các chương trình tour đã thiết kế.</p>
+      </div>
+      ${designLibraryActions()}
+    </header>
+    ${departureTabs()}
+    ${body}
+  </div>`;
+};
+
+function designProgramsBody() {
   const tours = designVisibleDrafts();
   const all = (state.drafts || []).filter((item) => item.design && (can("all") || item.owner === actor().name));
   const ready = all.filter((item) => designStepState({ ...blankDesign(), ...item.design }).done.preview).length;
-  return `<div class="tour-library">
-    <header class="tour-library-head"><div><span class="dz-eyebrow">TOUR WORKSPACE</span><h1>Chương trình tour</h1><p>Quản lý, xem lại và tiếp tục các chương trình tour đã thiết kế.</p></div>${btn(systemIcon("plus") + " Thiết kế tour mới", "designNew()", "primary")}</header>
-    <section class="tour-library-stats"><div><span>${systemIcon("folder-open")}</span><small>Tổng chương trình</small><b>${all.length}</b></div><div><span>${systemIcon("circle-check")}</span><small>Sẵn sàng báo giá</small><b>${ready}</b></div><div><span>${systemIcon("pen-ruler")}</span><small>Đang thiết kế</small><b>${all.length - ready}</b></div></section>
+  return `<section class="tour-library-stats"><div><span>${systemIcon("folder-open")}</span><small>Tổng chương trình</small><b>${all.length}</b></div><div><span>${systemIcon("circle-check")}</span><small>Sẵn sàng báo giá</small><b>${ready}</b></div><div><span>${systemIcon("pen-ruler")}</span><small>Đang thiết kế</small><b>${all.length - ready}</b></div></section>
     <div class="tour-library-toolbar"><label>${systemIcon("magnifying-glass")}<input value="${esc(designLibraryQuery)}" placeholder="Tìm theo tên tour, khách hàng, mã chương trình…" oninput="designLibraryQuery=this.value;render()"></label><span>${tours.length} chương trình</span></div>
-    <section class="tour-grid">${tours.length ? tours.map(designLibraryCard).join("") : designEmpty("route", designLibraryQuery ? "Không tìm thấy chương trình phù hợp" : "Chưa có chương trình tour", designLibraryQuery ? "Thử tìm bằng tên tour, khách hàng hoặc mã chương trình khác." : "Tạo chương trình đầu tiên bằng quy trình thiết kế 5 bước.", !designLibraryQuery ? btn(systemIcon("plus") + " Thiết kế tour mới", "designNew()", "primary") : "")}</section>
-  </div>`;
-};
+    <section class="tour-grid">${tours.length ? tours.map(designLibraryCard).join("") : designEmpty("route", designLibraryQuery ? "Không tìm thấy chương trình phù hợp" : "Chưa có chương trình tour", designLibraryQuery ? "Thử tìm bằng tên tour, khách hàng hoặc mã chương trình khác." : "Tạo chương trình đầu tiên bằng quy trình thiết kế 5 bước.", !designLibraryQuery ? btn(systemIcon("plus") + " Thiết kế tour mới", "designNew()", "primary") : "")}</section>`;
+}
 
 /* ---------- Thao tác ---------- */
 function designGoto(key) {
@@ -388,6 +416,7 @@ function designGoto(key) {
 }
 
 function selectLead(id) {
+  if (design?.tourKind === "sic") design = null;
   ensureDesign();
   designPickLead(id);
   if (current === "design") designOpenBuilder();
@@ -710,6 +739,12 @@ function designTemplateProgram(t) {
   return source.map((title) => ({ title, text: "" }));
 }
 
+/* Danh sách chọn: giữ giá trị đang dùng dù không còn trong danh mục (ví dụ loại tour của mẫu cũ) */
+function designOptionValues(values, current) {
+  if (!current || values.includes(current)) return values;
+  return [...values, current];
+}
+
 function designApplyTemplate(id) {
   const d = ensureDesign();
   const t = state.tourTemplates.find((x) => x.id === id);
@@ -717,6 +752,7 @@ function designApplyTemplate(id) {
   if (d.program.some((p) => p.title.trim() || p.text.trim()) && !confirm("Thay lịch trình hiện tại bằng mẫu này?")) return;
   d.template = t.name;
   d.name ||= t.name;
+  if (t.type) d.tourType = t.type;
   d.program = designTemplateProgram(t);
   d.days = d.program.length;
   d.tab = "detail";
@@ -724,7 +760,7 @@ function designApplyTemplate(id) {
   d.viewStep = "itinerary";
   if (document.querySelector(".tour-builder-modal")) designRefresh(["steps", "stage"]);
   else designOpenBuilder();
-  toast(`Đã áp dụng mẫu “${t.name}” (${d.days} ngày).`);
+  toast(`Đã áp dụng mẫu “${t.name}” (${d.days} ngày${t.type ? ", loại tour: " + t.type : ""}).`);
 }
 
 function designImportForm() {
@@ -742,12 +778,349 @@ function designNew() {
   designOpenBuilder();
 }
 
+/* ---------- Tour ghép SIC (T3-07): ngày cố định, sức chứa, đơn vị ghép ---------- */
+const designSicMaxPax = 100;
+const designSicQuoteNotice =
+  "Bản thiết kế tour SIC không tạo báo giá trực tiếp. Hãy mở bán chuyến, rồi tạo báo giá cho từng đơn vị ghép trong tab Chuyến SIC.";
+const designSicSourceLabels = {
+  customer: "Khách hàng thường",
+  lead: "Khách hàng tiềm năng",
+  manual: "Nhập tay (ngoài hệ thống)",
+};
+
+function designIsSic(d = ensureDesign()) {
+  return d.tourKind === "sic";
+}
+
+function designSicUnits(d) {
+  if (!Array.isArray(d.sicUnits)) d.sicUnits = [];
+  return d.sicUnits;
+}
+
+function designSicTotal(d) {
+  return designSicUnits(d).reduce((sum, u) => sum + (Number(u.pax) || 0), 0);
+}
+
+/* Giới hạn khách của chuyến: sức chứa đã đặt, chưa đặt thì dùng mức tối đa của ô số khách. */
+function designSicLimit(d) {
+  const capacity = Number(d.sicCapacity) || 0;
+  return capacity > 0 ? capacity : designSicMaxPax;
+}
+
+function designSicStatus(d) {
+  const capacity = Number(d.sicCapacity) || 0;
+  if (capacity <= 0) return { text: "Chưa đặt sức chứa", tone: "amber" };
+  const left = capacity - designSicTotal(d);
+  if (left <= 0) return { text: "Đã đầy", tone: "red" };
+  return { text: `Còn ${left} chỗ`, tone: "green" };
+}
+
+/* Tên hiện hành của khách trong hệ thống; khách đã bị xóa thì dùng tên đã lưu lúc ghép. */
+function designSicUnitName(u) {
+  if (u.refType === "customer") {
+    return (state.customers || []).find((c) => c.id === u.refId)?.name || u.name;
+  }
+  if (u.refType === "lead") return findLead(u.refId)?.name || u.name;
+  return u.name;
+}
+
+function designModalTitle(d) {
+  if (designIsSic(d)) return d.id ? "Chỉnh sửa tour ghép SIC" : "Thiết kế tour ghép SIC";
+  return d.id ? "Chỉnh sửa chương trình tour" : "Thiết kế chương trình tour";
+}
+
+function designCardSubline(d, lead) {
+  if (designIsSic(d)) {
+    const status = designSicStatus(d);
+    return `Tour ghép SIC · ${designSicUnits(d).length} đơn vị · ${esc(status.text)}`;
+  }
+  return `${esc(lead?.name || "Chưa gắn khách hàng")} · ${esc(d.country || "Chưa chọn thị trường")}`;
+}
+
+function designLibraryActions() {
+  const standard = btn(systemIcon("plus") + " Thiết kế tour mới", "designNew()", "primary");
+  const sic = btn(systemIcon("users") + " Thiết kế tour SIC mới", "designNewSic()", "primary");
+  return `<div class="tour-library-actions">${standard}${sic}</div>`;
+}
+
+function designNewSic() {
+  if (!requireCapability("tour_design_manage")) return;
+  design = blankDesign();
+  design.tourKind = "sic";
+  design.sicCapacity = 0;
+  design.sicUnits = [];
+  design.pax = 0;
+  design.program.push({ title: "", text: "" });
+  design.days = 1;
+  const profiles = typeof pricingSettings === "function" ? pricingSettings() : [];
+  if (profiles.length) {
+    design.pricingSource = "table";
+    design.pricingProfileId = profiles[0].id;
+    designApplyPricing(design);
+  }
+  designOpenBuilder();
+}
+
+/* Đổi số khách của chuyến thì tính lại số khách tổng và giá theo bảng giá. */
+function designSicSync(d, redrawList = true) {
+  d.pax = designSicTotal(d);
+  designApplyPricing(d);
+  designRefresh(["steps", "summary"]);
+  if (redrawList) designRefresh(["sic"]);
+  else designSicRefreshStatus(d);
+}
+
+function designSicSummaryText(d) {
+  const capacity = Number(d.sicCapacity) || 0;
+  const units = designSicUnits(d).length;
+  return `Đã ghép ${designSicTotal(d)}${capacity ? ` / ${capacity}` : ""} khách · ${units} đơn vị`;
+}
+
+/* Chỉ cập nhật dòng tổng và nhãn còn chỗ/đã đầy, không vẽ lại ô đang nhập (giữ con trỏ khi bấm Tab). */
+function designSicRefreshStatus(d) {
+  const summary = document.getElementById("dzSicSummary");
+  if (summary) summary.textContent = designSicSummaryText(d);
+  const status = designSicStatus(d);
+  const holder = document.getElementById("dzSicStatus");
+  if (holder) holder.innerHTML = badge(status.text, status.tone);
+}
+
+function designSicResetInput(id, value) {
+  const input = document.getElementById(id);
+  if (input) input.value = value;
+}
+
+function designSicSetCapacity(value) {
+  const d = ensureDesign();
+  const next = Math.floor(Number(value) || 0);
+  if (next < 1 || next > designSicMaxPax) {
+    toast(`Sức chứa phải từ 1 đến ${designSicMaxPax} khách.`);
+    designSicResetInput("dzSicCapacity", d.sicCapacity || "");
+    return;
+  }
+  const total = designSicTotal(d);
+  if (next < total) {
+    toast(`Sức chứa không thể nhỏ hơn số khách đã ghép (${total}).`);
+    designSicResetInput("dzSicCapacity", d.sicCapacity || "");
+    return;
+  }
+  d.sicCapacity = next;
+  designRefresh(["steps"]);
+  designSicRefreshStatus(d);
+}
+
+function designSicCustomerAllowed(c) {
+  if (!isScoped() || !crmOwners.includes(myName())) return true;
+  return !c.owner || c.owner === myName();
+}
+
+/* Khách trong hệ thống chưa được ghép vào chuyến này. */
+function designSicPickables(d) {
+  const used = designSicUnits(d).map((u) => `${u.refType}|${u.refId}`);
+  const leads = designableLeads().filter((l) => !used.includes(`lead|${l.id}`));
+  const customers = (state.customers || [])
+    .filter(designSicCustomerAllowed)
+    .filter((c) => !used.includes(`customer|${c.id}`));
+  return { leads, customers };
+}
+
+function designSicIsDuplicate(d, unit) {
+  const key = unit.name.toLowerCase();
+  return designSicUnits(d).some((u) => {
+    if (unit.refType !== "manual") return u.refType === unit.refType && u.refId === unit.refId;
+    return designSicUnitName(u).toLowerCase() === key;
+  });
+}
+
+function designSicAddUnit(d, unit) {
+  const pax = Math.floor(Number(unit.pax) || 0);
+  if (pax < 1) return toast("Số khách của đơn vị phải từ 1 trở lên.");
+  if (designSicIsDuplicate(d, unit)) return toast("Đơn vị này đã có trong danh sách ghép.");
+  const left = designSicLimit(d) - designSicTotal(d);
+  if (left <= 0) return toast("Chuyến đã đầy, không thể thêm đơn vị.");
+  const fitted = Math.min(pax, left);
+  designSicUnits(d).push({
+    refType: unit.refType,
+    refId: unit.refId,
+    name: unit.name,
+    pax: fitted,
+  });
+  if (fitted < pax) toast(`Chỉ còn ${left} chỗ, đã ghi ${fitted} khách cho đơn vị này.`);
+  designSicSync(d);
+}
+
+function designSicAddRef(selection) {
+  const d = ensureDesign();
+  const [kind, id] = String(selection || "").split("|", 2);
+  if (!id || !["lead", "customer"].includes(kind)) return;
+  const record = kind === "customer" ? (state.customers || []).find((c) => c.id === id) : findLead(id);
+  if (!record) return toast("Khách hàng đã chọn không còn tồn tại.");
+  designSicAddUnit(d, {
+    refType: kind,
+    refId: id,
+    name: String(record.name || id).slice(0, 80),
+    pax: Number(record.pax) || 1,
+  });
+}
+
+function designSicAddManual() {
+  const d = ensureDesign();
+  const name = String(document.getElementById("dzSicName")?.value || "").trim();
+  if (!name) return toast("Hãy nhập tên đơn vị ghép.");
+  designSicAddUnit(d, {
+    refType: "manual",
+    refId: "",
+    name: name.slice(0, 80),
+    pax: Number(document.getElementById("dzSicPax")?.value) || 0,
+  });
+}
+
+function designSicSetPax(i, value) {
+  const d = ensureDesign();
+  const unit = designSicUnits(d)[i];
+  if (!unit) return;
+  const wanted = Math.floor(Number(value) || 0);
+  if (wanted < 1) {
+    toast("Số khách của đơn vị phải từ 1 trở lên.");
+    designSicResetInput(`dzSicPax${i}`, unit.pax);
+    return;
+  }
+  const room = designSicLimit(d) - (designSicTotal(d) - unit.pax);
+  if (wanted > room) toast(`Vượt sức chứa, đơn vị này tối đa ${room} khách.`);
+  unit.pax = Math.min(wanted, room);
+  designSicResetInput(`dzSicPax${i}`, unit.pax);
+  designSicSync(d, false);
+}
+
+function designSicRemove(i) {
+  const d = ensureDesign();
+  designSicUnits(d).splice(i, 1);
+  designSicSync(d);
+}
+
+/* ---------- Giao diện tour SIC ---------- */
+function designSicSelect(name, values, current, placeholder) {
+  const first = placeholder ? `<option value="">${placeholder}</option>` : "";
+  const options = designOptionValues(values, current).map((v) => `<option ${v === current ? "selected" : ""}>${esc(v)}</option>`);
+  return `<select onchange="designSet('${name}',this.value)">${first}${options.join("")}</select>`;
+}
+
+function designSicInfoCard(d) {
+  const note = esc(d.note || "");
+  const form = [
+    `<div class="dz-form">`,
+    `<label class="dz-field"><span>Tên chương trình <i class="req">*</i></span>`,
+    `<input value="${esc(d.name)}" placeholder="Ví dụ: Hà Nội – Hạ Long SIC 4 ngày"`,
+    ` onchange="designSet('name',this.value)"></label>`,
+    `<div class="dz-row dz-row--3">`,
+    `<label class="dz-field">Thị trường${designSicSelect("country", crmCountries, d.country, "-- Chọn --")}</label>`,
+    `<label class="dz-field">Thời lượng (ngày)`,
+    `<input type="number" min="1" max="60" value="${d.days}" onchange="designSet('days',this.value)"></label>`,
+    `<label class="dz-field">Loại tour${designSicSelect("tourType", tourTypes, d.tourType, "-- Chọn --")}</label>`,
+    `</div>`,
+    `<div class="dz-row dz-row--3">`,
+    `<label class="dz-field"><span>Ngày khởi hành cố định <i class="req">*</i></span>`,
+    `<input type="date" min="${todayISO()}" value="${esc(d.start)}" onchange="designSet('start',this.value)"></label>`,
+    `<label class="dz-field"><span>Sức chứa (khách) <i class="req">*</i></span>`,
+    `<input id="dzSicCapacity" type="number" min="1" max="${designSicMaxPax}"`,
+    ` value="${Number(d.sicCapacity) || ""}" placeholder="Ví dụ: 16"`,
+    ` onchange="designSicSetCapacity(this.value)"></label>`,
+    `<label class="dz-field">Ngôn ngữ chương trình${designSicSelect("language", travelLanguages, d.language)}</label>`,
+    `</div>`,
+    `<div class="dz-row dz-row--2">${designRateField(d)}</div>`,
+    `<label class="dz-field">Ghi chú chuyến ghép`,
+    `<textarea maxlength="500" onchange="designSet('note',this.value)"`,
+    ` placeholder="Điểm đón, điều kiện ghép, lưu ý cho các đơn vị…">${note}</textarea></label>`,
+    `</div>`,
+  ].join("");
+  return card(`<span class="dz-num">1</span> Thông tin tour ghép SIC`, form);
+}
+
+function designSicUnitRow(u, i) {
+  return [
+    `<div class="dz-sic-row">`,
+    `<div class="dz-sic-name"><b>${esc(designSicUnitName(u))}</b>`,
+    `<small>${esc(designSicSourceLabels[u.refType] || "")}</small></div>`,
+    `<label class="dz-sic-pax"><span>Số khách</span>`,
+    `<input id="dzSicPax${i}" type="number" min="1" max="${designSicMaxPax}"`,
+    ` value="${Number(u.pax) || 1}" onchange="designSicSetPax(${i}, this.value)"></label>`,
+    `<button type="button" class="btn small dz-sic-remove" onclick="designSicRemove(${i})"`,
+    ` aria-label="Bỏ đơn vị khỏi chuyến" title="Bỏ đơn vị khỏi chuyến">${systemIcon("trash")}</button>`,
+    `</div>`,
+  ].join("");
+}
+
+function designSicPicker(d) {
+  const { leads, customers } = designSicPickables(d);
+  const option = (kind, r) => `<option value="${kind}|${esc(r.id)}">${esc(r.name)} · ${esc(r.id)}</option>`;
+  const groups = [
+    `<optgroup label="Khách hàng thường">${customers.map((c) => option("customer", c)).join("")}</optgroup>`,
+    `<optgroup label="Khách hàng tiềm năng">${leads.map((l) => option("lead", l)).join("")}</optgroup>`,
+  ].join("");
+  return [
+    `<label class="dz-field"><span>Chọn khách hàng trong hệ thống (chọn lần lượt nhiều khách)</span>`,
+    `<select onchange="designSicAddRef(this.value)">`,
+    `<option value="">-- Chọn khách hàng để ghép --</option>${groups}</select></label>`,
+  ].join("");
+}
+
+function designSicManualForm() {
+  return [
+    `<div class="dz-sic-manual">`,
+    `<label class="dz-field"><span>Hoặc nhập đơn vị chưa có trong hệ thống</span>`,
+    `<input id="dzSicName" maxlength="80" placeholder="Tên đơn vị / công ty ghép"></label>`,
+    `<label class="dz-field"><span>Số khách</span>`,
+    `<input id="dzSicPax" type="number" min="1" max="${designSicMaxPax}" value="1"></label>`,
+    `<button type="button" class="btn primary" onclick="designSicAddManual()">Thêm đơn vị</button>`,
+    `</div>`,
+  ].join("");
+}
+
+function designSicUnitsCard(d) {
+  const units = designSicUnits(d);
+  const status = designSicStatus(d);
+  const empty = '<p class="sub">Chưa có đơn vị ghép. Chọn khách hàng trong hệ thống hoặc nhập đơn vị mới.</p>';
+  const list = units.length ? units.map((u, i) => designSicUnitRow(u, i)).join("") : empty;
+  const body = [
+    `<p class="dz-sic-summary" id="dzSicSummary">${esc(designSicSummaryText(d))}</p>`,
+    `<div class="dz-sic-list">${list}</div>`,
+    `<div class="dz-sic-add">${designSicPicker(d)}${designSicManualForm()}</div>`,
+  ].join("");
+  return card("Đơn vị ghép", body, `<span id="dzSicStatus">${badge(status.text, status.tone)}</span>`);
+}
+
+function designDetailSicPanel(d) {
+  if (!designIsSic(d)) return "";
+  const status = designSicStatus(d);
+  const rows = designSicUnits(d).map((u) => {
+    return `<span>${esc(designSicUnitName(u))} <b>${Number(u.pax) || 0} khách</b></span>`;
+  });
+  const empty = "<span>Chưa có đơn vị ghép <b>—</b></span>";
+  return [
+    `<section class="tour-detail-panel"><h3>Tour ghép SIC</h3><div class="tour-detail-info">`,
+    `<span>Sức chứa <b>${Number(d.sicCapacity) || 0} khách</b></span>`,
+    `<span>Đã ghép <b>${designSicTotal(d)} khách</b></span>`,
+    `<span>Tình trạng <b>${esc(status.text)}</b></span>`,
+    `<span>Chuyến đang mở bán <b>${departureDraftCount(d.id)}</b></span>`,
+    rows.length ? rows.join("") : empty,
+    `</div></section>`,
+  ].join("");
+}
+
+function designSicTextLines(d) {
+  if (!designIsSic(d)) return [];
+  const status = designSicStatus(d);
+  const head = `Tour ghép SIC: ${designSicTotal(d)}/${Number(d.sicCapacity) || 0} khách (${status.text})`;
+  const units = designSicUnits(d).map((u) => `- ${designSicUnitName(u)}: ${Number(u.pax) || 0} khách`);
+  return [head, ...units];
+}
+
 function designOpenBuilder() {
   if (!requireCapability("tour_design_manage")) return;
   const d = ensureDesign();
   if (!d.svcTab) d.svcTab = serviceTypes[0] || "Other";
   if (!designSteps.some(([key]) => key === d.viewStep)) d.viewStep = "info";
-  modal(d.id ? "Chỉnh sửa chương trình tour" : "Thiết kế chương trình tour", designBuilderHtml(d));
+  modal(designModalTitle(d), designBuilderHtml(d));
 }
 
 /* ---------- Lưu nháp / mẫu / chia sẻ ---------- */
@@ -810,7 +1183,7 @@ function designDetailService(d, cat) {
 function designDetailHead(rec, d) {
   const lead = findLead(rec.lead || d.lead);
   const status = designStepState(d).done.preview ? "Sẵn sàng báo giá" : "Đang thiết kế";
-  const sub = `${esc(lead?.name || "Chưa gắn khách hàng")} · ${esc(d.country || "Chưa chọn thị trường")}`;
+  const sub = designCardSubline(d, lead);
   return [
     `<header>`,
     `<div><span class="tour-detail-status">${status}</span>`,
@@ -845,6 +1218,7 @@ function designDetailSide(rec, d) {
     `<section class="tour-detail-panel"><h3>Dịch vụ & chi phí</h3>`,
     `<div class="tour-detail-services">${services}</div>`,
     `<div class="tour-detail-total"><span>Lợi nhuận dự kiến</span><b>${profit}</b></div></section>`,
+    designDetailSicPanel(d),
     `<section class="tour-detail-panel"><h3>Thông tin chương trình</h3><div class="tour-detail-info">`,
     `<span>Khởi hành <b>${start}</b></span>`,
     `<span>Loại tour <b>${esc(d.tourType || "—")}</b></span>`,
@@ -861,7 +1235,7 @@ function designDetailFooter(rec) {
   const edit = can("tour_design_manage")
     ? btn(systemIcon("pen") + " Tiếp tục thiết kế", `designOpenDraft('${rec.id}')`, "primary")
     : "";
-  return `<footer>${del}${btn("Đóng", "closeModal()")}${edit}</footer>`;
+  return `<footer>${del}${btn("Đóng", "closeModal()")}${departureDetailAction(rec)}${edit}</footer>`;
 }
 
 function designDetail(id) {
@@ -892,7 +1266,8 @@ function designCanDeleteDraft(rec) {
 function designCardFooter(item) {
   const owner = esc(item.owner || "Chưa phân công");
   const role = esc(item.ownerRole || "Người thiết kế");
-  const end = `<div class="tour-card-end"><time>${dateTimeVN(item.savedAt)}</time>${designCardDelete(item)}</div>`;
+  const open = departureCardAction(item);
+  const end = `<div class="tour-card-end"><time>${dateTimeVN(item.savedAt)}</time>${open}${designCardDelete(item)}</div>`;
   return `<footer><span><b>${owner}</b><small>${role}</small></span>${end}</footer>`;
 }
 
@@ -956,7 +1331,7 @@ function designSaveTemplate() {
 
 function designText(d) {
   const lines = [`${d.name || "Chương trình tour"} — ${d.program.length} ngày, ${d.pax} khách`, d.start ? `Khởi hành: ${fmt(d.start)}` : "", ...d.program.map((p, i) => `Ngày ${i + 1}: ${p.title}${p.text ? " — " + p.text.replace(/\n/g, "; ") : ""}`)];
-  return lines.filter(Boolean).join("\n");
+  return lines.concat(designSicTextLines(d)).filter(Boolean).join("\n");
 }
 
 async function designShare() {
@@ -979,29 +1354,19 @@ function designPreview() {
   );
 }
 
-function createQuote() {
-  if (!requireCapability("quotes_manage")) return;
-  const d = ensureDesign();
-  const missing = [];
-  if (!d.lead && !(d.customerType === "customer" && d.customerId)) missing.push("chọn khách hàng");
-  if (!d.name.trim()) missing.push("đặt tên chương trình");
-  if (!d.start) missing.push("chọn ngày khởi hành");
-  if (!d.program.length || d.program.some((p) => !p.title.trim())) missing.push("nhập tiêu đề cho tất cả các ngày");
-  if (!(designCost(d) > 0)) missing.push("nhập chi phí dịch vụ");
-  if (!(d.amount > 0)) missing.push("nhập giá bán");
-  if (missing.length) return toast("Cần " + missing.join(", ") + ".");
-  const lead = designSelectedCustomer(d);
-  if (!lead) return toast("Khách hàng đã chọn không còn tồn tại.");
-  const id = nextBusinessId("quotes");
+/* Tên tour ghi trên báo giá. */
+const designQuoteTour = (d) => `${d.name.trim()} · ${d.program.length} ngày`;
+
+/* Dựng bản ghi báo giá từ một bản thiết kế (báo giá thường và báo giá của đơn vị trong chuyến SIC). */
+function designQuoteRecord(d, client, id) {
   const breakdown = Object.fromEntries(svcCats().map((c) => [c, designCatCost(d, c)]));
-  const tour = `${d.name.trim()} · ${d.program.length} ngày`;
-  state.quotes.push({
+  return {
     id,
     lead: d.lead || "",
     customerId: d.customerId || "",
     customerType: d.customerType || "lead",
-    client: lead.name,
-    tour,
+    client,
+    tour: designQuoteTour(d),
     days: d.program.length,
     pax: d.pax,
     pricingMode: d.pricingMode || "total",
@@ -1032,7 +1397,27 @@ function createQuote() {
     history: [],
     createdAt: nowISO(),
     createdBy: actor().name,
-  });
+  
+  };
+}
+
+function createQuote() {
+  if (!requireCapability("quotes_manage")) return;
+  const d = ensureDesign();
+  if (designIsSic(d)) return toast(designSicQuoteNotice);
+  const missing = [];
+  if (!d.lead && !(d.customerType === "customer" && d.customerId)) missing.push("chọn khách hàng");
+  if (!d.name.trim()) missing.push("đặt tên chương trình");
+  if (!d.start) missing.push("chọn ngày khởi hành");
+  if (!d.program.length || d.program.some((p) => !p.title.trim())) missing.push("nhập tiêu đề cho tất cả các ngày");
+  if (!(designCost(d) > 0)) missing.push("nhập chi phí dịch vụ");
+  if (!(d.amount > 0)) missing.push("nhập giá bán");
+  if (missing.length) return toast("Cần " + missing.join(", ") + ".");
+  const lead = designSelectedCustomer(d);
+  if (!lead) return toast("Khách hàng đã chọn không còn tồn tại.");
+  const id = nextBusinessId("quotes");
+  const tour = designQuoteTour(d);
+  state.quotes.push(designQuoteRecord(d, lead.name, id));
   if (d.customerType !== "customer") {
     lead.tour = tour;
     lead.days = d.program.length;

@@ -39,13 +39,14 @@ function emptyState() {
     fxHistory: [],
     tourTemplates: [],
     tourDays: [],
+    departures: [],
     approvals: [],
     auditLogs: [],
   };
 }
 
-/* Collection mới (phê duyệt, nhật ký, lịch sử tỷ giá, ngân hàng ngày tour) có thể chưa có bảng trên KIO: nếu đọc lỗi thì coi như rỗng. */
-const optionalCollections = ["approvals", "auditLogs", "fxHistory", "tourDays"];
+/* Collection mới (phê duyệt, nhật ký, lịch sử tỷ giá, ngân hàng ngày tour, chuyến SIC) có thể chưa có bảng trên KIO: nếu đọc lỗi thì coi như rỗng. */
+const optionalCollections = ["approvals", "auditLogs", "fxHistory", "tourDays", "departures"];
 
 function initializeDemoCollections() {
   for (const collection of Object.keys(emptyState()))
@@ -73,7 +74,7 @@ const businessIdSchemas = {
 };
 
 /* Mã nghiệp vụ cho collection không đánh lại số (tham chiếu chéo nhiều nơi). */
-const stableIdSchemas = { approvals: "PD", auditLogs: "NK", tourDays: "NG" };
+const stableIdSchemas = { approvals: "PD", auditLogs: "NK", tourDays: "NG", departures: "CK" };
 
 function nextStableId(collection, date = new Date()) {
   const prefix = stableIdSchemas[collection];
@@ -147,6 +148,12 @@ function normalizeBusinessIds() {
   for (const item of state.customerServiceCases) item.bookingId = remap("bookings", item.bookingId);
   for (const vehicle of state.vehicles) vehicle.supplier = remap("suppliers", vehicle.supplier);
   for (const draft of state.drafts) draft.lead = remap("leads", draft.lead);
+  for (const departure of state.departures || []) {
+    for (const unit of departure.units || []) {
+      unit.quoteId = remap("quotes", unit.quoteId);
+      unit.bookingId = remap("bookings", unit.bookingId);
+    }
+  }
 
   if (changed) {
     const replacements = Object.values(maps).flatMap((map) => [...map.entries()]);

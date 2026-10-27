@@ -139,3 +139,96 @@ body .modal > .tour-detail {
 .dz-pax-pricing-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted,#64748b)}
 .dz-pax-pricing-grid input{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#d1d5db);border-radius:7px;padding:7px 5px;font-size:12px;background:var(--surface,#fff);color:inherit}
 @media(min-width:1100px){.dz-pax-pricing-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* T3-07: nút ở đầu thư viện và khối đơn vị ghép của tour SIC */
+.tour-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tour-library-actions > .btn {
+  min-height: 44px;
+  padding-inline: 18px;
+}
+
+.dz-sic-summary {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.dz-sic-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.dz-sic-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px auto;
+  align-items: end;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f9fbff;
+}
+
+.dz-sic-name {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dz-sic-name small {
+  color: var(--muted);
+}
+
+.dz-sic-pax {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dz-sic-pax input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.dz-sic-add {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.dz-sic-manual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px auto;
+  align-items: end;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .tour-library-actions {
+    width: 100%;
+  }
+
+  .tour-library-actions > .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .dz-sic-row,
+  .dz-sic-manual {
+    grid-template-columns: minmax(0, 1fr) 96px;
+  }
+
+  .dz-sic-manual .btn {
+    grid-column: 1 / -1;
+  }
+}
